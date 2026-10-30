@@ -15,7 +15,7 @@ export const workspaceList = createServerFn({ method: "POST" })
     const [clientsResult, projectsResult, accountsResult, developerAssetsResult, adsAssetsResult] =
       await Promise.all([
         context.supabase
-          .from("clients")
+          .from("clients" as any)
           .select("id,name,description,website,legal_name,industry,contact_name,contact_email,contact_phone,address,city,logo_path,company_profile,scope_of_work,internal_notes,client_status,created_at,updated_at")
           .order("name"),
         context.supabase
@@ -124,12 +124,12 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
     const payload = { ...data, user_id: context.userId };
     const result = data.id
       ? await context.supabase
-          .from("clients")
+          .from("clients" as any)
           .update(payload)
           .eq("id", data.id)
           .select("id")
           .single()
-      : await context.supabase.from("clients").insert(payload).select("id").single();
+      : await context.supabase.from("clients" as any).insert(payload).select("id").single();
     if (result.error)
       throw new Error(
         result.error.code === "23505" ? "Nama client sudah digunakan." : "Gagal menyimpan client.",
@@ -151,7 +151,7 @@ export const workspaceDeleteClient = createServerFn({ method: "POST" })
       throw new Error(
         "Client masih memiliki proyek. Pindahkan atau hapus proyeknya terlebih dahulu.",
       );
-    const { error } = await context.supabase.from("clients").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("clients" as any).delete().eq("id", data.id);
     if (error) throw new Error("Gagal menghapus client.");
     return { ok: true };
   });
