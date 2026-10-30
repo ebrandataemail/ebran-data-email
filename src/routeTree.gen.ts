@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiHermesChatRouteImport } from './routes/api/hermes/chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHermesChatRoute = ApiHermesChatRouteImport.update({
+  id: '/api/hermes/chat',
+  path: '/api/hermes/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/hermes/chat': typeof ApiHermesChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/hermes/chat': typeof ApiHermesChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/hermes/chat': typeof ApiHermesChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/hermes/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/hermes/chat'
+  id: '__root__' | '/' | '/api/hermes/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiHermesChatRoute: typeof ApiHermesChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/hermes/chat': {
+      id: '/api/hermes/chat'
+      path: '/api/hermes/chat'
+      fullPath: '/api/hermes/chat'
+      preLoaderRoute: typeof ApiHermesChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiHermesChatRoute: ApiHermesChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
