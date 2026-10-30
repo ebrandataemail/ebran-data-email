@@ -53,6 +53,7 @@ import {
   type PriorityLevel,
 } from "@/lib/projects/deadline";
 import { ClientDialog, type ClientData } from "./clients/ClientDialog";
+import { ClientWorkspacePanel } from "./clients/ClientWorkspacePanel";
 import { KanbanBoard } from "./projects/KanbanBoard";
 
 const KEY = ["workspace", "projects-clients"] as const;
@@ -398,6 +399,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
               )}
             </div>
           )}
+          {isClients && data && <ClientWorkspacePanel clients={data.clients} />}
         </section>
       </main>
 
