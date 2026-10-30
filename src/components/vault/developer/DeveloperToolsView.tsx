@@ -54,7 +54,6 @@ import { DevAssetDialog } from "./DevAssetDialog";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Panel, FieldRow } from "@/components/vault/primitives";
-import { AssetAttachments } from "@/components/vault/AssetAttachments";
 import { workspaceList } from "@/lib/projects/projects.functions";
 import { useQuery } from "@tanstack/react-query";
 
@@ -119,6 +118,10 @@ export function DeveloperToolsView() {
       a.name.toLowerCase().includes(q) ||
       (a.description ?? "").toLowerCase().includes(q) ||
       (a.provider ?? "").toLowerCase().includes(q) ||
+      (a.username ?? "").toLowerCase().includes(q) ||
+      (a.websiteUrl ?? "").toLowerCase().includes(q) ||
+      a.environment.toLowerCase().includes(q) ||
+      a.status.toLowerCase().includes(q) ||
       (a.projectName ?? "").toLowerCase().includes(q) ||
       (a.clientName ?? "").toLowerCase().includes(q);
     const t = filter === "all" || a.type === filter;
@@ -253,7 +256,9 @@ export function DeveloperToolsView() {
                   <TableRow>
                     <TableHead className="pl-6">Aset</TableHead>
                     <TableHead>Tipe</TableHead>
-                    <TableHead>Proyek</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Environment / Status</TableHead>
+                    <TableHead>Proyek / Client</TableHead>
                     <TableHead>Terakhir Update</TableHead>
                     <TableHead className="text-right pr-6">Aksi</TableHead>
                   </TableRow>
@@ -267,8 +272,14 @@ export function DeveloperToolsView() {
                           {TYPE_LABELS[a.type]}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{a.provider ?? "—"}</TableCell>
+                      <TableCell className="text-xs">
+                        <span className="capitalize">{a.environment}</span>
+                        <span className="text-muted-foreground"> · </span>
+                        <span className="capitalize">{a.status}</span>
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
-                        {a.projectName ?? "—"}
+                        {a.projectName ?? "—"}{a.clientName ? ` · ${a.clientName}` : ""}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {new Date(a.updatedAt).toLocaleDateString("id-ID")}
@@ -340,16 +351,6 @@ function DevAssetCard({
     queryKey: ["workspace", "projects-clients"],
     queryFn: () => workspaceFn(),
     staleTime: 30_000,
-  });
-
-  const [attachmentsCount, setAttachmentsCount] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
-    try {
-      const stored = localStorage.getItem(`dev_attachments_${asset.id}`);
-      return stored ? JSON.parse(stored).length : 0;
-    } catch {
-      return 0;
-    }
   });
 
   const toggleReveal = async () => {
@@ -536,12 +537,6 @@ function DevAssetCard({
               >
                 Catatan
               </TabsTrigger>
-              <TabsTrigger
-                value="attachments"
-                className="relative h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent shadow-none"
-              >
-                Attachments ({attachmentsCount})
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="mt-0 space-y-4">
@@ -594,7 +589,7 @@ function DevAssetCard({
                     <Badge variant="outline">{asset.environment}</Badge>
                   </FieldRow>
                   <FieldRow icon={<ShieldCheck />} label="Status">
-                    <Badge variant={asset.status === "active" ? "success" : "muted"}>{asset.status}</Badge>
+                    <Badge variant={asset.status === "active" ? "default" : "muted"}>{asset.status}</Badge>
                   </FieldRow>
                   <FieldRow icon={<Calendar />} label="Kedaluwarsa">
                     <span className="text-xs text-muted-foreground">{asset.expiresAt ? new Date(asset.expiresAt).toLocaleDateString("id-ID") : "Tidak ditentukan"}</span>
@@ -646,9 +641,6 @@ function DevAssetCard({
               </Panel>
             </TabsContent>
 
-            <TabsContent value="attachments" className="mt-0">
-              <AssetAttachments id={asset.id} type="dev" onFilesCountChange={setAttachmentsCount} />
-            </TabsContent>
           </Tabs>
         </div>
       )}
