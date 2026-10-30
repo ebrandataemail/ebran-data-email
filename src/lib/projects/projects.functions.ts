@@ -16,7 +16,7 @@ export const workspaceList = createServerFn({ method: "POST" })
       await Promise.all([
         context.supabase
           .from("clients")
-          .select("id,name,description,website,created_at,updated_at")
+          .select("id,name,description,website,legal_name,industry,contact_name,contact_email,contact_phone,address,city,logo_path,company_profile,scope_of_work,internal_notes,client_status,created_at,updated_at")
           .order("name"),
         context.supabase
           .from("projects")
@@ -51,6 +51,18 @@ export const workspaceList = createServerFn({ method: "POST" })
         const projectIds = new Set(clientProjects.map((project) => project.id));
         return {
           ...client,
+          legalName: client.legal_name,
+          industry: client.industry,
+          contactName: client.contact_name,
+          contactEmail: client.contact_email,
+          contactPhone: client.contact_phone,
+          address: client.address,
+          city: client.city,
+          logoPath: client.logo_path,
+          companyProfile: client.company_profile,
+          scopeOfWork: client.scope_of_work,
+          internalNotes: client.internal_notes,
+          clientStatus: client.client_status,
           projectCount: clientProjects.length,
           emailCount: accounts.filter((account) => projectIds.has(account.project_id ?? "")).length,
           developerAssetCount: developerAssets.filter((item) =>
@@ -81,6 +93,10 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
       name: string;
       description?: string | null;
       website?: string | null;
+      legalName?: string | null; industry?: string | null; contactName?: string | null;
+      contactEmail?: string | null; contactPhone?: string | null; address?: string | null;
+      city?: string | null; logoPath?: string | null; companyProfile?: string | null;
+      scopeOfWork?: string | null; internalNotes?: string | null; clientStatus?: string;
     }) => {
       const name = text(input?.name, 120);
       if (!name) throw new Error("Nama client wajib diisi.");
@@ -89,6 +105,18 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
         name,
         description: text(input?.description, 1000) || null,
         website: text(input?.website, 300) || null,
+        legal_name: text(input?.legalName, 180) || null,
+        industry: text(input?.industry, 120) || null,
+        contact_name: text(input?.contactName, 120) || null,
+        contact_email: text(input?.contactEmail, 254) || null,
+        contact_phone: text(input?.contactPhone, 40) || null,
+        address: text(input?.address, 500) || null,
+        city: text(input?.city, 120) || null,
+        logo_path: text(input?.logoPath, 500) || null,
+        company_profile: text(input?.companyProfile, 5000) || null,
+        scope_of_work: text(input?.scopeOfWork, 5000) || null,
+        internal_notes: text(input?.internalNotes, 3000) || null,
+        client_status: ["prospect","active","on-hold","completed","inactive"].includes(input?.clientStatus ?? "") ? input!.clientStatus! : "active",
       };
     },
   )
