@@ -14,7 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
-import { Route as ApiHermesChatRouteImport } from './routes/api/hermes/chat'
+import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,9 +40,9 @@ const AuthenticatedVaultRoute = AuthenticatedVaultRouteImport.update({
   path: '/vault',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiHermesChatRoute = ApiHermesChatRouteImport.update({
-  id: '/api/hermes/chat',
-  path: '/api/hermes/chat',
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai/chat',
+  path: '/api/ai/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -51,14 +51,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/vault': typeof AuthenticatedVaultRoute
-  '/api/hermes/chat': typeof ApiHermesChatRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/vault': typeof AuthenticatedVaultRoute
-  '/api/hermes/chat': typeof ApiHermesChatRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -67,13 +67,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
-  '/api/hermes/chat': typeof ApiHermesChatRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/accounts' | '/vault' | '/api/hermes/chat'
+  fullPaths: '/' | '/auth' | '/accounts' | '/vault' | '/api/ai/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/accounts' | '/vault' | '/api/hermes/chat'
+  to: '/' | '/auth' | '/accounts' | '/vault' | '/api/ai/chat'
   id:
     | '__root__'
     | '/'
@@ -81,14 +81,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/accounts'
     | '/_authenticated/vault'
-    | '/api/hermes/chat'
+    | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiHermesChatRoute: typeof ApiHermesChatRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,11 +128,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVaultRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/hermes/chat': {
-      id: '/api/hermes/chat'
-      path: '/api/hermes/chat'
-      fullPath: '/api/hermes/chat'
-      preLoaderRoute: typeof ApiHermesChatRouteImport
+    '/api/ai/chat': {
+      id: '/api/ai/chat'
+      path: '/api/ai/chat'
+      fullPath: '/api/ai/chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -155,7 +155,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiHermesChatRoute: ApiHermesChatRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
