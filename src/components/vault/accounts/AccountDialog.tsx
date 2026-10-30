@@ -79,6 +79,7 @@ export function AccountDialog({
         },
       });
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast.success(account ? "Akun diperbarui" : "Akun ditambahkan");
       onOpenChange(false);
     } catch (err) {
