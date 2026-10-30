@@ -121,6 +121,7 @@ export function DevAssetDialog({
         },
       });
       await queryClient.invalidateQueries({ queryKey: DEV_ASSETS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast.success(asset ? "Aset diperbarui" : "Aset ditambahkan");
       onOpenChange(false);
     } catch (error) {
