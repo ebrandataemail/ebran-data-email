@@ -1,11 +1,10 @@
-import { useState } from "react";
-import { CalendarClock, LoaderCircle, MessageSquareText, RefreshCw, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { CalendarClock, LoaderCircle, RefreshCw, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
 import { asset } from "@/data/asset";
 import { cn } from "@/lib/utils";
-import { AiChatSheet } from "./AiChat";
 import { useAiAudit } from "./use-ai";
 
 // Shown until the AI runs its first live audit in this session.
@@ -38,7 +37,6 @@ const toneDot = {
 
 export function InsightRail() {
   const { audit, running, run } = useAiAudit();
-  const [chatOpen, setChatOpen] = useState(false);
   const score = audit?.score ?? 86;
   const insights = audit?.insights ?? defaultInsights;
 
@@ -92,13 +90,14 @@ export function InsightRail() {
           <p className="mt-4 text-[11px] text-muted-foreground">Contoh insight. Tekan ↻ agar AI menganalisis data terbaru.</p>
         )}
 
-        <Button variant="outline" size="sm" className="mt-5 w-full" onClick={() => setChatOpen(true)}>
+        <Button variant="outline" size="sm" className="mt-5 w-full" asChild>
+          <Link to="/ai">
           <MessageSquareText className="text-ai" />
           Tanya AI tentang aset ini
+          </Link>
         </Button>
       </section>
 
-      <AiChatSheet open={chatOpen} onOpenChange={setChatOpen} />
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-card">
         <h3 className="text-sm font-semibold text-foreground">Ringkasan</h3>
