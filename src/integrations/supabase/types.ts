@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_accounts: {
+        Row: {
+          alt_password_enc: string | null
+          created_at: string
+          email: string
+          id: string
+          lovable_status: string
+          note: string | null
+          password_enc: string | null
+          provider: string
+          pw_classes: number | null
+          pw_common_pattern: boolean
+          pw_fingerprint: string | null
+          pw_length: number | null
+          pw_matches_email: boolean
+          updated_at: string
+          usage_tag: string | null
+          user_id: string
+        }
+        Insert: {
+          alt_password_enc?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          lovable_status?: string
+          note?: string | null
+          password_enc?: string | null
+          provider: string
+          pw_classes?: number | null
+          pw_common_pattern?: boolean
+          pw_fingerprint?: string | null
+          pw_length?: number | null
+          pw_matches_email?: boolean
+          updated_at?: string
+          usage_tag?: string | null
+          user_id?: string
+        }
+        Update: {
+          alt_password_enc?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          lovable_status?: string
+          note?: string | null
+          password_enc?: string | null
+          provider?: string
+          pw_classes?: number | null
+          pw_common_pattern?: boolean
+          pw_fingerprint?: string | null
+          pw_length?: number | null
+          pw_matches_email?: boolean
+          updated_at?: string
+          usage_tag?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       hermes_chat_messages: {
         Row: {
           asset_id: string
@@ -46,6 +103,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      lovable_projects: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lovable_projects_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
