@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { Link, useNavigate, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
   LogOut,
   AtSign,
@@ -32,6 +32,7 @@ import {
 import { categories, projects, tags } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { StatusDot } from "./primitives";
+import { useAccounts } from "./accounts/use-accounts";
 
 const categoryIcons = {
   email: Mail,
@@ -59,29 +60,29 @@ function SectionLabel({ children, action }: { children: string; action?: boolean
   );
 }
 
+type NavTarget = "/vault" | "/accounts";
+
 function NavItem({
   icon,
   label,
   count,
-  active,
+  to,
 }: {
   icon: React.ReactNode;
   label: string;
-  count?: number;
-  active?: boolean;
+  count?: number | undefined;
+  to?: NavTarget | undefined;
 }) {
-  return (
-    <a
-      href="#"
-      onClick={(e) => e.preventDefault()}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
-        active
-          ? "bg-background text-foreground shadow-soft ring-1 ring-border"
-          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
-      )}
-    >
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const active = !!to && pathname === to;
+  const className = cn(
+    "group flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
+    active
+      ? "bg-background text-foreground shadow-soft ring-1 ring-border"
+      : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+  );
+  const inner = (
+    <>
       <span
         className={cn(
           "[&_svg]:size-4",
@@ -94,9 +95,23 @@ function NavItem({
       {count !== undefined && (
         <span className="text-[11px] tabular-nums text-muted-foreground/80">{count}</span>
       )}
+    </>
+  );
+  if (to) {
+    return (
+      <Link to={to} aria-current={active ? "page" : undefined} className={className}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <a href="#" onClick={(e) => e.preventDefault()} className={className}>
+      {inner}
     </a>
   );
 }
+
+const categoryRoutes: Partial<Record<string, NavTarget>> = { email: "/accounts", social: "/vault" };
 
 function CommandBar() {
   const [open, setOpen] = useState(false);
@@ -163,6 +178,7 @@ function CommandBar() {
 }
 
 export function SidebarContents() {
+  const { data: accounts } = useAccounts();
   return (
     <div className="flex h-full flex-col bg-sidebar">
       {/* Header */}
@@ -204,8 +220,8 @@ export function SidebarContents() {
                   key={c.name}
                   icon={<Icon />}
                   label={c.name}
-                  count={c.count}
-                  active={"active" in c && c.active}
+                  count={c.key === "email" ? accounts?.length : c.count}
+                  to={categoryRoutes[c.key]}
                 />
               );
             })}

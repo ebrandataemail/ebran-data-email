@@ -8,9 +8,9 @@ export const projects = [
 ];
 
 export const categories = [
-  { name: "Email (Core)", key: "email", count: 18 },
+  { name: "Email (Core)", key: "email", count: 0 },
   { name: "Developer Tools", key: "dev", count: 22 },
-  { name: "Social Media", key: "social", count: 29, active: true },
+  { name: "Social Media", key: "social", count: 29 },
   { name: "Ads & Marketing", key: "ads", count: 11 },
 ] as const;
 
