@@ -10,6 +10,7 @@ import {
   Megaphone,
   Plus,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 import appMark from "@/assets/app-mark.png";
@@ -17,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import { categories, projects, tags } from "@/data/asset";
+import { categories, tags } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { StatusDot } from "./primitives";
 import { useAccounts } from "./accounts/use-accounts";
@@ -48,7 +49,7 @@ function SectionLabel({ children, action }: { children: string; action?: boolean
   );
 }
 
-type NavTarget = "/vault" | "/accounts" | "/ai";
+type NavTarget = "/vault" | "/accounts" | "/ai" | "/projects" | "/clients";
 
 function NavItem({
   icon,
@@ -124,9 +125,8 @@ export function SidebarContents() {
         <div>
           <SectionLabel action>PROYEK & CLIENT</SectionLabel>
           <div className="space-y-0.5">
-            {projects.map((p) => (
-              <NavItem key={p.name} icon={<Folder />} label={p.name} count={p.count} />
-            ))}
+            <NavItem icon={<Folder />} label="Semua Proyek" to="/projects" />
+            <NavItem icon={<Users />} label="Client" to="/clients" />
           </div>
         </div>
 

@@ -92,7 +92,7 @@ export async function importCsv(db: Db, userId: string, csv: string) {
 }
 
 const LIST_COLUMNS =
-  "id, email, provider, password_enc, alt_password_enc, pw_fingerprint, pw_length, pw_classes, pw_matches_email, pw_common_pattern, lovable_status, usage_tag, note, created_at, updated_at, lovable_projects(id, name, url, note)";
+  "id, email, provider, project_id, password_enc, alt_password_enc, pw_fingerprint, pw_length, pw_classes, pw_matches_email, pw_common_pattern, lovable_status, usage_tag, note, created_at, updated_at, lovable_projects(id, name, url, note)";
 
 export async function listAccounts(db: Db) {
   const { data, error } = await db.from("email_accounts").select(LIST_COLUMNS).order("email");
@@ -108,6 +108,7 @@ export async function listAccounts(db: Db) {
   return (data ?? []).map((r) => ({
     id: r.id,
     email: r.email,
+    projectId: r.project_id,
     provider: r.provider,
     hasPassword: !!r.password_enc,
     hasAltPassword: !!r.alt_password_enc,
@@ -151,6 +152,7 @@ export type AccountInput = {
   lovableStatus: LovableStatus;
   usageTag: string | null;
   note: string | null;
+  projectId?: string | null;
   projects?: { id: string | null; name: string; url: string | null; note: string | null }[];
 };
 
@@ -159,6 +161,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
     lovable_status: input.lovableStatus,
     usage_tag: input.usageTag,
     note: input.note,
+    ...(input.projectId !== undefined ? { project_id: input.projectId } : {}),
   };
   const pw = input.password ? await passwordColumns(input.password, input.email) : null;
   let accountId = input.id;
@@ -176,6 +179,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
         user_id: userId,
         email: input.email,
         provider: providerOf(input.email),
+        project_id: input.projectId ?? null,
         ...base,
         ...(pw ?? (await passwordColumns(null, input.email))),
       })
