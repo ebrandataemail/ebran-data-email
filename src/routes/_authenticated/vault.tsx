@@ -4,7 +4,6 @@ import { CodeXml, Paperclip, ShieldCheck, SlidersHorizontal, UserRound } from "l
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { AssetHeader } from "@/components/vault/AssetHeader";
-import { InsightRail } from "@/components/vault/InsightRail";
 import { ApiTab } from "@/components/vault/tabs/ApiTab";
 import { AttachmentsTab } from "@/components/vault/tabs/AttachmentsTab";
 import { OpsTab } from "@/components/vault/tabs/OpsTab";
@@ -73,7 +72,7 @@ function Index() {
             </TabsList>
           </div>
 
-          <div className="mx-auto mt-6 grid max-w-[1200px] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="mx-auto mt-6 max-w-[1200px]">
             <div className="min-w-0">
               {tabs.map(({ value, Content }) => (
                 <TabsContent
@@ -85,7 +84,6 @@ function Index() {
                 </TabsContent>
               ))}
             </div>
-            <InsightRail />
           </div>
         </Tabs>
       </main>

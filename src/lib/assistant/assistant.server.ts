@@ -9,8 +9,9 @@ import { buildAssetBrief } from "./context";
 const PERSONA = `Kamu adalah asisten AI di aplikasi "Ebran Aset Digital - Arsip Data Pribadi Aman" milik Grey Gandaw untuk mengelola akun & aset digital.
 Jawab dalam Bahasa Indonesia yang ringkas dan profesional. Jangan pernah meminta, menebak, atau menuliskan password, secret token, TOTP secret, atau backup code — kamu hanya menerima fakta turunan tentangnya.`;
 
-function briefText() {
-  return `Data aset (JSON, rahasia sudah disamarkan):\n${JSON.stringify(buildAssetBrief(), null, 2)}`;
+function briefText(brief?: unknown) {
+  const data = brief || buildAssetBrief();
+  return `Data aset (JSON, rahasia sudah disamarkan):\n${JSON.stringify(data, null, 2)}`;
 }
 
 async function runText(instructions: string, prompt: string, effort: "low" | "medium") {
@@ -167,8 +168,8 @@ export async function extractDocument(input: {
 
 /* ---------- Chat ---------- */
 
-export function chatInstructions() {
-  return `${PERSONA}\nKamu menjawab pertanyaan pengguna tentang aset yang sedang dibuka. Gunakan data aset berikut sebagai sumber kebenaran; jika data tidak tersedia, katakan terus terang. Gunakan markdown ringan bila membantu.\n\n${briefText()}`;
+export function chatInstructions(brief?: unknown) {
+  return `${PERSONA}\nKamu menjawab pertanyaan pengguna tentang aset yang sedang dibuka. Gunakan data aset berikut sebagai sumber kebenaran; jika data tidak tersedia, katakan terus terang. Gunakan markdown ringan bila membantu.\n\n${briefText(brief)}`;
 }
 
 /* ---------- Email vault audit ---------- */

@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { aiExtractDocument } from "@/lib/assistant/assistant.functions";
 import { cn } from "@/lib/utils";
-import { CopyButton, Panel } from "../primitives";
-import { errorMessage } from "../use-ai";
+import { CopyButton, Panel } from "./primitives";
+import { errorMessage } from "./use-ai";
 
 type OcrResult = Awaited<ReturnType<typeof aiExtractDocument>>;
 
@@ -77,15 +77,17 @@ function StatusBadge({ f }: { f: AccountFileItem }) {
   );
 }
 
-export function AccountAttachments({
-  accountId,
+export function AssetAttachments({
+  id,
+  type = "account",
   onFilesCountChange,
 }: {
-  accountId: string;
+  id: string;
+  type?: "account" | "dev";
   onFilesCountChange?: (count: number) => void;
 }) {
   const extract = useServerFn(aiExtractDocument);
-  const storageKey = `account_attachments_${accountId}`;
+  const storageKey = `${type}_attachments_${id}`;
 
   const [files, setFiles] = useState<AccountFileItem[]>(() => {
     if (typeof window === "undefined") return [];

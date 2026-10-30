@@ -40,9 +40,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { vaultSaveAccount } from "@/lib/vault/vault.functions";
+import { workspaceList } from "@/lib/projects/projects.functions";
 import { CopyButton, FieldRow, Panel, QuickChip, StatusDot } from "../primitives";
 import { errorMessage } from "../use-ai";
-import { AccountAttachments } from "./AccountAttachments";
+import { AssetAttachments } from "../AssetAttachments";
 import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, type VaultAccount } from "./use-accounts";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +72,14 @@ export function AccountVaultCard({
   const [usageTag, setUsageTag] = useState(account.usageTag ?? "");
   const [note, setNote] = useState(account.note ?? "");
   const [projects, setProjects] = useState(account.projects);
+  const [projectId, setProjectId] = useState(account.projectId ?? "none");
+
+  const workspaceFn = useServerFn(workspaceList);
+  const workspace = useQuery({
+    queryKey: ["workspace", "projects-clients"],
+    queryFn: () => workspaceFn(),
+    staleTime: 30_000,
+  });
 
   const [attachmentsCount, setAttachmentsCount] = useState<number>(() => {
     if (typeof window === "undefined") return 0;
@@ -109,6 +118,7 @@ export function AccountVaultCard({
     setUsageTag(account.usageTag ?? "");
     setNote(account.note ?? "");
     setProjects(account.projects);
+    setProjectId(account.projectId ?? "none");
   };
 
   const handleSave = async () => {
@@ -122,6 +132,7 @@ export function AccountVaultCard({
           lovableStatus: status,
           usageTag,
           note,
+          projectId: projectId === "none" ? null : projectId,
           projects: projects.map((p) => ({
             id: p.id.startsWith("new-") ? null : p.id,
             name: p.name,
@@ -211,6 +222,16 @@ export function AccountVaultCard({
           <div className="flex items-center gap-2 self-start sm:self-auto">
             {!isEditing ? (
               <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ai-ghost" size="icon-sm" asChild>
+                      <a href={`/ai?assetId=${account.id}`}>
+                        <Sparkles className="size-3.5" />
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Tanya AI tentang akun ini</TooltipContent>
+                </Tooltip>
                 <Button
                   variant="outline"
                   size="sm"
@@ -224,10 +245,15 @@ export function AccountVaultCard({
                   )}
                   {expanded ? "Tutup Detail" : "Lihat Detail"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={startEditing} className="gap-1.5">
-                  <Pencil className="size-3.5" />
-                  <span>Edit</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={startEditing} className="gap-1.5">
+                      <Pencil className="size-3.5" />
+                      <span>Edit</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit, Refine & Adjust</TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -355,6 +381,36 @@ export function AccountVaultCard({
                         <Badge variant="ai">{account.usageTag}</Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </FieldRow>
+
+                    <FieldRow icon={<Folder />} label="Workspace Project">
+                      {isEditing ? (
+                        <Select value={projectId} onValueChange={setProjectId}>
+                          <SelectTrigger className="h-8 text-sm w-48">
+                            <SelectValue placeholder="Pilih proyek" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Belum ditetapkan</SelectItem>
+                            {workspace.data?.projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {workspace.data?.projects.find((p) => p.id === account.projectId)
+                              ?.name ?? "Belum ditetapkan"}
+                          </span>
+                          {account.projectId && (
+                            <Badge variant="muted" className="text-[10px]">
+                              Workspace Linked
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </FieldRow>
 
@@ -576,8 +632,9 @@ export function AccountVaultCard({
 
               {/* Attachments Tab */}
               <TabsContent value="attachments" className="mt-0">
-                <AccountAttachments
-                  accountId={account.id}
+                <AssetAttachments
+                  id={account.id}
+                  type="account"
                   onFilesCountChange={setAttachmentsCount}
                 />
               </TabsContent>

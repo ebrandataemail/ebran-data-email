@@ -40,7 +40,11 @@ export function AccountDialog({
   const saveFn = useServerFn(vaultSaveAccount);
   const queryClient = useQueryClient();
   const workspaceFn = useServerFn(workspaceList);
-  const workspace = useQuery({ queryKey: ["workspace", "projects-clients"], queryFn: () => workspaceFn(), staleTime: 30_000 });
+  const workspace = useQuery({
+    queryKey: ["workspace", "projects-clients"],
+    queryFn: () => workspaceFn(),
+    staleTime: 30_000,
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<VaultAccount["lovableStatus"]>("unknown");
@@ -148,10 +152,16 @@ export function AccountDialog({
           <div className="space-y-1.5">
             <Label>Proyek</Label>
             <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger><SelectValue placeholder="Pilih proyek" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih proyek" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Belum ditetapkan</SelectItem>
-                {workspace.data?.projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}
+                {workspace.data?.projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

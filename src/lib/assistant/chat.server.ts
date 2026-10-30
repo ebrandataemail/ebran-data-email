@@ -101,16 +101,65 @@ export async function handleAiChat(request: Request) {
     return json(400, "Permintaan tidak valid.");
   }
 
-  if (body.assetId !== asset.id) {
-    return json(404, "Aset tidak ditemukan.");
-  }
-
   if (!isUserMessage(body.message)) {
     return json(400, "Pesan tidak valid.");
   }
 
-  const assetId = asset.id;
+  const assetId = String(body.assetId || "");
   const message = body.message;
+
+  // 2b. Fetch asset context for the AI.
+  let brief: Record<string, unknown> | null = null;
+
+  if (assetId === asset.id) {
+    // Dummy asset fallback (legacy/home page)
+    brief = buildAssetBrief();
+  } else {
+    // Try email accounts
+    const { data: acc } = await auth.supabase
+      .from("email_accounts")
+      .select("*, projects(id, name)")
+      .eq("id", assetId)
+      .eq("user_id", auth.userId)
+      .single();
+
+    if (acc) {
+      brief = {
+        type: "email_account",
+        email: acc.email,
+        status: acc.lovable_status,
+        tag: acc.usage_tag,
+        note: acc.note,
+        projects: acc.projects.map((p) => p.name),
+        updatedAt: acc.updated_at,
+      };
+    } else {
+      // Try developer assets
+      const { data: dev } = await auth.supabase
+        .from("developer_assets")
+        .select("*, projects(id, name)")
+        .eq("id", assetId)
+        .eq("user_id", auth.userId)
+        .single();
+
+      if (dev) {
+        const project = dev.projects as unknown as { id: string; name: string } | null;
+        brief = {
+          type: "developer_asset",
+          assetType: dev.type,
+          name: dev.name,
+          description: dev.description,
+          projectName: project?.name,
+          metadata: dev.metadata,
+          updatedAt: dev.updated_at,
+        };
+      }
+    }
+  }
+
+  if (!brief) {
+    return json(404, "Aset tidak ditemukan atau tidak dapat diakses.");
+  }
 
   // 3. Load only this user's conversation history.
   const { data: rows, error: historyError } = await auth.supabase
@@ -163,7 +212,7 @@ export async function handleAiChat(request: Request) {
 
     const result = streamText({
       model,
-      instructions: chatInstructions(),
+      instructions: chatInstructions(brief),
       messages: await convertToModelMessages(messages),
       abortSignal: request.signal,
       maxRetries: 1,

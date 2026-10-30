@@ -22,12 +22,14 @@ import { categories, tags } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { StatusDot } from "./primitives";
 import { useAccounts } from "./accounts/use-accounts";
+import { useDevAssets } from "./developer/use-dev-assets";
+import { useAdsAssets } from "./ads/use-ads-assets";
 
 const categoryIcons = {
   email: Mail,
   dev: CodeXml,
-  social: AtSign,
   ads: Megaphone,
+  social: AtSign,
 } as const;
 
 function SectionLabel({ children, action }: { children: string; action?: boolean }) {
@@ -49,7 +51,8 @@ function SectionLabel({ children, action }: { children: string; action?: boolean
   );
 }
 
-type NavTarget = "/vault" | "/accounts" | "/ai" | "/projects" | "/clients";
+type NavTarget =
+  "/vault" | "/accounts" | "/ai" | "/projects" | "/clients" | "/developer-tools" | "/ads";
 
 function NavItem({
   icon,
@@ -100,10 +103,18 @@ function NavItem({
   );
 }
 
-const categoryRoutes: Partial<Record<string, NavTarget>> = { email: "/accounts", social: "/vault" };
+const categoryRoutes: Partial<Record<string, NavTarget>> = {
+  email: "/accounts",
+  dev: "/developer-tools",
+  ads: "/ads",
+  social: "/vault",
+};
 
 export function SidebarContents() {
   const { data: accounts } = useAccounts();
+  const { data: devAssets } = useDevAssets();
+  const { data: adsAssets } = useAdsAssets();
+
   return (
     <div className="flex h-full flex-col bg-sidebar">
       {/* Header */}
@@ -134,13 +145,21 @@ export function SidebarContents() {
           <SectionLabel>KATEGORI</SectionLabel>
           <div className="space-y-0.5">
             {categories.map((c) => {
-              const Icon = categoryIcons[c.key];
+              const Icon = categoryIcons[c.key as keyof typeof categoryIcons];
+              const count =
+                c.key === "email"
+                  ? accounts?.length
+                  : c.key === "dev"
+                    ? devAssets?.length
+                    : c.key === "ads"
+                      ? adsAssets?.length
+                      : c.count;
               return (
                 <NavItem
                   key={c.name}
                   icon={<Icon />}
                   label={c.name}
-                  count={c.key === "email" ? accounts?.length : c.count}
+                  count={count}
                   to={categoryRoutes[c.key]}
                 />
               );

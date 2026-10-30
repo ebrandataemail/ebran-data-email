@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useSearch } from "@tanstack/react-router";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Eraser, LoaderCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -43,7 +44,13 @@ function AiAvatar({ className = "size-7" }: { className?: string }) {
   );
 }
 
-function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
+function ChatWindow({
+  assetId,
+  initialMessages,
+}: {
+  assetId: string;
+  initialMessages: UIMessage[];
+}) {
   const queryClient = useQueryClient();
   const clearFn = useServerFn(aiClearChat);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -56,16 +63,16 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
           return {
-            body: { assetId: asset.id, message: messages.at(-1) },
+            body: { assetId, message: messages.at(-1) },
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           };
         },
       }),
-    [],
+    [assetId],
   );
 
   const { messages, sendMessage, status, stop, setMessages, error } = useChat({
-    id: `ai-${asset.id}`,
+    id: `ai-${assetId}`,
     messages: initialMessages,
     transport,
     onError: (err) => {
@@ -79,7 +86,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
       toast.error("AI tidak bisa menjawab", { description });
     },
     onFinish: () => {
-      queryClient.invalidateQueries({ queryKey: ["ai", "chat", asset.id] });
+      queryClient.invalidateQueries({ queryKey: ["ai", "chat", assetId] });
     },
   });
 
@@ -97,9 +104,9 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
 
   const clear = async () => {
     try {
-      await clearFn({ data: { assetId: asset.id } });
+      await clearFn({ data: { assetId } });
       setMessages([]);
-      queryClient.setQueryData(["ai", "chat", asset.id], { json: "[]" });
+      queryClient.setQueryData(["ai", "chat", assetId], { json: "[]" });
       toast("Riwayat chat dihapus");
     } catch (err) {
       toast.error("Gagal menghapus", { description: errorMessage(err) });
@@ -213,10 +220,12 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
 }
 
 function ChatLoader() {
+  const search = useSearch({ from: "/_authenticated/ai" }) as { assetId?: string };
+  const assetId = search.assetId || asset.id;
   const historyFn = useServerFn(aiChatHistory);
   const history = useQuery({
-    queryKey: ["ai", "chat", asset.id],
-    queryFn: () => historyFn({ data: { assetId: asset.id } }),
+    queryKey: ["ai", "chat", assetId],
+    queryFn: () => historyFn({ data: { assetId } }),
     staleTime: Infinity,
     retry: false,
   });
@@ -239,10 +248,15 @@ function ChatLoader() {
       </div>
     );
   }
-  return <ChatWindow initialMessages={JSON.parse(history.data.json) as UIMessage[]} />;
+  return (
+    <ChatWindow assetId={assetId} initialMessages={JSON.parse(history.data.json) as UIMessage[]} />
+  );
 }
 
 export function AiChatPageContent() {
+  const search = useSearch({ from: "/_authenticated/ai" }) as { assetId?: string };
+  const assetId = search.assetId || asset.id;
+
   return (
     <div className="flex min-h-[calc(100vh-13rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card">
       <div className="flex items-center gap-3 border-b border-border px-5 py-4">
@@ -250,7 +264,8 @@ export function AiChatPageContent() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">Asisten AI Ebran</p>
           <p className="truncate text-xs text-muted-foreground">
-            Konteks aset aktif · Rahasia tetap terlindungi
+            Aset: {assetId === asset.id ? "Instagram Newton" : assetId.slice(0, 8)} · Rahasia
+            terlindungi
           </p>
         </div>
       </div>
