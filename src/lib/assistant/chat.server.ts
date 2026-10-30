@@ -124,13 +124,22 @@ export async function handleAiChat(request: Request) {
       .single();
 
     if (acc) {
+      const linkedProject = acc.projects as unknown as
+        | { id: string; name: string }
+        | { id: string; name: string }[]
+        | null;
+      const projectNames = Array.isArray(linkedProject)
+        ? linkedProject.map((project) => project.name)
+        : linkedProject
+          ? [linkedProject.name]
+          : [];
       brief = {
         type: "email_account",
         email: acc.email,
         status: acc.lovable_status,
         tag: acc.usage_tag,
         note: acc.note,
-        projects: acc.projects.map((p) => p.name),
+        projects: projectNames,
         updatedAt: acc.updated_at,
       };
     } else {
