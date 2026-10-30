@@ -121,19 +121,24 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
     },
   )
   .handler(async ({ data, context }) => {
-    const payload = { ...data, user_id: context.userId };
-    const result = data.id
+    // Never send id: null on INSERT: PostgreSQL must generate the UUID default.
+    const { id, ...clientFields } = data;
+    const payload = { ...clientFields, user_id: context.userId };
+    const result = id
       ? await context.supabase
           .from("clients" as any)
           .update(payload)
-          .eq("id", data.id)
+          .eq("id", id)
           .select("id")
           .single()
       : await context.supabase.from("clients" as any).insert(payload).select("id").single();
-    if (result.error)
-      throw new Error(
-        result.error.code === "23505" ? "Nama client sudah digunakan." : "Gagal menyimpan client.",
-      );
+    if (result.error) {
+      console.error("[workspaceSaveClient] Supabase error:", result.error);
+      if (result.error.code === "23505") throw new Error("Nama client sudah digunakan.");
+      if (result.error.code === "23502") throw new Error("Ada kolom wajib yang belum terisi.");
+      if (result.error.code === "42501") throw new Error("Tidak memiliki izin untuk menyimpan client. Silakan login ulang.");
+      throw new Error(result.error.message || "Gagal menyimpan client.");
+    }
     return result.data;
   });
 
