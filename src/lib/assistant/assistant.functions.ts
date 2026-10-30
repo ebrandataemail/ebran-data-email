@@ -3,7 +3,7 @@ import type { UIMessage } from "ai";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asset } from "@/data/asset";
-import { extractDocument, formatEnv, generateNote, runAudit } from "./hermes.server";
+import { extractDocument, formatEnv, generateNote, runAudit } from "./assistant.server";
 
 const MAX_OCR_BYTES = 8 * 1024 * 1024;
 const OCR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
@@ -13,20 +13,20 @@ function assertAsset(assetId: unknown) {
   return assetId;
 }
 
-export const hermesGenerateNote = createServerFn({ method: "POST" })
+export const aiGenerateNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { draft: string }) => ({ draft: String(input?.draft ?? "").slice(0, 2000) }))
   .handler(async ({ data }) => ({ note: await generateNote(data.draft) }));
 
-export const hermesSecurityAudit = createServerFn({ method: "POST" })
+export const aiSecurityAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => runAudit());
 
-export const hermesFormatEnv = createServerFn({ method: "POST" })
+export const aiFormatEnv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => formatEnv());
 
-export const hermesExtractDocument = createServerFn({ method: "POST" })
+export const aiExtractDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { fileName: string; mediaType: string; base64: string }) => {
     const fileName = String(input?.fileName ?? "dokumen").slice(0, 200);
@@ -39,18 +39,18 @@ export const hermesExtractDocument = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => extractDocument(data));
 
-export const hermesChatHistory = createServerFn({ method: "POST" })
+export const aiChatHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { assetId: string }) => ({ assetId: assertAsset(input?.assetId) }))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
-      .from("hermes_chat_messages")
+      .from("ai_chat_messages")
       .select("message_id, role, parts")
       .eq("asset_id", data.assetId)
       .order("seq", { ascending: true })
       .limit(200);
     if (error) {
-      console.error("[Hermes chat history]", error);
+      console.error("[AI chat history]", error);
       throw new Error("Gagal memuat riwayat chat.");
     }
     // Serialize as JSON text: UIMessage parts are free-form JSON.
@@ -62,17 +62,17 @@ export const hermesChatHistory = createServerFn({ method: "POST" })
     return { json: JSON.stringify(messages) };
   });
 
-export const hermesClearChat = createServerFn({ method: "POST" })
+export const aiClearChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { assetId: string }) => ({ assetId: assertAsset(input?.assetId) }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
-      .from("hermes_chat_messages")
+      .from("ai_chat_messages")
       .delete()
       .eq("asset_id", data.assetId)
       .eq("user_id", context.userId);
     if (error) {
-      console.error("[Hermes chat clear]", error);
+      console.error("[AI chat clear]", error);
       throw new Error("Gagal menghapus riwayat chat.");
     }
     return { ok: true };

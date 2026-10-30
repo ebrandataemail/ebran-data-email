@@ -1,12 +1,12 @@
-// Server-only Hermes AI "brain": prompts and Lovable AI calls for every AI feature.
+// Server-only AI prompts and Lovable AI calls for every AI feature.
 import { Output, streamText, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import { asset } from "@/data/asset";
-import { createHermesModel, hermesProviderOptions, toHermesError } from "@/lib/ai/lovable.server";
+import { aiProviderOptions, createAiModel, toAiError } from "@/lib/ai/lovable.server";
 import { buildAssetBrief } from "./context";
 
-const PERSONA = `Kamu adalah Hermes, asisten AI di aplikasi "Hermes Asset Vault" milik Grey Gandaw untuk mengelola akun & aset digital.
+const PERSONA = `Kamu adalah asisten AI di aplikasi "Ebran Aset Digital - Arsip Data Pribadi Aman" milik Grey Gandaw untuk mengelola akun & aset digital.
 Jawab dalam Bahasa Indonesia yang ringkas dan profesional. Jangan pernah meminta, menebak, atau menuliskan password, secret token, TOTP secret, atau backup code — kamu hanya menerima fakta turunan tentangnya.`;
 
 function briefText() {
@@ -15,19 +15,19 @@ function briefText() {
 
 async function runText(instructions: string, prompt: string, effort: "low" | "medium") {
   try {
-    const { model } = createHermesModel();
+    const { model } = createAiModel();
     const result = streamText({
       model,
       instructions,
       messages: [{ role: "user", content: prompt }],
       maxRetries: 1,
-      providerOptions: hermesProviderOptions(effort),
+      providerOptions: aiProviderOptions(effort),
     });
     const text = (await result.text).trim();
     if (!text) throw new Error("Empty AI response");
     return text;
   } catch (error) {
-    throw toHermesError(error);
+    throw toAiError(error);
   }
 }
 
@@ -38,18 +38,18 @@ async function runObject<T>(
   effort: "low" | "medium",
 ): Promise<T> {
   try {
-    const { model } = createHermesModel();
+    const { model } = createAiModel();
     const result = streamText({
       model,
       instructions,
       messages,
       maxRetries: 1,
       output: Output.object({ schema }),
-      providerOptions: hermesProviderOptions(effort),
+      providerOptions: aiProviderOptions(effort),
     });
     return (await result.output) as T;
   } catch (error) {
-    throw toHermesError(error);
+    throw toAiError(error);
   }
 }
 
@@ -118,7 +118,7 @@ export async function formatEnv(): Promise<EnvFormat> {
     [
       {
         role: "user",
-        content: `Layanan: ${asset.title}\nKategori: ${asset.category}\nWebhook: ${asset.api.webhookUrl}\nBuat nama variabel .env dan komentar header singkat yang menyebut "Hermes AI".`,
+        content: `Layanan: ${asset.title}\nKategori: ${asset.category}\nWebhook: ${asset.api.webhookUrl}\nBuat nama variabel .env dan komentar header singkat yang menyebut "Ebran Aset Digital".`,
       },
     ],
     "low",
