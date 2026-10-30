@@ -55,7 +55,7 @@ export function AssetHeader() {
         <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
           <span>Disinkronkan oleh</span>
           <Badge variant="ai">
-            <span className="text-[10px]">✨</span> Hermes Agent
+            <span className="text-[10px]">✨</span> AI
           </Badge>
           <span>· 2 menit lalu</span>
         </div>

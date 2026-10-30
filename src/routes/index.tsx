@@ -7,9 +7,9 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Ebran Aset Digital" },
+      { title: "Ebran Aset Digital - Arsip Data Pribadi Aman" },
       { name: "description", content: "Vault aset & akun digital bertenaga AI." },
-      { property: "og:title", content: "Ebran Aset Digital" },
+      { property: "og:title", content: "Ebran Aset Digital - Arsip Data Pribadi Aman" },
       { property: "og:description", content: "Kelola akun, kredensial, 2FA, API key, dan dokumen dengan AI." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

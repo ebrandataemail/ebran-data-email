@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/vault")({
         name: "description",
         content: "Kelola akun, kredensial, 2FA, API key, dan dokumen digital dalam satu vault bertenaga AI.",
       },
-      { property: "og:title", content: "Ebran Aset Digital" },
+      { property: "og:title", content: "Instagram - Newton Badminton · Ebran Aset Digital" },
       {
         property: "og:description",
         content: "Vault aset & akun digital bertenaga AI — kredensial, 2FA, API key, dan dokumen.",

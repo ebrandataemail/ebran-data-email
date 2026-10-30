@@ -3,10 +3,9 @@ import { useChat } from "@ai-sdk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { Eraser, LoaderCircle } from "lucide-react";
+import { Eraser, LoaderCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import hermesMark from "@/assets/hermes-mark.png";
 import {
   Conversation,
   ConversationContent,
@@ -36,7 +35,11 @@ const SUGGESTIONS = [
 ];
 
 function AiAvatar({ className = "size-7" }: { className?: string }) {
-  return <img src={hermesMark} alt="Hermes" width={28} height={28} className={className} />;
+  return (
+    <span className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-ai shadow-ai ${className}`}>
+      <Sparkles className="size-1/2 text-ai-contrast" aria-hidden />
+    </span>
+  );
 }
 
 function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {

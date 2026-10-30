@@ -183,15 +183,10 @@ export function SidebarContents() {
     <div className="flex h-full flex-col bg-sidebar">
       {/* Header */}
       <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-        <div className="relative flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-soft">
-          <Vault className="size-4" />
-          <span className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-gradient-ai ring-2 ring-sidebar">
-            <Sparkles className="size-2 text-ai-contrast" />
-          </span>
-        </div>
+        <img src={appMark} alt="" width={32} height={32} className="size-8 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
           <span className="truncate text-sm font-semibold text-foreground">Ebran Aset Digital</span>
-          <span className="text-[11px] text-muted-foreground">Workspace Grey</span>
+          <span className="truncate text-[11px] text-muted-foreground">Arsip Data Pribadi Aman</span>
         </div>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </div>
