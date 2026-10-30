@@ -18,13 +18,13 @@ import { devSaveAsset } from "@/lib/developer/developer.functions";
 import { workspaceList } from "@/lib/projects/projects.functions";
 import { errorMessage } from "../use-ai";
 import { DEV_ASSETS_KEY } from "./use-dev-assets";
+import type { DevAsset } from "@/lib/developer/developer.server";
 import {
   DEV_ASSET_TYPES,
-  type DevAsset,
   type DevAssetEnvironment,
   type DevAssetStatus,
   type DevAssetType,
-} from "@/lib/developer/developer.server";
+} from "@/lib/developer/developer.types";
 
 const TYPE_LABELS: Record<DevAssetType, string> = {
   api_key: "API Key / Token",
