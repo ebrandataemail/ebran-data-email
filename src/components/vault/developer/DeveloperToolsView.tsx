@@ -114,9 +114,13 @@ export function DeveloperToolsView() {
   });
 
   const filtered = assets.filter((a) => {
+    const q = query.toLowerCase();
     const m =
-      a.name.toLowerCase().includes(query.toLowerCase()) ||
-      (a.description ?? "").toLowerCase().includes(query.toLowerCase());
+      a.name.toLowerCase().includes(q) ||
+      (a.description ?? "").toLowerCase().includes(q) ||
+      (a.provider ?? "").toLowerCase().includes(q) ||
+      (a.projectName ?? "").toLowerCase().includes(q) ||
+      (a.clientName ?? "").toLowerCase().includes(q);
     const t = filter === "all" || a.type === filter;
     return m && t;
   });
@@ -380,6 +384,7 @@ function DevAssetCard({
           status: asset.status,
           expiresAt: asset.expiresAt,
           projectId: projectId === "none" ? null : projectId,
+          metadata: asset.metadata,
         },
       });
       await queryClient.invalidateQueries({ queryKey: DEV_ASSETS_KEY });
@@ -490,7 +495,7 @@ function DevAssetCard({
 
         <div className="pt-4 border-t border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {asset.status && <Badge variant={asset.status === "active" ? "success" : "muted"} className="text-[10px]">{asset.status}</Badge>}
+            {asset.status && <Badge variant={asset.status === "active" ? "default" : "muted"} className="text-[10px]">{asset.status}</Badge>}
             {asset.projectName ? (
               <Badge variant="muted" className="text-[10px] gap-1 px-1.5 py-0">
                 <StatusDot className="size-1" />
