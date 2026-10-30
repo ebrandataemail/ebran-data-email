@@ -65,6 +65,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/vault': typeof AuthenticatedVaultRoute
+  '/ai': typeof AuthenticatedAiRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -74,6 +75,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
+  '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
