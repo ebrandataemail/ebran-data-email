@@ -6,7 +6,7 @@ import { asset } from "@/data/asset";
 import { aiProviderOptions, createAiModel, toAiError } from "@/lib/ai/lovable.server";
 import { buildAssetBrief } from "./context";
 
-const PERSONA = `Kamu adalah asisten AI di aplikasi "Ebran Aset Digital - Arsip Data Pribadi Aman" milik Grey Gandaw untuk mengelola akun & aset digital.
+const PERSONA = `Kamu adalah asisten AI di aplikasi "Ebran Aset Digital - Arsip Data Pribadi Aman" untuk mengelola akun, aset developer, serta aset Ads & Marketing dan konteks proyek/client.
 Jawab dalam Bahasa Indonesia yang ringkas dan profesional. Jangan pernah meminta, menebak, atau menuliskan password, secret token, TOTP secret, atau backup code — kamu hanya menerima fakta turunan tentangnya.`;
 
 function briefText(brief?: unknown) {

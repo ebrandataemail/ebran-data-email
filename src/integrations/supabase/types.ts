@@ -77,6 +77,12 @@ export type Database = {
         }
         Relationships: []
       }
+      ads_assets: {
+        Row: { account_identifier: string | null; created_at: string; description: string | null; environment: string; expires_at: string | null; id: string; metadata: Json; name: string; platform: string; project_id: string | null; status: string; updated_at: string; user_id: string; value_enc: string; website_url: string | null }
+        Insert: { account_identifier?: string | null; created_at?: string; description?: string | null; environment?: string; expires_at?: string | null; id?: string; metadata?: Json; name: string; platform: string; project_id?: string | null; status?: string; updated_at?: string; user_id?: string; value_enc: string; website_url?: string | null }
+        Update: { account_identifier?: string | null; created_at?: string; description?: string | null; environment?: string; expires_at?: string | null; id?: string; metadata?: Json; name?: string; platform?: string; project_id?: string | null; status?: string; updated_at?: string; user_id?: string; value_enc?: string; website_url?: string | null }
+        Relationships: [{ foreignKeyName: "ads_assets_project_owner_fkey"; columns: ["project_id", "user_id"]; isOneToOne: false; referencedRelation: "projects"; referencedColumns: ["id", "user_id"] }]
+      }
       developer_assets: {
         Row: {
           created_at: string

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BriefcaseBusiness, CodeXml, FolderKanban, Mail, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { BriefcaseBusiness, CodeXml, FolderKanban, Mail, Megaphone, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { Badge } from "@/components/ui/badge";
@@ -114,7 +114,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
       !window.confirm(
         mode === "clients"
           ? "Hapus client ini?"
-          : "Hapus proyek ini? Akun Email dan aset Developer yang terhubung akan menjadi belum ditetapkan.",
+          : "Hapus proyek ini? Akun Email, aset Developer, dan aset Ads yang terhubung akan menjadi belum ditetapkan.",
       )
     )
       return;
@@ -153,7 +153,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
           </div>
         </header>
         <section className="mx-auto max-w-[1200px] space-y-5 px-4 py-6 sm:px-8">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
                 <BriefcaseBusiness className="text-muted-foreground" />
@@ -187,6 +187,15 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                 <div>
                   <p className="text-2xl font-semibold">{data?.unassignedDeveloperAssetCount ?? 0}</p>
                   <p className="text-xs text-muted-foreground">Aset developer belum terhubung proyek</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-3 p-4">
+                <Megaphone className="text-muted-foreground" />
+                <div>
+                  <p className="text-2xl font-semibold">{data?.unassignedAdsAssetCount ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">Aset Ads belum terhubung proyek</p>
                 </div>
               </CardContent>
             </Card>
@@ -253,14 +262,14 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                       </p>
                       <div className="mt-3 flex items-center justify-between">
                         {isClients ? (
-                          <Badge variant="secondary">{client!.projectCount} proyek · {client!.emailCount + client!.developerAssetCount} aset</Badge>
+                          <Badge variant="secondary">{client!.projectCount} proyek · {client!.emailCount + client!.developerAssetCount + client!.adsAssetCount} aset</Badge>
                         ) : (
                           <>
                             <Badge variant={project!.status === "active" ? "default" : "secondary"}>
                               {project!.status}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {project!.emailCount} email · {project!.developerAssetCount} aset developer
+                              {project!.emailCount} email · {project!.developerAssetCount} developer · {project!.adsAssetCount} ads
                             </span>
                           </>
                         )}

@@ -169,6 +169,29 @@ export async function handleAiChat(request: Request) {
           updatedAt: dev.updated_at,
         };
       }
+      if (!brief) {
+        // Ads & Marketing context contains operational metadata only, never encrypted credentials.
+        const { data: ads } = await auth.supabase
+          .from("ads_assets")
+          .select("id, platform, name, account_identifier, website_url, environment, status, expires_at, description, updated_at, projects(id, name, clients(id, name))")
+          .eq("id", assetId)
+          .eq("user_id", auth.userId)
+          .maybeSingle();
+        if (ads) {
+          const linkedProject = ads.projects as unknown as
+            | { id: string; name: string; clients?: { id: string; name: string } | null }
+            | { id: string; name: string; clients?: { id: string; name: string } | null }[]
+            | null;
+          const project = Array.isArray(linkedProject) ? linkedProject[0] : linkedProject;
+          brief = {
+            type: "ads_marketing_asset", platform: ads.platform, name: ads.name,
+            accountIdentifier: ads.account_identifier, websiteUrl: ads.website_url,
+            environment: ads.environment, status: ads.status, expiresAt: ads.expires_at,
+            description: ads.description, projectName: project?.name ?? null,
+            clientName: project?.clients?.name ?? null, updatedAt: ads.updated_at,
+          };
+        }
+      }
     }
   }
 

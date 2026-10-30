@@ -18,6 +18,7 @@ import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedDeveloperToolsRouteImport } from './routes/_authenticated/developer-tools'
+import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -64,6 +65,11 @@ const AuthenticatedDeveloperToolsRoute = AuthenticatedDeveloperToolsRouteImport.
   path: '/developer-tools',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai/chat',
   path: '/api/ai/chat',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
+  '/ads': typeof AuthenticatedAdsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
@@ -103,11 +110,12 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/developer-tools': typeof AuthenticatedDeveloperToolsRoute
+  '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/projects' | '/clients' | '/developer-tools' | '/api/ai/chat'
+  fullPaths: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/projects' | '/clients' | '/developer-tools' | '/ads' | '/api/ai/chat'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/projects' | '/clients' | '/developer-tools' | '/api/ai/chat'
   id:
@@ -121,6 +129,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/clients'
     | '/_authenticated/developer-tools'
+    | '/_authenticated/ads'
     | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeveloperToolsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ads': {
+      id: '/_authenticated/ads'
+      path: '/ads'
+      fullPath: '/ads'
+      preLoaderRoute: typeof AuthenticatedAdsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/ai/chat': {
       id: '/api/ai/chat'
       path: '/api/ai/chat'
@@ -213,6 +229,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedDeveloperToolsRoute: typeof AuthenticatedDeveloperToolsRoute
+  AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -222,6 +239,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedDeveloperToolsRoute: AuthenticatedDeveloperToolsRoute,
+  AuthenticatedAdsRoute: AuthenticatedAdsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
