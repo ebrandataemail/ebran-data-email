@@ -72,8 +72,6 @@ export interface FileRoutesByFullPath {
   '/vault': typeof AuthenticatedVaultRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/clients': typeof AuthenticatedClientsRoute
-  '/projects': typeof AuthenticatedProjectsRoute
-  '/clients': typeof AuthenticatedClientsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +80,8 @@ export interface FileRoutesByTo {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/vault': typeof AuthenticatedVaultRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/clients': typeof AuthenticatedClientsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -109,6 +109,8 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts'
     | '/_authenticated/ai'
     | '/_authenticated/vault'
+    | '/_authenticated/projects'
+    | '/_authenticated/clients'
     | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
