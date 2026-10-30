@@ -53,6 +53,7 @@ import {
   type PriorityLevel,
 } from "@/lib/projects/deadline";
 import { ClientDialog, type ClientData } from "./clients/ClientDialog";
+import { ClientWorkspacePanel } from "./clients/ClientWorkspacePanel";
 import { KanbanBoard } from "./projects/KanbanBoard";
 
 const KEY = ["workspace", "projects-clients"] as const;
@@ -398,6 +399,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
               )}
             </div>
           )}
+          {isClients && data && <ClientWorkspacePanel clients={data.clients} />}
         </section>
       </main>
 
@@ -416,6 +418,12 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                 name: clientData.name,
                 description: clientData.description,
                 website: clientData.website,
+                legalName: clientData.legalName, industry: clientData.industry,
+                contactName: clientData.contactName, contactEmail: clientData.contactEmail,
+                contactPhone: clientData.contactPhone, address: clientData.address, city: clientData.city,
+                logoPath: clientData.logoPath, companyProfile: clientData.companyProfile,
+                scopeOfWork: clientData.scopeOfWork, internalNotes: clientData.internalNotes,
+                clientStatus: clientData.clientStatus,
               },
             });
             await queryClient.invalidateQueries({ queryKey: KEY });
