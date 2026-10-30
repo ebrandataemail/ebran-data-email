@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -33,14 +35,23 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-import { asset, categories, projects, tags } from "@/data/asset";
+import { asset, categories, tags } from "@/data/asset";
 import { OPEN_ASSET_COMMAND_EVENT } from "@/lib/vault/palette-trigger";
 import { useAccounts } from "./accounts/use-accounts";
+import { useDevAssets } from "./developer/use-dev-assets";
+import { workspaceList } from "@/lib/projects/projects.functions";
 
 export function AssetCommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { data: accounts } = useAccounts();
+  const { data: developerAssets = [] } = useDevAssets();
+  const workspaceFn = useServerFn(workspaceList);
+  const { data: workspace } = useQuery({
+    queryKey: ["workspace", "projects-clients"],
+    queryFn: () => workspaceFn(),
+    staleTime: 30_000,
+  });
 
   // Listen for Cmd+K and Ctrl+K keyboard shortcut
   useEffect(() => {
@@ -84,7 +95,7 @@ export function AssetCommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Cari aset digital, kredensial, email, proyek... (Cmd+K)" />
+      <CommandInput placeholder="Cari email, aset developer, proyek, client... (Cmd+K)" />
       <CommandList className="max-h-[380px]">
         <CommandEmpty>
           <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
@@ -238,6 +249,43 @@ export function AssetCommandPalette() {
           </>
         )}
 
+        {developerAssets.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading={`Developer Tools (${developerAssets.length})`}>
+              {developerAssets.slice(0, 10).map((item) => (
+                <CommandItem
+                  key={item.id}
+                  value={`Developer ${item.name} ${item.type} ${item.provider ?? ""} ${item.username ?? ""} ${item.projectName ?? ""} ${item.clientName ?? ""} ${item.status}`}
+                  onSelect={() => handleNavigate("/developer-tools")}
+                  className="flex items-center gap-3"
+                >
+                  <CodeXml className="size-4 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-foreground">{item.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.provider || item.type} · {item.projectName || "Tanpa proyek"}
+                      {item.clientName ? ` · ${item.clientName}` : ""}
+                    </p>
+                  </div>
+                  <Badge variant={item.status === "active" ? "default" : "muted"}>{item.status}</Badge>
+                </CommandItem>
+              ))}
+              {developerAssets.slice(0, 6).map((item) => (
+                <CommandItem
+                  key={`ai-${item.id}`}
+                  value={`Tanya AI analisis ${item.name} ${item.provider ?? ""}`}
+                  onSelect={() => handleNavigate(`/ai?assetId=${item.id}`)}
+                >
+                  <Sparkles className="size-4 text-ai" />
+                  <span className="flex-1 truncate">Tanya AI · {item.name}</span>
+                  <CommandShortcut>AI</CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
         {/* Tab & Section Navigation */}
         <CommandGroup heading="Navigasi Bagian Vault">
           <CommandItem
@@ -299,22 +347,35 @@ export function AssetCommandPalette() {
 
         {/* Projects & Categories */}
         <CommandGroup heading="Proyek & Kategori">
-          {projects.map((p) => (
+          {workspace?.projects.map((project) => (
             <CommandItem
-              key={p.name}
-              value={`Proyek ${p.name}`}
-              onSelect={() => handleNavigate("/vault")}
+              key={project.id}
+              value={`Proyek ${project.name} ${project.clientName ?? ""}`}
+              onSelect={() => handleNavigate("/projects")}
             >
               <Folder className="size-4 text-muted-foreground" />
-              <span className="flex-1 truncate">{p.name}</span>
-              <span className="text-xs text-muted-foreground">{p.count} aset</span>
+              <span className="flex-1 truncate">{project.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {project.emailCount + project.developerAssetCount} aset
+              </span>
+            </CommandItem>
+          ))}
+          {workspace?.clients.map((client) => (
+            <CommandItem
+              key={client.id}
+              value={`Client ${client.name} ${client.website ?? ""}`}
+              onSelect={() => handleNavigate("/clients")}
+            >
+              <Folder className="size-4 text-muted-foreground" />
+              <span className="flex-1 truncate">{client.name}</span>
+              <span className="text-xs text-muted-foreground">{client.projectCount} proyek</span>
             </CommandItem>
           ))}
           {categories.map((c) => (
             <CommandItem
               key={c.name}
               value={`Kategori ${c.name}`}
-              onSelect={() => handleNavigate(c.key === "email" ? "/accounts" : "/vault")}
+              onSelect={() => handleNavigate(c.key === "email" ? "/accounts" : c.key === "dev" ? "/developer-tools" : "/vault")}
             >
               <Layers className="size-4 text-muted-foreground" />
               <span className="flex-1 truncate">{c.name}</span>
