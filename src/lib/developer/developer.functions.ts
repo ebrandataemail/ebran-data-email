@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
-  DEV_ASSET_TYPES,
   deleteDevAsset,
   listDevAssets,
   revealDevAsset,
@@ -10,6 +9,7 @@ import {
   type DevAssetEnvironment,
   type DevAssetStatus,
 } from "./developer.server";
+import { DEV_ASSET_TYPES, DEV_ASSET_ENVIRONMENTS, DEV_ASSET_STATUSES } from "./developer.types";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function optionalUuid(value: unknown) {
@@ -23,9 +23,7 @@ function requiredUuid(value: unknown) {
   if (!id) throw new Error("ID aset tidak valid.");
   return id;
 }
-const ENVIRONMENTS: DevAssetEnvironment[] = ["production", "staging", "development", "local", "other"];
-const STATUSES: DevAssetStatus[] = ["active", "inactive", "expired", "revoked", "maintenance", "draft"];
-const clean = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
+ const clean = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
 
 export const devListAssets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -40,8 +38,8 @@ export const devSaveAsset = createServerFn({ method: "POST" })
     if (!DEV_ASSET_TYPES.includes(input.type)) throw new Error("Jenis aset tidak valid.");
     const environment = input.environment ?? "production";
     const status = input.status ?? "active";
-    if (!ENVIRONMENTS.includes(environment)) throw new Error("Environment tidak valid.");
-    if (!STATUSES.includes(status)) throw new Error("Status aset tidak valid.");
+    if (!DEV_ASSET_ENVIRONMENTS.includes(environment)) throw new Error("Environment tidak valid.");
+    if (!DEV_ASSET_STATUSES.includes(status)) throw new Error("Status aset tidak valid.");
     const websiteUrl = clean(input.websiteUrl, 500);
     if (websiteUrl) {
       try { new URL(websiteUrl); } catch { throw new Error("URL website harus menggunakan format URL lengkap."); }
