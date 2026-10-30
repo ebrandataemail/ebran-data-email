@@ -87,30 +87,6 @@ function findApiCallError(
 }
 
 /**
- * Extract a safe upstream error message.
- */
-function safeOpenAIMessage(
-  err: APICallError,
-): string | undefined {
-  try {
-    const body = JSON.parse(err.responseBody ?? "") as {
-      message?: unknown;
-      error?: {
-        message?: unknown;
-      };
-    };
-
-    const message = body.error?.message ?? body.message;
-
-    return typeof message === "string" && message.length < 400
-      ? message
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * Convert OpenAI errors into safe Indonesian messages.
  */
 export function toHermesError(
@@ -164,3 +140,4 @@ export function toHermesError(
       );
   }
 }
+```
