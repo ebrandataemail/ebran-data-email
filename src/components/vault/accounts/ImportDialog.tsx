@@ -69,6 +69,7 @@ export function ImportDialog({
       const res = await importFn({ data: { csv: file.text } });
       setReport(res);
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast.success("Impor selesai", {
         description: `${res.added} akun baru · ${res.updated} diperbarui · ${res.projects} proyek`,
       });
