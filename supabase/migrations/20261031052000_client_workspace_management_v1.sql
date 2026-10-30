@@ -32,7 +32,7 @@ CREATE TABLE public.client_digital_assets (
 CREATE TABLE public.client_tasks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
   client_id uuid NOT NULL, title text NOT NULL CHECK (char_length(trim(title)) BETWEEN 1 AND 160), description text,
-  status text NOT NULL DEFAULT 'things-to-do' CHECK (status IN ('things-to-do','on-process','pending','revision','finished','cancel')),
+  status text NOT NULL DEFAULT 'things-to-do' CHECK (status IN ('things-to-do','queue-on-process','on-process','pending','revision','finished','cancel')),
   priority text NOT NULL DEFAULT 'medium' CHECK (priority IN ('low','medium','high')), due_date date, assignee text, sort_order integer NOT NULL DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT client_tasks_id_user_id_key UNIQUE (id,user_id),
