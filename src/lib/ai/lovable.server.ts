@@ -4,6 +4,11 @@ import { APICallError } from "ai";
 export const HERMES_MODEL =
   process.env["OPENAI_MODEL"] || "gpt-4.1-mini";
 
+export type HermesReasoningEffort = "low" | "medium";
+
+/**
+ * Standardized Hermes error.
+ */
 export class HermesError extends Error {
   status: number;
 
@@ -15,8 +20,9 @@ export class HermesError extends Error {
 }
 
 /**
- * Create the OpenAI Responses model inside each request.
- * The API key is read only on the server.
+ * Create the official OpenAI Responses model.
+ * API key is read only on the server.
+ * No Lovable gateway or Run ID dependency.
  */
 export function createHermesModel() {
   const apiKey = process.env["OPENAI_API_KEY"];
@@ -39,9 +45,11 @@ export function createHermesModel() {
 
 /**
  * OpenAI provider options.
- * Do not request or expose internal reasoning.
+ * Reasoning is not exposed to the frontend.
  */
-export function hermesProviderOptions() {
+export function hermesProviderOptions(
+  _effort: HermesReasoningEffort = "medium"
+) {
   return {
     openai: {
       store: false,
@@ -49,6 +57,9 @@ export function hermesProviderOptions() {
   };
 }
 
+/**
+ * Find an OpenAI API error nested inside another error.
+ */
 function findApiCallError(
   error: unknown,
   depth = 0
@@ -76,6 +87,9 @@ function findApiCallError(
   );
 }
 
+/**
+ * Extract a safe upstream error message.
+ */
 function safeOpenAIMessage(
   err: APICallError
 ): string | undefined {
@@ -90,8 +104,10 @@ function safeOpenAIMessage(
     const message =
       body.error?.message ?? body.message;
 
-    return typeof message === "string" &&
+    return (
+      typeof message === "string" &&
       message.length < 400
+    )
       ? message
       : undefined;
   } catch {
@@ -109,13 +125,11 @@ export function toHermesError(
     return error;
   }
 
+  // Log server-side only. Never return raw error details to the client.
   console.error("[Hermes OpenAI]", error);
 
   const apiError = findApiCallError(error);
   const status = apiError?.statusCode ?? 500;
-  const upstream = apiError
-    ? safeOpenAIMessage(apiError)
-    : undefined;
 
   switch (status) {
     case 400:
@@ -133,7 +147,13 @@ export function toHermesError(
     case 403:
       return new HermesError(
         403,
-        upstream ?? "Akses OpenAI API ditolak."
+        "Akses OpenAI API ditolak. Periksa izin dan konfigurasi proyek."
+      );
+
+    case 404:
+      return new HermesError(
+        503,
+        "Model OpenAI tidak tersedia. Periksa konfigurasi OPENAI_MODEL."
       );
 
     case 429:
