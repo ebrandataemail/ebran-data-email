@@ -13,9 +13,9 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
-  Vault,
 } from "lucide-react";
 
+import appMark from "@/assets/app-mark.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
