@@ -63,7 +63,7 @@ export const vaultSaveAccount = createServerFn({ method: "POST" })
         lovableStatus,
         usageTag: optionalText(input?.usageTag, 80),
         note: optionalText(input?.note, 1000),
-        projectId: input?.projectId ? uuid(input.projectId) : null,
+        projectId: input?.projectId === undefined ? undefined : input.projectId ? uuid(input.projectId) : null,
         projects: input?.projects?.map((p) => ({
           id: p.id ? uuid(p.id) : null,
           name: String(p.name || "Proyek Tanpa Nama").slice(0, 100),
