@@ -173,7 +173,8 @@ export function vaultFacts(accounts: VaultAccount[]) {
       missing: count((a) => !a.hasPassword),
       withAlternative: count((a) => a.hasAltPassword),
       accountsSharingAPassword: count((a) => a.passwordReusedBy > 0),
-      sharedPasswordGroupsBySize: Object.fromEntries(reusedGroups),
+      // reusedGroups counts accounts per group size; divide to get the number of groups.
+      sharedPasswordGroupsBySize: Object.fromEntries(Array.from(reusedGroups, ([size, n]) => [`${size} akun`, Math.round(n / size)])),
       followNameYearSymbolPattern: count((a) => a.passwordCommonPattern),
       containNameFromEmail: count((a) => a.passwordMatchesEmail),
       shorterThan10: count((a) => a.hasPassword && (a.passwordLength ?? 0) < 10),
