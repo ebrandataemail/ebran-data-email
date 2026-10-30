@@ -161,3 +161,20 @@ export async function extractDocument(input: { fileName: string; mediaType: stri
 export function chatInstructions() {
   return `${PERSONA}\nKamu menjawab pertanyaan pengguna tentang aset yang sedang dibuka. Gunakan data aset berikut sebagai sumber kebenaran; jika data tidak tersedia, katakan terus terang. Gunakan markdown ringan bila membantu.\n\n${briefText()}`;
 }
+
+/* ---------- Email vault audit ---------- */
+
+export async function runVaultAudit(facts: unknown): Promise<SecurityAudit> {
+  const audit = await runObject(
+    auditSchema,
+    `${PERSONA}\nKamu auditor keamanan untuk brankas akun email (banyak akun Gmail & domain kantor yang dipakai untuk proyek Lovable). Kamu hanya menerima statistik agregat, bukan password. Nilai risiko: password yang dipakai ulang di banyak akun, pola "Nama+tahun+simbol" yang mudah ditebak, password mengandung nama dari email, akun tanpa password tercatat, akun Lovable kosong yang bisa dimanfaatkan, dan proyek tanpa link. Tone "warning" untuk risiko, "success" untuk hal baik, "muted" untuk info netral. Sebutkan angka konkret.`,
+    [{ role: "user", content: `Statistik brankas email (JSON):\n${JSON.stringify(facts, null, 2)}\n\nJalankan audit untuk seluruh brankas.` }],
+    "medium",
+  );
+  return {
+    ...audit,
+    score: Math.max(0, Math.min(100, Math.round(audit.score))),
+    insights: audit.insights.slice(0, 3),
+    recommendations: audit.recommendations.slice(0, 4),
+  };
+}
