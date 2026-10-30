@@ -113,8 +113,8 @@ function CommandBar() {
         onClick={() => setOpen(true)}
         className="group relative flex w-full cursor-pointer items-center gap-2 rounded-lg border border-border bg-background p-[1px] text-left shadow-soft transition-all hover:border-ai/50 hover:shadow-ai"
       >
-        <span className="flex w-full items-center gap-2 rounded-[7px] bg-gradient-ai-soft px-2.5 py-2">
-          <Sparkles className="size-4 shrink-0 text-ai" />
+        <span className="flex w-full items-center gap-1.5 rounded-[7px] bg-gradient-ai-soft px-2 py-2">
+          <Sparkles className="size-3.5 shrink-0 text-ai" />
           <span className="flex-1 truncate text-[11px] tracking-tight text-muted-foreground group-hover:text-foreground">
             Ask Hermes AI or Search (Cmd+K)
           </span>
@@ -174,7 +174,7 @@ export function SidebarContents() {
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </div>
 
-      <div className="px-3 pt-4">
+      <div className="px-2.5 pt-4">
         <CommandBar />
       </div>
 
