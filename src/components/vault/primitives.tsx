@@ -15,7 +15,7 @@ export async function copyText(value: string, label = "Nilai") {
   }
 }
 
-export function CopyButton({ value, label }: { value: string; label?: string }) {
+export function CopyButton({ value, label }: { value: string; label?: string | undefined }) {
   const [copied, setCopied] = useState(false);
   return (
     <Tooltip>
