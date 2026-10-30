@@ -12,7 +12,7 @@ const text = (value: unknown, max: number) =>
 export const workspaceList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [clientsResult, projectsResult, accountsResult] = await Promise.all([
+    const [clientsResult, projectsResult, accountsResult, developerAssetsResult] = await Promise.all([
       context.supabase
         .from("clients")
         .select("id,name,description,website,created_at,updated_at")
@@ -22,23 +22,33 @@ export const workspaceList = createServerFn({ method: "POST" })
         .select("id,name,description,status,client_id,created_at,updated_at")
         .order("name"),
       context.supabase.from("email_accounts").select("id,email,project_id").order("email"),
+      context.supabase.from("developer_assets").select("id,project_id").order("created_at", { ascending: false }),
     ]);
-    if (clientsResult.error || projectsResult.error || accountsResult.error)
+    if (clientsResult.error || projectsResult.error || accountsResult.error || developerAssetsResult.error)
       throw new Error("Gagal memuat data proyek dan client.");
     const clients = clientsResult.data ?? [];
     const projects = projectsResult.data ?? [];
     const accounts = accountsResult.data ?? [];
+    const developerAssets = developerAssetsResult.data ?? [];
     return {
-      clients: clients.map((client) => ({
-        ...client,
-        projectCount: projects.filter((project) => project.client_id === client.id).length,
-      })),
+      clients: clients.map((client) => {
+        const clientProjects = projects.filter((project) => project.client_id === client.id);
+        const projectIds = new Set(clientProjects.map((project) => project.id));
+        return {
+          ...client,
+          projectCount: clientProjects.length,
+          emailCount: accounts.filter((account) => projectIds.has(account.project_id ?? "")).length,
+          developerAssetCount: developerAssets.filter((item) => projectIds.has(item.project_id ?? "")).length,
+        };
+      }),
       projects: projects.map((project) => ({
         ...project,
         clientName: clients.find((client) => client.id === project.client_id)?.name ?? null,
         emailCount: accounts.filter((account) => account.project_id === project.id).length,
+        developerAssetCount: developerAssets.filter((item) => item.project_id === project.id).length,
       })),
       unassignedEmailCount: accounts.filter((account) => !account.project_id).length,
+      unassignedDeveloperAssetCount: developerAssets.filter((item) => !item.project_id).length,
     };
   });
 
