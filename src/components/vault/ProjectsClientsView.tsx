@@ -114,7 +114,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
       !window.confirm(
         mode === "clients"
           ? "Hapus client ini?"
-          : "Hapus proyek ini? Akun Email dan aset Developer yang terhubung akan menjadi belum ditetapkan.",
+          : "Hapus proyek ini? Akun Email, aset Developer, dan aset Ads yang terhubung akan menjadi belum ditetapkan.",
       )
     )
       return;
@@ -253,14 +253,14 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                       </p>
                       <div className="mt-3 flex items-center justify-between">
                         {isClients ? (
-                          <Badge variant="secondary">{client!.projectCount} proyek · {client!.emailCount + client!.developerAssetCount} aset</Badge>
+                          <Badge variant="secondary">{client!.projectCount} proyek · {client!.emailCount + client!.developerAssetCount + client!.adsAssetCount} aset</Badge>
                         ) : (
                           <>
                             <Badge variant={project!.status === "active" ? "default" : "secondary"}>
                               {project!.status}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {project!.emailCount} email · {project!.developerAssetCount} aset developer
+                              {project!.emailCount} email · {project!.developerAssetCount} developer · {project!.adsAssetCount} ads
                             </span>
                           </>
                         )}
