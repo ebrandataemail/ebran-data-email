@@ -151,6 +151,7 @@ export type AccountInput = {
   lovableStatus: LovableStatus;
   usageTag: string | null;
   note: string | null;
+  projects?: { id: string | null; name: string; url: string | null; note: string | null }[];
 };
 
 export async function saveAccount(db: Db, userId: string, input: AccountInput) {
@@ -160,30 +161,74 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
     note: input.note,
   };
   const pw = input.password ? await passwordColumns(input.password, input.email) : null;
+  let accountId = input.id;
+
   if (input.id) {
     const { error } = await db
       .from("email_accounts")
       .update({ ...base, ...(pw ?? {}) })
       .eq("id", input.id);
     if (error) throw new Error("Gagal memperbarui akun.");
-    return { id: input.id };
+  } else {
+    const { data, error } = await db
+      .from("email_accounts")
+      .insert({
+        user_id: userId,
+        email: input.email,
+        provider: providerOf(input.email),
+        ...base,
+        ...(pw ?? (await passwordColumns(null, input.email))),
+      })
+      .select("id")
+      .single();
+    if (error)
+      throw new Error(
+        error.code === "23505" ? "Email ini sudah ada di vault." : "Gagal menambah akun.",
+      );
+    accountId = data.id;
   }
-  const { data, error } = await db
-    .from("email_accounts")
-    .insert({
+
+  // Handle projects if provided
+  if (input.projects && accountId) {
+    const existingProjects = input.projects.filter((p) => p.id);
+    const newProjects = input.projects.filter((p) => !p.id);
+
+    // Delete projects not in the list anymore
+    if (input.id) {
+      const keptIds = existingProjects.map((p) => p.id).filter(Boolean) as string[];
+      const { error: delErr } = await db
+        .from("lovable_projects")
+        .delete()
+        .eq("account_id", accountId)
+        .not("id", "in", `(${keptIds.join(",")})`);
+      if (delErr && keptIds.length < input.projects.length) {
+        // Only error if there were actually projects to delete
+      }
+    }
+
+    // Upsert existing/new projects
+    const projectRows = input.projects.map((p) => ({
+      id: p.id || undefined,
       user_id: userId,
-      email: input.email,
-      provider: providerOf(input.email),
-      ...base,
-      ...(pw ?? (await passwordColumns(null, input.email))),
-    })
-    .select("id")
-    .single();
-  if (error)
-    throw new Error(
-      error.code === "23505" ? "Email ini sudah ada di vault." : "Gagal menambah akun.",
-    );
-  return { id: data.id };
+      account_id: accountId!,
+      name: p.name,
+      url: p.url,
+      note: p.note,
+    }));
+
+    if (projectRows.length > 0) {
+      const { error: projErr } = await db.from("lovable_projects").upsert(projectRows);
+      if (projErr) {
+        console.error("[vault save] projects", projErr);
+        throw new Error("Gagal menyimpan data proyek.");
+      }
+    } else if (input.id) {
+      // If we cleared all projects
+      await db.from("lovable_projects").delete().eq("account_id", accountId);
+    }
+  }
+
+  return { id: accountId };
 }
 
 /** Non-secret facts about the whole vault, for the AI audit. */

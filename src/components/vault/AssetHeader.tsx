@@ -7,6 +7,7 @@ import {
   KeyRound,
   LogIn,
   Menu,
+  Search,
   SquarePen,
   UserRound,
 } from "lucide-react";
@@ -16,26 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { asset } from "@/data/asset";
 import { SidebarContents } from "./AppSidebar";
-import { CopyButton, SecretValue, StatusDot } from "./primitives";
-
-function QuickChip({
-  icon,
-  label,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background py-1 pl-2.5 pr-1 shadow-soft transition-colors hover:border-border-strong">
-      <span className="text-muted-foreground [&_svg]:size-3.5">{icon}</span>
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="h-4 w-px bg-border" />
-      {children}
-    </div>
-  );
-}
+import { triggerAssetCommandPalette } from "@/lib/vault/palette-trigger";
+import { CopyButton, QuickChip, SecretValue, StatusDot } from "./primitives";
 
 export function AssetHeader() {
   return (
@@ -60,12 +43,29 @@ export function AssetHeader() {
           <ChevronRight className="size-3.5" />
           <span className="truncate font-medium text-foreground">{asset.title}</span>
         </nav>
-        <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
-          <span>Disinkronkan oleh</span>
-          <Badge variant="ai">
-            <span className="text-[10px]">✨</span> AI
-          </Badge>
-          <span>· 2 menit lalu</span>
+        <div className="ml-auto flex items-center gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={triggerAssetCommandPalette}
+            className="h-8 gap-2 border-border/80 bg-background/80 px-2.5 text-xs text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
+            aria-label="Cari aset digital (Cmd+K)"
+          >
+            <Search className="size-3.5" />
+            <span className="hidden sm:inline">Cari aset digital...</span>
+            <span className="sm:hidden">Cari</span>
+            <kbd className="pointer-events-none hidden h-4 select-none items-center gap-0.5 rounded border border-border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
+              <span className="text-[10px]">⌘</span>K
+            </kbd>
+          </Button>
+          <div className="hidden items-center gap-2 text-xs text-muted-foreground lg:flex">
+            <span>Disinkronkan oleh</span>
+            <Badge variant="ai">
+              <span className="text-[10px]">✨</span> AI
+            </Badge>
+            <span>· 2 menit lalu</span>
+          </div>
         </div>
       </div>
 

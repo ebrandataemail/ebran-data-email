@@ -7,15 +7,14 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  LayoutGrid,
+  List,
   LoaderCircle,
   Mail,
   Menu,
   Pencil,
   Plus,
-  RefreshCw,
   Search,
-  ShieldAlert,
-  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -51,12 +50,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { vaultAudit, vaultDeleteAccount, vaultRevealPassword } from "@/lib/vault/vault.functions";
+import { vaultDeleteAccount, vaultRevealPassword } from "@/lib/vault/vault.functions";
 import { cn } from "@/lib/utils";
 import { AppSidebar, SidebarContents } from "../AppSidebar";
+import { triggerAssetCommandPalette } from "@/lib/vault/palette-trigger";
 import { CopyButton } from "../primitives";
 import { errorMessage } from "../use-ai";
 import { AccountDialog } from "./AccountDialog";
+import { AccountVaultCard } from "./AccountVaultCard";
 import { ImportDialog } from "./ImportDialog";
 import {
   ACCOUNTS_KEY,
@@ -187,121 +188,13 @@ function RiskBadges({ a }: { a: VaultAccount }) {
   );
 }
 
-function VaultAuditCard({ total }: { total: number }) {
-  const auditFn = useServerFn(vaultAudit);
-  const audit = useQuery({
-    queryKey: ["vault", "audit"],
-    queryFn: () => auditFn(),
-    enabled: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    retry: false,
-  });
-
-  const run = async () => {
-    const res = await audit.refetch();
-    if (res.error) toast.error("Audit gagal", { description: errorMessage(res.error) });
-  };
-
-  return (
-    <section className="rounded-xl border border-ai/30 bg-gradient-ai-soft p-5 shadow-card">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-ai shadow-ai">
-            <Sparkles className="size-3.5 text-ai-contrast" />
-          </span>
-          <h3 className="text-sm font-semibold text-foreground">Audit AI Brankas Email</h3>
-          <Badge variant="ai">AI</Badge>
-        </div>
-        <Button
-          variant={audit.data ? "ai-ghost" : "ai"}
-          size="sm"
-          onClick={run}
-          disabled={audit.isFetching || total === 0}
-        >
-          {audit.isFetching ? (
-            <LoaderCircle className="animate-spin" />
-          ) : audit.data ? (
-            <RefreshCw />
-          ) : (
-            <ShieldAlert />
-          )}
-          {audit.isFetching
-            ? "Menganalisis…"
-            : audit.data
-              ? "Analisis ulang"
-              : `Audit ${total} akun`}
-        </Button>
-      </div>
-
-      {!audit.data && !audit.isFetching && (
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          AI membaca statistik brankas (pemakaian ulang password, pola lemah, akun kosong) — tanpa
-          melihat password.
-        </p>
-      )}
-
-      {audit.data && (
-        <div
-          className={cn(
-            "mt-4 grid gap-5 lg:grid-cols-[180px_1fr_1fr]",
-            audit.isFetching && "opacity-60",
-          )}
-        >
-          <div>
-            <div className="flex items-end gap-1.5">
-              <span className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">
-                {audit.data.score}
-              </span>
-              <span className="pb-1.5 text-sm text-muted-foreground">/ 100</span>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background">
-              <div
-                className="h-full rounded-full bg-gradient-ai"
-                style={{ width: `${audit.data.score}%` }}
-              />
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              {audit.data.headline}
-            </p>
-          </div>
-          <ul className="space-y-3">
-            {audit.data.insights.map((i) => (
-              <li key={i.title} className="flex gap-2.5">
-                <span
-                  className={cn(
-                    "mt-1.5 size-1.5 shrink-0 rounded-full",
-                    i.tone === "warning"
-                      ? "bg-warning"
-                      : i.tone === "success"
-                        ? "bg-success"
-                        : "bg-border-strong",
-                  )}
-                />
-                <div>
-                  <p className="text-[13px] font-medium text-foreground">{i.title}</p>
-                  <p className="text-xs text-muted-foreground">{i.body}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <ol className="list-decimal space-y-1.5 pl-4 text-[13px] text-foreground marker:text-ai">
-            {audit.data.recommendations.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ol>
-        </div>
-      )}
-    </section>
-  );
-}
-
 export function AccountsView() {
   const { data: accounts = [], isPending, isError, error, refetch } = useAccounts();
   const queryClient = useQueryClient();
   const deleteFn = useServerFn(vaultDeleteAccount);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<{ open: boolean; account: VaultAccount | null }>({
     open: false,
@@ -321,16 +214,6 @@ export function AccountsView() {
           a.projects.some((p) => p.name.toLowerCase().includes(q) || (p.url ?? "").includes(q))),
     );
   }, [accounts, query, filter]);
-
-  const stats = useMemo(
-    () => ({
-      total: accounts.length,
-      projects: accounts.reduce((n, a) => n + a.projects.length, 0),
-      empty: accounts.filter((a) => a.lovableStatus === "empty").length,
-      reused: accounts.filter((a) => a.passwordReusedBy > 0).length,
-    }),
-    [accounts],
-  );
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -381,6 +264,18 @@ export function AccountsView() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={triggerAssetCommandPalette}
+                className="gap-2 text-muted-foreground"
+                aria-label="Cari aset digital (Cmd+K)"
+              >
+                <Search className="size-4" />
+                <span className="hidden sm:inline">Cari Aset</span>
+                <kbd className="pointer-events-none hidden h-4 select-none items-center gap-0.5 rounded border border-border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
+                  ⌘K
+                </kbd>
+              </Button>
               <Button variant="outline" onClick={() => setImportOpen(true)}>
                 <Upload />
                 Impor CSV
@@ -394,28 +289,8 @@ export function AccountsView() {
         </header>
 
         <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {[
-              { label: "Total akun", value: stats.total },
-              { label: "Proyek Lovable", value: stats.projects },
-              { label: "Lovable kosong", value: stats.empty },
-              { label: "Password dipakai ulang", value: stats.reused },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-xl border border-border bg-card p-4 shadow-card"
-              >
-                <div className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-                  {s.value}
-                </div>
-                <div className="text-xs text-muted-foreground">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          <VaultAuditCard total={stats.total} />
-
-          <section className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+          <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+            {/* Toolbar: Search, Filters, View Switcher */}
             <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -438,8 +313,41 @@ export function AccountsView() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {visible.length} / {accounts.length}
+
+              {/* View Switcher: Card (Vault Style) vs Table */}
+              <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("card")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                    viewMode === "card"
+                      ? "bg-background text-foreground shadow-soft"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  title="Tampilan Kartu Vault"
+                >
+                  <LayoutGrid className="size-3.5" />
+                  <span className="hidden sm:inline">Kartu Vault</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                    viewMode === "table"
+                      ? "bg-background text-foreground shadow-soft"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  title="Tampilan Tabel"
+                >
+                  <List className="size-3.5" />
+                  <span className="hidden sm:inline">Tabel</span>
+                </button>
+              </div>
+
+              <span className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">
+                {visible.length} / {accounts.length} akun
               </span>
             </div>
 
@@ -457,6 +365,9 @@ export function AccountsView() {
               </div>
             ) : accounts.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Mail className="size-6" />
+                </div>
                 <p className="text-sm font-semibold text-foreground">Vault email masih kosong</p>
                 <p className="max-w-sm text-sm text-muted-foreground">
                   Impor sheet "Data Email" (CSV) untuk memasukkan semua akun dan proyek Lovable
@@ -467,7 +378,43 @@ export function AccountsView() {
                   Impor CSV
                 </Button>
               </div>
+            ) : viewMode === "card" ? (
+              /* /vault Card Style List */
+              <div className="space-y-4 p-4 sm:p-6 bg-subtle/40">
+                {visible.map((a) => (
+                  <AccountVaultCard
+                    key={a.id}
+                    account={a}
+                    onDelete={() => setDeleting(a)}
+                    passwordCell={<PasswordCell account={a} />}
+                    riskBadges={<RiskBadges a={a} />}
+                  />
+                ))}
+                {visible.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Mail className="size-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-sm font-semibold text-foreground">
+                      Tidak ada akun yang cocok
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Coba sesuaikan kata kunci pencarian atau filter status.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setQuery("");
+                        setFilter("all");
+                      }}
+                      className="mt-3 text-xs"
+                    >
+                      Reset Filter
+                    </Button>
+                  </div>
+                )}
+              </div>
             ) : (
+              /* Table View Option */
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -154,3 +154,29 @@ export function StatusDot({ className }: { className?: string }) {
     </span>
   );
 }
+
+export function QuickChip({
+  icon,
+  label,
+  children,
+  className,
+}: {
+  icon: ReactNode;
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg border border-border bg-background py-1 pl-2.5 pr-1 shadow-soft transition-colors hover:border-border-strong",
+        className,
+      )}
+    >
+      <span className="text-muted-foreground [&_svg]:size-3.5">{icon}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="h-4 w-px bg-border" />
+      {children}
+    </div>
+  );
+}

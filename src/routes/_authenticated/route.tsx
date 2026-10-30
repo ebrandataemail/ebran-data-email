@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
+import { AssetCommandPalette } from "@/components/vault/AssetCommandPalette";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -11,5 +12,10 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { user: data.user };
   },
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <Outlet />
+      <AssetCommandPalette />
+    </>
+  ),
 });

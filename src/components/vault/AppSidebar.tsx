@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
@@ -7,11 +6,9 @@ import {
   ChevronsUpDown,
   CodeXml,
   Folder,
-  KeyRound,
   Mail,
   Megaphone,
   Plus,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
@@ -20,15 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
 import { categories, projects, tags } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { StatusDot } from "./primitives";
@@ -113,70 +101,6 @@ function NavItem({
 
 const categoryRoutes: Partial<Record<string, NavTarget>> = { email: "/accounts", social: "/vault" };
 
-function CommandBar() {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="group relative flex w-full cursor-pointer items-center gap-2 rounded-lg border border-border bg-background p-[1px] text-left shadow-soft transition-all hover:border-ai/50 hover:shadow-ai"
-      >
-        <span className="flex w-full items-center gap-1.5 rounded-[7px] bg-gradient-ai-soft px-2 py-2">
-          <Sparkles className="size-3.5 shrink-0 text-ai" />
-          <span className="flex-1 truncate text-[11px] tracking-tight text-muted-foreground group-hover:text-foreground">
-            Tanya AI atau Cari (Cmd+K)
-          </span>
-        </span>
-      </button>
-
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="✨ Tanya AI atau Cari (Cmd+K)" />
-        <CommandList>
-          <CommandEmpty>Tidak ada hasil. Tekan Enter untuk bertanya ke AI.</CommandEmpty>
-          <CommandGroup heading="AI">
-            <CommandItem onSelect={() => setOpen(false)}>
-              <Sparkles className="text-ai" />
-              Akun mana yang token API-nya hampir kedaluwarsa?
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              <ShieldCheck className="text-ai" />
-              Jalankan audit keamanan untuk semua akun #Production
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Aset">
-            <CommandItem onSelect={() => setOpen(false)}>
-              <AtSign />
-              Instagram - Newton Badminton
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              <Mail />
-              Gmail - newton@gmail.com
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              <KeyRound />
-              SocioAPI - Production Keys
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
-    </>
-  );
-}
-
 export function SidebarContents() {
   const { data: accounts } = useAccounts();
   return (
@@ -191,10 +115,6 @@ export function SidebarContents() {
           </span>
         </div>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
-      </div>
-
-      <div className="px-2.5 pt-4">
-        <CommandBar />
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-2 py-5">
