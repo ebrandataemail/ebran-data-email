@@ -133,6 +133,7 @@ export function DeveloperToolsView() {
     try {
       await deleteFn({ data: { id } });
       await queryClient.invalidateQueries({ queryKey: DEV_ASSETS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast.success("Aset dihapus");
     } catch (err) {
       toast.error("Gagal menghapus", { description: errorMessage(err) });
@@ -389,6 +390,7 @@ function DevAssetCard({
         },
       });
       await queryClient.invalidateQueries({ queryKey: DEV_ASSETS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast.success("Aset diperbarui");
       setIsEditing(false);
     } catch (err) {
