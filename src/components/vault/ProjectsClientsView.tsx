@@ -114,7 +114,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
       !window.confirm(
         mode === "clients"
           ? "Hapus client ini?"
-          : "Hapus proyek ini? Akun email yang terhubung akan menjadi belum ditetapkan.",
+          : "Hapus proyek ini? Akun Email dan aset Developer yang terhubung akan menjadi belum ditetapkan.",
       )
     )
       return;
