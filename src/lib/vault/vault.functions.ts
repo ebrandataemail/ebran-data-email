@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { runVaultAudit } from "@/lib/hermes/hermes.server";
+import { runVaultAudit } from "@/lib/assistant/assistant.server";
 import { cleanEmail, type LovableStatus } from "./normalize";
 import { importCsv, listAccounts, revealPassword, saveAccount, vaultFacts } from "./vault.server";
 

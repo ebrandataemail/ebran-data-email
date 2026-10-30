@@ -1,6 +1,6 @@
-// Streaming Hermes chat handler:
+// Streaming AI chat handler:
 // authenticates the user, loads only their own conversation,
-// streams the OpenAI response, and saves both messages to the database.
+// streams the Lovable AI response, and saves both messages to the database.
 
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -13,11 +13,11 @@ import {
 import type { Database } from "@/integrations/supabase/types";
 import { asset } from "@/data/asset";
 import {
-  createHermesModel,
-  hermesProviderOptions,
-  toHermesError,
+  createAiModel,
+  aiProviderOptions,
+  toAiError,
 } from "@/lib/ai/lovable.server";
-import { chatInstructions } from "./hermes.server";
+import { chatInstructions } from "./assistant.server";
 
 const HISTORY_LIMIT = 40;
 
@@ -95,7 +95,7 @@ function isUserMessage(value: unknown): value is UIMessage {
   );
 }
 
-export async function handleHermesChat(request: Request) {
+export async function handleAiChat(request: Request) {
   // 1. Authenticate the current user.
   const auth = await authenticate(request);
 
@@ -128,7 +128,7 @@ export async function handleHermesChat(request: Request) {
 
   // 3. Load only this user's conversation history.
   const { data: rows, error: historyError } = await auth.supabase
-    .from("hermes_chat_messages")
+    .from("ai_chat_messages")
     .select("message_id, role, parts")
     .eq("user_id", auth.userId)
     .eq("asset_id", assetId)
@@ -136,7 +136,7 @@ export async function handleHermesChat(request: Request) {
     .limit(HISTORY_LIMIT);
 
   if (historyError) {
-    console.error("[Hermes chat] history", historyError);
+    console.error("[AI chat] history", historyError);
     return json(500, "Gagal memuat riwayat chat.");
   }
 
@@ -151,7 +151,7 @@ export async function handleHermesChat(request: Request) {
 
   // 4. Save the user's message.
   const { error: saveUserError } = await auth.supabase
-    .from("hermes_chat_messages")
+    .from("ai_chat_messages")
     .upsert(
       {
         user_id: auth.userId,
@@ -167,15 +167,15 @@ export async function handleHermesChat(request: Request) {
     );
 
   if (saveUserError) {
-    console.error("[Hermes chat] save user message", saveUserError);
+    console.error("[AI chat] save user message", saveUserError);
     return json(500, "Gagal menyimpan pesan.");
   }
 
-  // 5. Build the conversation and stream the OpenAI response.
+  // 5. Build the conversation and stream the Lovable AI response.
   const messages = [...history, message];
 
   try {
-    const { model } = createHermesModel();
+    const { model } = createAiModel();
 
     const result = streamText({
       model,
@@ -183,7 +183,7 @@ export async function handleHermesChat(request: Request) {
       messages: await convertToModelMessages(messages),
       abortSignal: request.signal,
       maxRetries: 1,
-      providerOptions: hermesProviderOptions("medium"),
+      providerOptions: aiProviderOptions("medium"),
     });
 
     return result.toUIMessageStreamResponse({
@@ -202,7 +202,7 @@ export async function handleHermesChat(request: Request) {
       },
 
       onError: (error) => {
-        return toHermesError(error).message;
+        return toAiError(error).message;
       },
 
       // 6. Save the assistant's response.
@@ -217,7 +217,7 @@ export async function handleHermesChat(request: Request) {
         if (!hasText) return;
 
         const { error } = await auth.supabase
-          .from("hermes_chat_messages")
+          .from("ai_chat_messages")
           .insert({
             user_id: auth.userId,
             asset_id: assetId,
@@ -227,7 +227,7 @@ export async function handleHermesChat(request: Request) {
           });
 
         if (error) {
-          console.error("[Hermes chat] save assistant message", {
+          console.error("[AI chat] save assistant message", {
             error,
             isAborted,
           });
@@ -235,7 +235,7 @@ export async function handleHermesChat(request: Request) {
       },
     });
   } catch (error) {
-    const result = toHermesError(error);
+    const result = toAiError(error);
 
     return json(result.status, result.message);
   }
