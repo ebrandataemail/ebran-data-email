@@ -142,10 +142,7 @@ export const ocrSchema = z.object({
 export type OcrResult = z.infer<typeof ocrSchema>;
 
 export async function extractDocument(input: { fileName: string; mediaType: string; base64: string }) {
-  const isPdf = input.mediaType === "application/pdf";
-  const filePart = isPdf
-    ? ({ type: "file", filename: input.fileName, data: input.base64, mediaType: "application/pdf" } as const)
-    : ({ type: "image", image: new URL(`data:${input.mediaType};base64,${input.base64}`) } as const);
+  const filePart = { type: "file", filename: input.fileName, data: input.base64, mediaType: input.mediaType } as const;
   return runObject(
     ocrSchema,
     `${PERSONA}\nKamu mesin OCR. Baca dokumen apa adanya dan ekstrak data terstruktur (nama, nomor, tanggal, jumlah, alamat, dll). Jangan mengarang nilai yang tidak terbaca. Untuk nomor identitas, tulis lengkap sesuai dokumen.`,
