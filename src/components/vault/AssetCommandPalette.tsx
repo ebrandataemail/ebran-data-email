@@ -15,6 +15,7 @@ import {
   Layers,
   Lock,
   Mail,
+  Megaphone,
   Paperclip,
   Search,
   ShieldCheck,
@@ -39,6 +40,7 @@ import { asset, categories, tags } from "@/data/asset";
 import { OPEN_ASSET_COMMAND_EVENT } from "@/lib/vault/palette-trigger";
 import { useAccounts } from "./accounts/use-accounts";
 import { useDevAssets } from "./developer/use-dev-assets";
+import { useAdsAssets } from "./ads/use-ads-assets";
 import { workspaceList } from "@/lib/projects/projects.functions";
 
 export function AssetCommandPalette() {
@@ -46,6 +48,7 @@ export function AssetCommandPalette() {
   const navigate = useNavigate();
   const { data: accounts } = useAccounts();
   const { data: developerAssets = [] } = useDevAssets();
+  const { data: adsAssets = [] } = useAdsAssets();
   const workspaceFn = useServerFn(workspaceList);
   const { data: workspace } = useQuery({
     queryKey: ["workspace", "projects-clients"],
@@ -95,7 +98,7 @@ export function AssetCommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Cari email, aset developer, proyek, client... (Cmd+K)" />
+      <CommandInput placeholder="Cari email, developer, iklan, proyek, client... (Cmd+K)" />
       <CommandList className="max-h-[380px]">
         <CommandEmpty>
           <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
@@ -286,6 +289,33 @@ export function AssetCommandPalette() {
           </>
         )}
 
+
+        {adsAssets.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading={`Ads & Marketing (${adsAssets.length})`}>
+              {adsAssets.slice(0, 10).map((item) => (
+                <CommandItem key={item.id}
+                  value={`Ads Marketing ${item.name} ${item.platform} ${item.accountIdentifier ?? ""} ${item.projectName ?? ""} ${item.clientName ?? ""} ${item.status}`}
+                  onSelect={() => handleNavigate("/ads")} className="flex items-center gap-3">
+                  <Megaphone className="size-4 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-foreground">{item.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{item.platform} · {item.projectName || "Tanpa proyek"}{item.clientName ? ` · ${item.clientName}` : ""}</p>
+                  </div>
+                  <Badge variant={item.status === "active" ? "default" : "muted"}>{item.status}</Badge>
+                </CommandItem>
+              ))}
+              {adsAssets.slice(0, 6).map((item) => (
+                <CommandItem key={`ads-ai-${item.id}`} value={`Tanya AI kampanye iklan ${item.name} ${item.platform}`}
+                  onSelect={() => handleNavigate(`/ai?assetId=${item.id}`)}>
+                  <Sparkles className="size-4 text-ai" /><span className="flex-1 truncate">Tanya AI · {item.name}</span><CommandShortcut>AI</CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
         {/* Tab & Section Navigation */}
         <CommandGroup heading="Navigasi Bagian Vault">
           <CommandItem
@@ -356,7 +386,7 @@ export function AssetCommandPalette() {
               <Folder className="size-4 text-muted-foreground" />
               <span className="flex-1 truncate">{project.name}</span>
               <span className="text-xs text-muted-foreground">
-                {project.emailCount + project.developerAssetCount} aset
+                {project.emailCount + project.developerAssetCount + project.adsAssetCount} aset
               </span>
             </CommandItem>
           ))}
@@ -375,7 +405,7 @@ export function AssetCommandPalette() {
             <CommandItem
               key={c.name}
               value={`Kategori ${c.name}`}
-              onSelect={() => handleNavigate(c.key === "email" ? "/accounts" : c.key === "dev" ? "/developer-tools" : "/vault")}
+              onSelect={() => handleNavigate(c.key === "email" ? "/accounts" : c.key === "dev" ? "/developer-tools" : c.key === "ads" ? "/ads" : "/vault")}
             >
               <Layers className="size-4 text-muted-foreground" />
               <span className="flex-1 truncate">{c.name}</span>
