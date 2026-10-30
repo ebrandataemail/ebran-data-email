@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   CodeXml,
   Database,
-  ExternalLink,
   KeyRound,
   LayoutGrid,
   List,
@@ -14,17 +13,15 @@ import {
   Search,
   ShieldCheck,
   Terminal,
+  Folder,
+  Trash2,
   Webhook,
   Sparkles,
   ChevronDown,
   ChevronUp,
-  FileText,
-  ShieldAlert,
-  ShieldCheck as ShieldIcon,
   Calendar,
   X,
   Check,
-  Paperclip,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,7 +48,7 @@ import { AppSidebar } from "@/components/vault/AppSidebar";
 import { CopyButton, RevealButton, StatusDot } from "@/components/vault/primitives";
 import { errorMessage } from "@/components/vault/use-ai";
 import { devDeleteAsset, devRevealAsset, devSaveAsset } from "@/lib/developer/developer.functions";
-import { DevAsset } from "@/lib/developer/developer.server";
+import type { DevAsset, DevAssetType } from "@/lib/developer/developer.server";
 import { DEV_ASSETS_KEY, useDevAssets } from "./use-dev-assets";
 import { DevAssetDialog } from "./DevAssetDialog";
 import { cn } from "@/lib/utils";
@@ -67,6 +64,18 @@ const TYPE_ICONS: Record<string, typeof CodeXml> = {
   env_var: Terminal,
   ssh_key: ShieldCheck,
   db_connection: Database,
+  app_account: CodeXml,
+  website: CodeXml,
+  domain: CodeXml,
+  hosting: Database,
+  repository: CodeXml,
+  package: CodeXml,
+  oauth_app: KeyRound,
+  cloud_service: Database,
+  ai_model: Sparkles,
+  ai_agent: Sparkles,
+  robot: Terminal,
+  automation: Webhook,
   other: CodeXml,
 };
 
@@ -76,6 +85,18 @@ const TYPE_LABELS: Record<string, string> = {
   env_var: "Env Var",
   ssh_key: "SSH Key",
   db_connection: "Database",
+  app_account: "Akun Aplikasi",
+  website: "Website",
+  domain: "Domain",
+  hosting: "Hosting / Server",
+  repository: "Repository / Git",
+  package: "Package / Library",
+  oauth_app: "OAuth App",
+  cloud_service: "Cloud Service",
+  ai_model: "AI Model / Provider",
+  ai_agent: "AI Agent",
+  robot: "Bot / Robot / RPA",
+  automation: "Automation",
   other: "Lainnya",
 };
 
@@ -91,7 +112,6 @@ export function DeveloperToolsView() {
     open: false,
     asset: null,
   });
-  const [deleting, setDeleting] = useState<DevAsset | null>(null);
 
   const filtered = assets.filter((a) => {
     const m =
@@ -353,6 +373,12 @@ function DevAssetCard({
           name,
           description,
           type,
+          provider: asset.provider,
+          websiteUrl: asset.websiteUrl,
+          username: asset.username,
+          environment: asset.environment,
+          status: asset.status,
+          expiresAt: asset.expiresAt,
           projectId: projectId === "none" ? null : projectId,
         },
       });
@@ -420,7 +446,7 @@ function DevAssetCard({
                 </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon-xs" onClick={() => setIsEditing(true)}>
+                    <Button variant="ghost" size="icon-xs" onClick={onEdit}>
                       <Pencil className="size-3.5" />
                     </Button>
                   </TooltipTrigger>
@@ -464,13 +490,14 @@ function DevAssetCard({
 
         <div className="pt-4 border-t border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {asset.status && <Badge variant={asset.status === "active" ? "success" : "muted"} className="text-[10px]">{asset.status}</Badge>}
             {asset.projectName ? (
               <Badge variant="muted" className="text-[10px] gap-1 px-1.5 py-0">
                 <StatusDot className="size-1" />
                 {asset.projectName}
               </Badge>
             ) : (
-              <span className="text-[10px] text-muted-foreground italic">Unlinked</span>
+              <span className="text-[10px] text-muted-foreground italic">Belum ditautkan ke proyek</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -531,7 +558,7 @@ function DevAssetCard({
                   </FieldRow>
                   <FieldRow icon={<Database />} label="Tipe Aset">
                     {isEditing ? (
-                      <Select value={type} onValueChange={setType}>
+                      <Select value={type} onValueChange={(next) => setType(next as DevAssetType)}>
                         <SelectTrigger className="h-7 text-xs">
                           <SelectValue />
                         </SelectTrigger>
@@ -548,6 +575,24 @@ function DevAssetCard({
                         {TYPE_LABELS[asset.type]}
                       </Badge>
                     )}
+                  </FieldRow>
+                  <FieldRow icon={<CodeXml />} label="Provider / Platform">
+                    <span className="text-sm">{asset.provider || "—"}</span>
+                  </FieldRow>
+                  <FieldRow icon={<CodeXml />} label="Website / Dashboard">
+                    {asset.websiteUrl ? <a className="text-sm text-primary hover:underline" href={asset.websiteUrl} target="_blank" rel="noreferrer">{asset.websiteUrl}</a> : <span>—</span>}
+                  </FieldRow>
+                  <FieldRow icon={<Terminal />} label="Username / Account ID">
+                    <span className="text-sm">{asset.username || "—"}</span>
+                  </FieldRow>
+                  <FieldRow icon={<ShieldCheck />} label="Environment">
+                    <Badge variant="outline">{asset.environment}</Badge>
+                  </FieldRow>
+                  <FieldRow icon={<ShieldCheck />} label="Status">
+                    <Badge variant={asset.status === "active" ? "success" : "muted"}>{asset.status}</Badge>
+                  </FieldRow>
+                  <FieldRow icon={<Calendar />} label="Kedaluwarsa">
+                    <span className="text-xs text-muted-foreground">{asset.expiresAt ? new Date(asset.expiresAt).toLocaleDateString("id-ID") : "Tidak ditentukan"}</span>
                   </FieldRow>
                   <FieldRow icon={<Folder />} label="Proyek Workspace">
                     {isEditing ? (
