@@ -89,7 +89,12 @@ function joinNotes(...parts: (string | null | undefined)[]) {
   return uniq.length ? uniq.join(" · ") : null;
 }
 
-const STATUS_RANK: Record<LovableStatus, number> = { unknown: 0, not_registered: 1, empty: 2, has_project: 3 };
+const STATUS_RANK: Record<LovableStatus, number> = {
+  unknown: 0,
+  not_registered: 1,
+  empty: 2,
+  has_project: 3,
+};
 
 type RowInfo = {
   lovableStatus: LovableStatus;
@@ -107,14 +112,30 @@ export function interpretRow(projectRaw: string, linkRaw: string, noteRaw: strin
   if (link && !linkUrl) notes.push(link);
 
   if (!project) {
-    if (linkUrl) return { lovableStatus: "has_project", usageTag: null, notes, project: { name: titleFromUrl(linkUrl), url: linkUrl, note: null } };
+    if (linkUrl)
+      return {
+        lovableStatus: "has_project",
+        usageTag: null,
+        notes,
+        project: { name: titleFromUrl(linkUrl), url: linkUrl, note: null },
+      };
     return { lovableStatus: "unknown", usageTag: null, notes, project: null };
   }
   if (isUrl(project)) {
-    return { lovableStatus: "has_project", usageTag: null, notes, project: { name: titleFromUrl(project), url: project, note: null } };
+    return {
+      lovableStatus: "has_project",
+      usageTag: null,
+      notes,
+      project: { name: titleFromUrl(project), url: project, note: null },
+    };
   }
   if (/tiktok/i.test(project)) {
-    return { lovableStatus: "unknown", usageTag: project.replace(/^akun\s+/i, "").trim(), notes, project: null };
+    return {
+      lovableStatus: "unknown",
+      usageTag: project.replace(/^akun\s+/i, "").trim(),
+      notes,
+      project: null,
+    };
   }
   if (/kosong/i.test(project)) {
     if (/bonus/i.test(project)) notes.push("Ada bonus");
@@ -123,7 +144,12 @@ export function interpretRow(projectRaw: string, linkRaw: string, noteRaw: strin
     return { lovableStatus: status, usageTag: null, notes, project: null };
   }
   const name = project.replace(/^lovable\s*(?:-\s*)?/i, "").trim() || project;
-  return { lovableStatus: "has_project", usageTag: null, notes, project: { name, url: linkUrl, note: null } };
+  return {
+    lovableStatus: "has_project",
+    usageTag: null,
+    notes,
+    project: { name, url: linkUrl, note: null },
+  };
 }
 
 const HEADER_ALIASES: Record<string, keyof typeof COLS> = {
@@ -187,22 +213,39 @@ export function normalizeCsv(text: string): NormalizeResult {
     if (password && !existing.password) existing.password = password;
     else if (password && password !== existing.password && !existing.altPassword) {
       existing.altPassword = password;
-      merged.push({ row: rowNo, message: `${email}: password berbeda disimpan sebagai password alternatif` });
+      merged.push({
+        row: rowNo,
+        message: `${email}: password berbeda disimpan sebagai password alternatif`,
+      });
     } else merged.push({ row: rowNo, message: `${email}: baris duplikat digabung` });
-    if (STATUS_RANK[info.lovableStatus] > STATUS_RANK[existing.lovableStatus]) existing.lovableStatus = info.lovableStatus;
+    if (STATUS_RANK[info.lovableStatus] > STATUS_RANK[existing.lovableStatus])
+      existing.lovableStatus = info.lovableStatus;
     existing.usageTag ??= info.usageTag;
     existing.note = joinNotes(existing.note, ...info.notes);
-    if (info.project && !existing.projects.some((p) => p.name === info.project!.name)) existing.projects.push(info.project);
+    if (info.project && !existing.projects.some((p) => p.name === info.project!.name))
+      existing.projects.push(info.project);
   });
 
-  return { accounts: Array.from(byEmail.values()), totalRows: rows.length - 1, skipped, cleaned, merged };
+  return {
+    accounts: Array.from(byEmail.values()),
+    totalRows: rows.length - 1,
+    skipped,
+    cleaned,
+    merged,
+  };
 }
 
 /* ---------- Password facts (stored instead of analysing plaintext later) ---------- */
 
 export function passwordStrengthFacts(password: string, email: string) {
   const local = (email.split("@")[0] ?? "").toLowerCase().replace(/[^a-z]/g, "");
-  const normalized = password.toLowerCase().replace(/0/g, "o").replace(/1/g, "i").replace(/3/g, "e").replace(/4/g, "a").replace(/5/g, "s");
+  const normalized = password
+    .toLowerCase()
+    .replace(/0/g, "o")
+    .replace(/1/g, "i")
+    .replace(/3/g, "e")
+    .replace(/4/g, "a")
+    .replace(/5/g, "s");
   const stem = local.slice(0, 4);
   return {
     length: password.length,

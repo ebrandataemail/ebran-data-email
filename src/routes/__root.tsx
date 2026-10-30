@@ -82,7 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Ebran Aset Digital - Arsip Data Pribadi Aman" },
-      { name: "description", content: "Arsip aman untuk akun, kredensial, dan aset digital pribadi." },
+      {
+        name: "description",
+        content: "Arsip aman untuk akun, kredensial, dan aset digital pribadi.",
+      },
       { name: "author", content: "Ebran Aset Digital" },
       { property: "og:title", content: "Ebran Aset Digital - Arsip Data Pribadi Aman" },
       { property: "og:description", content: "Vault aset & akun digital bertenaga AI." },

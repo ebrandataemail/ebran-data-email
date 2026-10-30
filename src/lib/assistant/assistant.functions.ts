@@ -15,7 +15,9 @@ function assertAsset(assetId: unknown) {
 
 export const aiGenerateNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { draft: string }) => ({ draft: String(input?.draft ?? "").slice(0, 2000) }))
+  .inputValidator((input: { draft: string }) => ({
+    draft: String(input?.draft ?? "").slice(0, 2000),
+  }))
   .handler(async ({ data }) => ({ note: await generateNote(data.draft) }));
 
 export const aiSecurityAudit = createServerFn({ method: "POST" })
@@ -32,7 +34,8 @@ export const aiExtractDocument = createServerFn({ method: "POST" })
     const fileName = String(input?.fileName ?? "dokumen").slice(0, 200);
     const mediaType = String(input?.mediaType ?? "");
     const base64 = String(input?.base64 ?? "");
-    if (!OCR_TYPES.includes(mediaType)) throw new Error("Format file tidak didukung. Gunakan PDF, JPG, atau PNG.");
+    if (!OCR_TYPES.includes(mediaType))
+      throw new Error("Format file tidak didukung. Gunakan PDF, JPG, atau PNG.");
     if (!base64) throw new Error("File kosong.");
     if (base64.length * 0.75 > MAX_OCR_BYTES) throw new Error("File terlalu besar (maks. 8 MB).");
     return { fileName, mediaType, base64 };

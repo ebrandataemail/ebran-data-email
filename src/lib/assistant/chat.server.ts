@@ -3,20 +3,11 @@
 // streams the Lovable AI response, and saves both messages to the database.
 
 import { createClient } from "@supabase/supabase-js";
-import {
-  convertToModelMessages,
-  createIdGenerator,
-  streamText,
-  type UIMessage,
-} from "ai";
+import { convertToModelMessages, createIdGenerator, streamText, type UIMessage } from "ai";
 
 import type { Database } from "@/integrations/supabase/types";
 import { asset } from "@/data/asset";
-import {
-  createAiModel,
-  aiProviderOptions,
-  toAiError,
-} from "@/lib/ai/lovable.server";
+import { createAiModel, aiProviderOptions, toAiError } from "@/lib/ai/lovable.server";
 import { chatInstructions } from "./assistant.server";
 
 const HISTORY_LIMIT = 40;
@@ -37,9 +28,7 @@ async function authenticate(request: Request) {
 
   if (!url || !key) return null;
 
-  const token = request.headers
-    .get("authorization")
-    ?.replace(/^Bearer\s+/i, "");
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
   if (!token || token.split(".").length !== 3) return null;
 
@@ -87,10 +76,7 @@ function isUserMessage(value: unknown): value is UIMessage {
     Array.isArray(message.parts) &&
     message.parts.length > 0 &&
     message.parts.every(
-      (part) =>
-        part.type === "text" &&
-        typeof part.text === "string" &&
-        part.text.length <= 4000,
+      (part) => part.type === "text" && typeof part.text === "string" && part.text.length <= 4000,
     )
   );
 }
@@ -150,21 +136,19 @@ export async function handleAiChat(request: Request) {
     }));
 
   // 4. Save the user's message.
-  const { error: saveUserError } = await auth.supabase
-    .from("ai_chat_messages")
-    .upsert(
-      {
-        user_id: auth.userId,
-        asset_id: assetId,
-        message_id: message.id,
-        role: "user",
-        parts: message.parts as never,
-      },
-      {
-        onConflict: "user_id,asset_id,message_id",
-        ignoreDuplicates: true,
-      },
-    );
+  const { error: saveUserError } = await auth.supabase.from("ai_chat_messages").upsert(
+    {
+      user_id: auth.userId,
+      asset_id: assetId,
+      message_id: message.id,
+      role: "user",
+      parts: message.parts as never,
+    },
+    {
+      onConflict: "user_id,asset_id,message_id",
+      ignoreDuplicates: true,
+    },
+  );
 
   if (saveUserError) {
     console.error("[AI chat] save user message", saveUserError);
@@ -209,22 +193,18 @@ export async function handleAiChat(request: Request) {
       onFinish: async ({ responseMessage, isAborted }) => {
         const hasText = responseMessage.parts.some(
           (part) =>
-            part.type === "text" &&
-            typeof part.text === "string" &&
-            part.text.trim().length > 0,
+            part.type === "text" && typeof part.text === "string" && part.text.trim().length > 0,
         );
 
         if (!hasText) return;
 
-        const { error } = await auth.supabase
-          .from("ai_chat_messages")
-          .insert({
-            user_id: auth.userId,
-            asset_id: assetId,
-            message_id: responseMessage.id,
-            role: "assistant",
-            parts: responseMessage.parts as never,
-          });
+        const { error } = await auth.supabase.from("ai_chat_messages").insert({
+          user_id: auth.userId,
+          asset_id: assetId,
+          message_id: responseMessage.id,
+          role: "assistant",
+          parts: responseMessage.parts as never,
+        });
 
         if (error) {
           console.error("[AI chat] save assistant message", {

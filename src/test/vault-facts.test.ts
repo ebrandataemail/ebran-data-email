@@ -36,6 +36,8 @@ describe("vault facts sent to the AI", () => {
   });
 
   it("counts accounts with no saved password", () => {
-    expect(vaultFacts([acc({ hasPassword: false, passwordLength: null }), acc({})]).passwords.missing).toBe(1);
+    expect(
+      vaultFacts([acc({ hasPassword: false, passwordLength: null }), acc({})]).passwords.missing,
+    ).toBe(1);
   });
 });

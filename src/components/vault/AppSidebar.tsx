@@ -186,7 +186,9 @@ export function SidebarContents() {
         <img src={appMark} alt="" width={32} height={32} className="size-8 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
           <span className="truncate text-sm font-semibold text-foreground">Ebran Aset Digital</span>
-          <span className="truncate text-[11px] text-muted-foreground">Arsip Data Pribadi Aman</span>
+          <span className="truncate text-[11px] text-muted-foreground">
+            Arsip Data Pribadi Aman
+          </span>
         </div>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </div>

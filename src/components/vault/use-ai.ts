@@ -30,7 +30,9 @@ export function useAiAudit() {
       return undefined;
     }
     if (res.data) {
-      toast.success(`Audit selesai — skor keamanan ${res.data.score}/100`, { description: res.data.headline });
+      toast.success(`Audit selesai — skor keamanan ${res.data.score}/100`, {
+        description: res.data.headline,
+      });
     }
     return res.data;
   };

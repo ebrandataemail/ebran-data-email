@@ -1,0 +1,6 @@
+{
+  "name": "Ebran Aset Digital",
+  "description": "Arsip aman untuk akun, kredensial, dan aset digital pribadi dengan asisten AI.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -72,7 +72,10 @@ function findApiCallError(error: unknown, depth = 0): APICallError | undefined {
 function gatewayMessage(apiError: APICallError | undefined) {
   if (!apiError?.responseBody) return undefined;
   try {
-    const body = JSON.parse(apiError.responseBody) as { message?: unknown; error?: { message?: unknown } };
+    const body = JSON.parse(apiError.responseBody) as {
+      message?: unknown;
+      error?: { message?: unknown };
+    };
     const msg = body.message ?? body.error?.message;
     return typeof msg === "string" && msg.length < 300 ? msg : undefined;
   } catch {
@@ -92,9 +95,16 @@ export function toAiError(error: unknown): AiError {
     case 401:
       return new AiError(401, "Kunci Lovable AI tidak valid. Periksa konfigurasi server.");
     case 402:
-      return new AiError(402, gatewayMessage(apiError) ?? "Kredit Lovable AI habis. Tambah kredit di pengaturan workspace.");
+      return new AiError(
+        402,
+        gatewayMessage(apiError) ??
+          "Kredit Lovable AI habis. Tambah kredit di pengaturan workspace.",
+      );
     case 403:
-      return new AiError(403, gatewayMessage(apiError) ?? "Akses Lovable AI ditolak untuk permintaan ini.");
+      return new AiError(
+        403,
+        gatewayMessage(apiError) ?? "Akses Lovable AI ditolak untuk permintaan ini.",
+      );
     case 404:
       return new AiError(503, "Model AI sedang tidak tersedia.");
     case 429:

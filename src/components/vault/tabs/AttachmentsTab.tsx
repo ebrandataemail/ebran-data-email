@@ -1,11 +1,26 @@
 import { useRef, useState } from "react";
-import { CloudUpload, Eye, FileImage, FileText, ScanText, Sparkles, Trash2, TriangleAlert } from "lucide-react";
+import {
+  CloudUpload,
+  Eye,
+  FileImage,
+  FileText,
+  ScanText,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { asset } from "@/data/asset";
 import { aiExtractDocument } from "@/lib/assistant/assistant.functions";
 import { cn } from "@/lib/utils";
@@ -29,7 +44,9 @@ const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 function formatSize(bytes: number) {
-  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
 function readBase64(file: File) {
@@ -75,7 +92,9 @@ export function AttachmentsTab() {
       const base64 = await readBase64(file);
       const result = await extract({ data: { fileName: file.name, mediaType: file.type, base64 } });
       update(item.id, { status: "done", result });
-      toast.success(`${file.name} selesai dipindai`, { description: `${result.fields.length} field diekstrak · ${result.documentType}` });
+      toast.success(`${file.name} selesai dipindai`, {
+        description: `${result.fields.length} field diekstrak · ${result.documentType}`,
+      });
     } catch (err) {
       const message = errorMessage(err);
       update(item.id, { status: "error", error: message });
@@ -102,7 +121,8 @@ export function AttachmentsTab() {
     setFiles((prev) => [...entries.map((e) => e.item), ...prev]);
     const toScan = entries.filter((e) => e.item.status === "processing");
     if (toScan.length) toast("AI mulai memindai dokumen", { icon: "✨" });
-    if (entries.some((e) => e.item.status === "unsupported")) toast("Hanya PDF, JPG, dan PNG yang bisa dipindai.");
+    if (entries.some((e) => e.item.status === "unsupported"))
+      toast("Hanya PDF, JPG, dan PNG yang bisa dipindai.");
     if (entries.some((e) => e.item.error)) toast.error("Ada file lebih dari 8 MB yang dilewati.");
     toScan.forEach((e) => void scan(e.item, e.file));
   };
@@ -149,7 +169,8 @@ export function AttachmentsTab() {
         <div>
           <p className="text-sm font-semibold text-foreground">Drag & Drop files here.</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            ✨ <span className="font-medium text-ai-foreground">AI</span> will automatically extract data (OCR).
+            ✨ <span className="font-medium text-ai-foreground">AI</span> will automatically extract
+            data (OCR).
           </p>
         </div>
         <span className="text-xs text-muted-foreground/80">PDF, JPG, PNG · maks. 8 MB</span>
@@ -160,7 +181,10 @@ export function AttachmentsTab() {
           {files.map((f) => {
             const Icon = f.type === "image" ? FileImage : FileText;
             return (
-              <li key={f.id} className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-subtle">
+              <li
+                key={f.id}
+                className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-subtle"
+              >
                 <div
                   className={cn(
                     "flex size-10 shrink-0 items-center justify-center rounded-lg border",
@@ -207,7 +231,9 @@ export function AttachmentsTab() {
             );
           })}
           {files.length === 0 && (
-            <li className="px-5 py-8 text-center text-sm text-muted-foreground">Belum ada lampiran.</li>
+            <li className="px-5 py-8 text-center text-sm text-muted-foreground">
+              Belum ada lampiran.
+            </li>
           )}
         </ul>
       </Panel>
@@ -223,7 +249,10 @@ export function AttachmentsTab() {
           </DialogHeader>
           <dl className="max-h-[60vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">
             {viewing?.result?.fields.map((field, i) => (
-              <div key={`${field.label}-${i}`} className="grid grid-cols-[140px_1fr_auto] items-center gap-3 px-4 py-2.5 text-sm">
+              <div
+                key={`${field.label}-${i}`}
+                className="grid grid-cols-[140px_1fr_auto] items-center gap-3 px-4 py-2.5 text-sm"
+              >
                 <dt className="text-muted-foreground">{field.label}</dt>
                 <dd className="break-words font-medium text-foreground">{field.value}</dd>
                 <CopyButton value={field.value} label={field.label} />

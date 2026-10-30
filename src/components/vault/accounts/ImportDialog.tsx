@@ -6,7 +6,14 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { normalizeCsv } from "@/lib/vault/normalize";
 import { vaultImportCsv } from "@/lib/vault/vault.functions";
 import { errorMessage } from "../use-ai";
@@ -23,7 +30,13 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+export function ImportDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const importFn = useServerFn(vaultImportCsv);
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,7 +69,9 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
       const res = await importFn({ data: { csv: file.text } });
       setReport(res);
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
-      toast.success("Impor selesai", { description: `${res.added} akun baru · ${res.updated} diperbarui · ${res.projects} proyek` });
+      toast.success("Impor selesai", {
+        description: `${res.added} akun baru · ${res.updated} diperbarui · ${res.projects} proyek`,
+      });
     } catch (err) {
       toast.error("Impor gagal", { description: errorMessage(err) });
     } finally {
@@ -78,8 +93,8 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
         <DialogHeader>
           <DialogTitle>Impor & sinkronkan dari CSV</DialogTitle>
           <DialogDescription>
-            Kolom: Link (email), Kode (password), Proyek Lovable, Link Lovable, Catatan. Email yang sudah ada akan diperbarui,
-            bukan diduplikasi. Password dienkripsi sebelum disimpan.
+            Kolom: Link (email), Kode (password), Proyek Lovable, Link Lovable, Catatan. Email yang
+            sudah ada akan diperbarui, bukan diduplikasi. Password dienkripsi sebelum disimpan.
           </DialogDescription>
         </DialogHeader>
 
@@ -93,8 +108,12 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
               <FileSpreadsheet className="size-5 text-muted-foreground" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-foreground">{file?.name ?? "Pilih file CSV"}</span>
-              <span className="block text-xs text-muted-foreground">Ekspor Google Sheets → File → Download → CSV</span>
+              <span className="block truncate text-sm font-medium text-foreground">
+                {file?.name ?? "Pilih file CSV"}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Ekspor Google Sheets → File → Download → CSV
+              </span>
             </span>
             <input
               ref={inputRef}
@@ -117,9 +136,17 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
               <Stat label="Proyek Lovable" value={projects} />
             </div>
             <ul className="space-y-1.5 text-xs text-muted-foreground">
-              {preview.cleaned.length > 0 && <li>• {preview.cleaned.length} email dirapikan (titik/teks berlebih dihapus)</li>}
-              {preview.merged.length > 0 && <li>• {preview.merged.length} baris duplikat digabung ke email yang sama</li>}
-              {preview.skipped.length > 0 && <li className="text-destructive">• {preview.skipped.length} baris dilewati (email tidak valid)</li>}
+              {preview.cleaned.length > 0 && (
+                <li>• {preview.cleaned.length} email dirapikan (titik/teks berlebih dihapus)</li>
+              )}
+              {preview.merged.length > 0 && (
+                <li>• {preview.merged.length} baris duplikat digabung ke email yang sama</li>
+              )}
+              {preview.skipped.length > 0 && (
+                <li className="text-destructive">
+                  • {preview.skipped.length} baris dilewati (email tidak valid)
+                </li>
+              )}
               <li>• {preview.accounts.filter((a) => !a.password).length} akun tanpa password</li>
             </ul>
           </div>
@@ -140,19 +167,25 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
               <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border p-3 text-xs text-muted-foreground">
                 {report.cleaned.map((i) => (
                   <li key={`c${i.row}`}>
-                    <Badge variant="muted" className="mr-1.5 px-1.5 py-0">baris {i.row}</Badge>
+                    <Badge variant="muted" className="mr-1.5 px-1.5 py-0">
+                      baris {i.row}
+                    </Badge>
                     {i.message}
                   </li>
                 ))}
                 {report.merged.map((i) => (
                   <li key={`m${i.row}`}>
-                    <Badge variant="muted" className="mr-1.5 px-1.5 py-0">baris {i.row}</Badge>
+                    <Badge variant="muted" className="mr-1.5 px-1.5 py-0">
+                      baris {i.row}
+                    </Badge>
                     {i.message}
                   </li>
                 ))}
                 {report.skipped.map((i) => (
                   <li key={`s${i.row}`} className="text-destructive">
-                    <Badge variant="danger" className="mr-1.5 px-1.5 py-0">baris {i.row}</Badge>
+                    <Badge variant="danger" className="mr-1.5 px-1.5 py-0">
+                      baris {i.row}
+                    </Badge>
                     {i.message}
                   </li>
                 ))}

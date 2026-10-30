@@ -128,7 +128,12 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-xl border border-border bg-card shadow-card", className)}>
+    <section
+      className={cn(
+        "overflow-hidden rounded-xl border border-border bg-card shadow-card",
+        className,
+      )}
+    >
       <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>

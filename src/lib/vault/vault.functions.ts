@@ -40,11 +40,20 @@ export const vaultRevealPassword = createServerFn({ method: "POST" })
 export const vaultSaveAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { id: string | null; email: string; password: string | null; lovableStatus: string; usageTag: string | null; note: string | null }) => {
+    (input: {
+      id: string | null;
+      email: string;
+      password: string | null;
+      lovableStatus: string;
+      usageTag: string | null;
+      note: string | null;
+    }) => {
       const id = input?.id ? uuid(input.id) : null;
       const email = cleanEmail(String(input?.email ?? ""));
       if (!id && !email) throw new Error("Email tidak valid.");
-      const lovableStatus = STATUSES.includes(input?.lovableStatus as LovableStatus) ? (input.lovableStatus as LovableStatus) : "unknown";
+      const lovableStatus = STATUSES.includes(input?.lovableStatus as LovableStatus)
+        ? (input.lovableStatus as LovableStatus)
+        : "unknown";
       return {
         id,
         email: email ?? "",

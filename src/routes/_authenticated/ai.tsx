@@ -20,14 +20,19 @@ function AiPage() {
             </span>
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-foreground">Tanya AI</h1>
-              <p className="text-sm text-muted-foreground">Asisten cerdas untuk memahami dan mengelola aset digitalmu.</p>
+              <p className="text-sm text-muted-foreground">
+                Asisten cerdas untuk memahami dan mengelola aset digitalmu.
+              </p>
             </div>
           </div>
         </header>
         <section className="mx-auto flex max-w-[1100px] flex-col gap-5 px-4 py-6 sm:px-8">
           <div>
             <p className="text-sm font-medium text-foreground">Percakapan tentang aset aktif</p>
-            <p className="mt-1 text-xs text-muted-foreground">Riwayat tersimpan aman di akunmu. AI hanya menerima konteks aset yang sudah disaring dari password dan secret.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Riwayat tersimpan aman di akunmu. AI hanya menerima konteks aset yang sudah disaring
+              dari password dan secret.
+            </p>
           </div>
           <AiChatPageContent />
         </section>

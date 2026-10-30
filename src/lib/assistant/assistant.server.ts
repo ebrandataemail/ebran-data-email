@@ -141,8 +141,17 @@ export const ocrSchema = z.object({
 });
 export type OcrResult = z.infer<typeof ocrSchema>;
 
-export async function extractDocument(input: { fileName: string; mediaType: string; base64: string }) {
-  const filePart = { type: "file", filename: input.fileName, data: input.base64, mediaType: input.mediaType } as const;
+export async function extractDocument(input: {
+  fileName: string;
+  mediaType: string;
+  base64: string;
+}) {
+  const filePart = {
+    type: "file",
+    filename: input.fileName,
+    data: input.base64,
+    mediaType: input.mediaType,
+  } as const;
   return runObject(
     ocrSchema,
     `${PERSONA}\nKamu mesin OCR. Baca dokumen apa adanya dan ekstrak data terstruktur (nama, nomor, tanggal, jumlah, alamat, dll). Jangan mengarang nilai yang tidak terbaca. Untuk nomor identitas, tulis lengkap sesuai dokumen.`,
@@ -168,7 +177,12 @@ export async function runVaultAudit(facts: unknown): Promise<SecurityAudit> {
   const audit = await runObject(
     auditSchema,
     `${PERSONA}\nKamu auditor keamanan untuk brankas akun email (banyak akun Gmail & domain kantor yang dipakai untuk proyek Lovable). Kamu hanya menerima statistik agregat, bukan password. Nilai risiko: password yang dipakai ulang di banyak akun, pola "Nama+tahun+simbol" yang mudah ditebak, password mengandung nama dari email, akun tanpa password tercatat, akun Lovable kosong yang bisa dimanfaatkan, dan proyek tanpa link. Tone "warning" untuk risiko, "success" untuk hal baik, "muted" untuk info netral. Sebutkan angka konkret.`,
-    [{ role: "user", content: `Statistik brankas email (JSON):\n${JSON.stringify(facts, null, 2)}\n\nJalankan audit untuk seluruh brankas.` }],
+    [
+      {
+        role: "user",
+        content: `Statistik brankas email (JSON):\n${JSON.stringify(facts, null, 2)}\n\nJalankan audit untuk seluruh brankas.`,
+      },
+    ],
     "medium",
   );
   return {

@@ -23,13 +23,21 @@ function safeRedirect(value: unknown): string {
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({ redirect: safeRedirect(search["redirect"]) }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: safeRedirect(search["redirect"]),
+  }),
   head: () => ({
     meta: [
       { title: "Masuk · Ebran Aset Digital" },
-      { name: "description", content: "Masuk ke Ebran Aset Digital untuk mengelola akun dan aset digital kamu." },
+      {
+        name: "description",
+        content: "Masuk ke Ebran Aset Digital untuk mengelola akun dan aset digital kamu.",
+      },
       { property: "og:title", content: "Masuk · Ebran Aset Digital" },
-      { property: "og:description", content: "Masuk untuk membuka vault aset digital bertenaga AI." },
+      {
+        property: "og:description",
+        content: "Masuk untuk membuka vault aset digital bertenaga AI.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -84,7 +92,9 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
           <img src={appMark} alt="Ebran Aset Digital" width={56} height={56} className="size-14" />
-          <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">Ebran Aset Digital</h1>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
+            Ebran Aset Digital
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">Arsip Data Pribadi Aman</p>
         </div>
 
@@ -96,10 +106,18 @@ function AuthPage() {
               </span>
               <p className="text-sm font-semibold text-foreground">Cek email kamu</p>
               <p className="text-sm text-muted-foreground">
-                Kami mengirim link konfirmasi ke <span className="font-medium text-foreground">{email}</span>. Klik link
-                itu, lalu masuk di sini.
+                Kami mengirim link konfirmasi ke{" "}
+                <span className="font-medium text-foreground">{email}</span>. Klik link itu, lalu
+                masuk di sini.
               </p>
-              <Button variant="outline" size="sm" onClick={() => { setCheckEmail(false); setMode("signin"); }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCheckEmail(false);
+                  setMode("signin");
+                }}
+              >
                 Kembali ke halaman masuk
               </Button>
             </div>
@@ -113,7 +131,14 @@ function AuthPage() {
                 <form onSubmit={submit} className="space-y-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>

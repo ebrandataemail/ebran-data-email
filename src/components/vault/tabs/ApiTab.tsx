@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { CalendarClock, KeyRound, LoaderCircle, Lock, Sparkles, TriangleAlert, Webhook } from "lucide-react";
+import {
+  CalendarClock,
+  KeyRound,
+  LoaderCircle,
+  Lock,
+  Sparkles,
+  TriangleAlert,
+  Webhook,
+} from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
@@ -65,7 +73,9 @@ export function ApiTab() {
         description: `${next.variables.length} variabel siap ditempel ke project kamu.`,
       });
     } catch {
-      toast.error("Gagal menyalin ke clipboard", { description: "Tekan tombol lagi untuk menyalin." });
+      toast.error("Gagal menyalin ke clipboard", {
+        description: "Tekan tombol lagi untuk menyalin.",
+      });
     }
   };
 
@@ -78,7 +88,12 @@ export function ApiTab() {
             <CopyButton value={a.publicKey} label="Public API key" />
           </FieldRow>
           <FieldRow icon={<Lock />} label="Secret Token">
-            <SecretValue value={a.secretToken} label="Secret token" prefix="sk_live_" mask="********" />
+            <SecretValue
+              value={a.secretToken}
+              label="Secret token"
+              prefix="sk_live_"
+              mask="********"
+            />
           </FieldRow>
           <FieldRow icon={<Webhook />} label="Webhook URL">
             <span className="font-mono text-sm">{a.webhookUrl}</span>

@@ -18,7 +18,15 @@ import { asset } from "@/data/asset";
 import { SidebarContents } from "./AppSidebar";
 import { CopyButton, SecretValue, StatusDot } from "./primitives";
 
-function QuickChip({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+function QuickChip({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background py-1 pl-2.5 pr-1 shadow-soft transition-colors hover:border-border-strong">
       <span className="text-muted-foreground [&_svg]:size-3.5">{icon}</span>

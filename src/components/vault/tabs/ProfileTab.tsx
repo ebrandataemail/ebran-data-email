@@ -34,7 +34,10 @@ export function ProfileTab() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Informasi Profil" description="Identitas dan kontak yang terhubung ke akun ini.">
+      <Panel
+        title="Informasi Profil"
+        description="Identitas dan kontak yang terhubung ke akun ini."
+      >
         <div className="divide-y divide-border">
           <FieldRow icon={<ShieldUser />} label="Role / Akses">
             <Badge variant="muted">{p.role}</Badge>

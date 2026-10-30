@@ -68,8 +68,22 @@ export const asset = {
     createdAt: "15 Agustus 2024",
   },
   attachments: [
-    { id: "1", name: "invoice-newton.pdf", size: "248 KB", type: "pdf", status: "done", fields: 12 },
-    { id: "2", name: "ktp-verifikasi.jpg", size: "1.4 MB", type: "image", status: "done", fields: 7 },
+    {
+      id: "1",
+      name: "invoice-newton.pdf",
+      size: "248 KB",
+      type: "pdf",
+      status: "done",
+      fields: 12,
+    },
+    {
+      id: "2",
+      name: "ktp-verifikasi.jpg",
+      size: "1.4 MB",
+      type: "image",
+      status: "done",
+      fields: 7,
+    },
   ],
 };
 

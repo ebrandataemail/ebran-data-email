@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/vault")({
       { title: "Instagram - Newton Badminton · Ebran Aset Digital" },
       {
         name: "description",
-        content: "Kelola akun, kredensial, 2FA, API key, dan dokumen digital dalam satu vault bertenaga AI.",
+        content:
+          "Kelola akun, kredensial, 2FA, API key, dan dokumen digital dalam satu vault bertenaga AI.",
       },
       { property: "og:title", content: "Instagram - Newton Badminton · Ebran Aset Digital" },
       {
@@ -36,7 +37,13 @@ const tabs = [
   { value: "keamanan", label: "Keamanan & Recovery", icon: ShieldCheck, Content: SecurityTab },
   { value: "api", label: "API & Developer", icon: CodeXml, Content: ApiTab },
   { value: "ops", label: "Ops & Status", icon: SlidersHorizontal, Content: OpsTab },
-  { value: "attachments", label: "Attachments", icon: Paperclip, Content: AttachmentsTab, count: 2 },
+  {
+    value: "attachments",
+    label: "Attachments",
+    icon: Paperclip,
+    Content: AttachmentsTab,
+    count: 2,
+  },
 ];
 
 function Index() {

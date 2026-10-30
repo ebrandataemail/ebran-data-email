@@ -36,7 +36,9 @@ function fromBase64(b64: string) {
 export async function encryptSecret(plain: string) {
   const key = await aesKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(plain)));
+  const cipher = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(plain)),
+  );
   const packed = new Uint8Array(iv.length + cipher.length);
   packed.set(iv);
   packed.set(cipher, iv.length);
@@ -47,7 +49,11 @@ export async function decryptSecret(value: string) {
   if (!value.startsWith("v1:")) throw new Error("Format sandi tidak dikenal.");
   const packed = fromBase64(value.slice(3));
   const key = await aesKey();
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: packed.slice(0, 12) }, key, packed.slice(12));
+  const plain = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: packed.slice(0, 12) },
+    key,
+    packed.slice(12),
+  );
   return dec.decode(plain);
 }
 

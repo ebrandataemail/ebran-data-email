@@ -34,9 +34,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { vaultAudit, vaultDeleteAccount, vaultRevealPassword } from "@/lib/vault/vault.functions";
 import { cn } from "@/lib/utils";
@@ -45,7 +58,13 @@ import { CopyButton } from "../primitives";
 import { errorMessage } from "../use-ai";
 import { AccountDialog } from "./AccountDialog";
 import { ImportDialog } from "./ImportDialog";
-import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, useAccounts, type VaultAccount } from "./use-accounts";
+import {
+  ACCOUNTS_KEY,
+  STATUS_LABEL,
+  STATUS_VARIANT,
+  useAccounts,
+  type VaultAccount,
+} from "./use-accounts";
 
 type Filter = "all" | VaultAccount["lovableStatus"] | "reused" | "weak" | "no_password";
 
@@ -70,7 +89,10 @@ function matchesFilter(a: VaultAccount, f: Filter) {
 
 function PasswordCell({ account }: { account: VaultAccount }) {
   const revealFn = useServerFn(vaultRevealPassword);
-  const [shown, setShown] = useState<{ password: string | null; altPassword: string | null } | null>(null);
+  const [shown, setShown] = useState<{
+    password: string | null;
+    altPassword: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -112,13 +134,31 @@ function PasswordCell({ account }: { account: VaultAccount }) {
   return (
     <div className="flex items-center gap-1">
       <div className="flex min-w-[96px] flex-col">
-        <span className="font-mono text-[13px] text-foreground">{shown?.password ?? "••••••••"}</span>
-        {shown?.altPassword && <span className="font-mono text-[11px] text-muted-foreground">alt: {shown.altPassword}</span>}
+        <span className="font-mono text-[13px] text-foreground">
+          {shown?.password ?? "••••••••"}
+        </span>
+        {shown?.altPassword && (
+          <span className="font-mono text-[11px] text-muted-foreground">
+            alt: {shown.altPassword}
+          </span>
+        )}
       </div>
-      <Button variant="ghost" size="icon-sm" aria-label={shown ? "Sembunyikan" : "Tampilkan"} onClick={toggle} disabled={loading}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={shown ? "Sembunyikan" : "Tampilkan"}
+        onClick={toggle}
+        disabled={loading}
+      >
         {loading ? <LoaderCircle className="animate-spin" /> : shown ? <EyeOff /> : <Eye />}
       </Button>
-      <Button variant="ghost" size="icon-sm" aria-label="Salin password" onClick={copy} disabled={loading}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Salin password"
+        onClick={copy}
+        disabled={loading}
+      >
         {copied ? <Check className="text-success" /> : <Copy />}
       </Button>
     </div>
@@ -135,7 +175,11 @@ function RiskBadges({ a }: { a: VaultAccount }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {items.map((t) => (
-        <Badge key={t} variant={t.startsWith("Dipakai") ? "danger" : "muted"} className="px-1.5 py-0 text-[10px]">
+        <Badge
+          key={t}
+          variant={t.startsWith("Dipakai") ? "danger" : "muted"}
+          className="px-1.5 py-0 text-[10px]"
+        >
           {t}
         </Badge>
       ))}
@@ -169,29 +213,57 @@ function VaultAuditCard({ total }: { total: number }) {
           <h3 className="text-sm font-semibold text-foreground">Audit AI Brankas Email</h3>
           <Badge variant="ai">AI</Badge>
         </div>
-        <Button variant={audit.data ? "ai-ghost" : "ai"} size="sm" onClick={run} disabled={audit.isFetching || total === 0}>
-          {audit.isFetching ? <LoaderCircle className="animate-spin" /> : audit.data ? <RefreshCw /> : <ShieldAlert />}
-          {audit.isFetching ? "Menganalisis…" : audit.data ? "Analisis ulang" : `Audit ${total} akun`}
+        <Button
+          variant={audit.data ? "ai-ghost" : "ai"}
+          size="sm"
+          onClick={run}
+          disabled={audit.isFetching || total === 0}
+        >
+          {audit.isFetching ? (
+            <LoaderCircle className="animate-spin" />
+          ) : audit.data ? (
+            <RefreshCw />
+          ) : (
+            <ShieldAlert />
+          )}
+          {audit.isFetching
+            ? "Menganalisis…"
+            : audit.data
+              ? "Analisis ulang"
+              : `Audit ${total} akun`}
         </Button>
       </div>
 
       {!audit.data && !audit.isFetching && (
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          AI membaca statistik brankas (pemakaian ulang password, pola lemah, akun kosong) — tanpa melihat password.
+          AI membaca statistik brankas (pemakaian ulang password, pola lemah, akun kosong) — tanpa
+          melihat password.
         </p>
       )}
 
       {audit.data && (
-        <div className={cn("mt-4 grid gap-5 lg:grid-cols-[180px_1fr_1fr]", audit.isFetching && "opacity-60")}>
+        <div
+          className={cn(
+            "mt-4 grid gap-5 lg:grid-cols-[180px_1fr_1fr]",
+            audit.isFetching && "opacity-60",
+          )}
+        >
           <div>
             <div className="flex items-end gap-1.5">
-              <span className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">{audit.data.score}</span>
+              <span className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">
+                {audit.data.score}
+              </span>
               <span className="pb-1.5 text-sm text-muted-foreground">/ 100</span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background">
-              <div className="h-full rounded-full bg-gradient-ai" style={{ width: `${audit.data.score}%` }} />
+              <div
+                className="h-full rounded-full bg-gradient-ai"
+                style={{ width: `${audit.data.score}%` }}
+              />
             </div>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{audit.data.headline}</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {audit.data.headline}
+            </p>
           </div>
           <ul className="space-y-3">
             {audit.data.insights.map((i) => (
@@ -199,7 +271,11 @@ function VaultAuditCard({ total }: { total: number }) {
                 <span
                   className={cn(
                     "mt-1.5 size-1.5 shrink-0 rounded-full",
-                    i.tone === "warning" ? "bg-warning" : i.tone === "success" ? "bg-success" : "bg-border-strong",
+                    i.tone === "warning"
+                      ? "bg-warning"
+                      : i.tone === "success"
+                        ? "bg-success"
+                        : "bg-border-strong",
                   )}
                 />
                 <div>
@@ -227,7 +303,10 @@ export function AccountsView() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [importOpen, setImportOpen] = useState(false);
-  const [editing, setEditing] = useState<{ open: boolean; account: VaultAccount | null }>({ open: false, account: null });
+  const [editing, setEditing] = useState<{ open: boolean; account: VaultAccount | null }>({
+    open: false,
+    account: null,
+  });
   const [deleting, setDeleting] = useState<VaultAccount | null>(null);
 
   const visible = useMemo(() => {
@@ -275,7 +354,12 @@ export function AccountsView() {
             <div className="flex items-center gap-3">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" className="lg:hidden" aria-label="Buka menu">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="lg:hidden"
+                    aria-label="Buka menu"
+                  >
                     <Menu />
                   </Button>
                 </SheetTrigger>
@@ -288,8 +372,12 @@ export function AccountsView() {
                 <Mail className="size-5" />
               </span>
               <div>
-                <h1 className="text-xl font-semibold tracking-tight text-foreground">Email (Core)</h1>
-                <p className="text-sm text-muted-foreground">Akun email & proyek Lovable yang terhubung.</p>
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                  Email (Core)
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Akun email & proyek Lovable yang terhubung.
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -313,8 +401,13 @@ export function AccountsView() {
               { label: "Lovable kosong", value: stats.empty },
               { label: "Password dipakai ulang", value: stats.reused },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-border bg-card p-4 shadow-card">
-                <div className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">{s.value}</div>
+              <div
+                key={s.label}
+                className="rounded-xl border border-border bg-card p-4 shadow-card"
+              >
+                <div className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+                  {s.value}
+                </div>
                 <div className="text-xs text-muted-foreground">{s.label}</div>
               </div>
             ))}
@@ -366,7 +459,8 @@ export function AccountsView() {
               <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <p className="text-sm font-semibold text-foreground">Vault email masih kosong</p>
                 <p className="max-w-sm text-sm text-muted-foreground">
-                  Impor sheet "Data Email" (CSV) untuk memasukkan semua akun dan proyek Lovable sekaligus.
+                  Impor sheet "Data Email" (CSV) untuk memasukkan semua akun dan proyek Lovable
+                  sekaligus.
                 </p>
                 <Button onClick={() => setImportOpen(true)}>
                   <Upload />
@@ -393,7 +487,10 @@ export function AccountsView() {
                           <CopyButton value={a.email} label="Email" />
                         </div>
                         <div className="mt-1 flex flex-wrap gap-1">
-                          <Badge variant={STATUS_VARIANT[a.lovableStatus]} className="px-1.5 py-0 text-[10px]">
+                          <Badge
+                            variant={STATUS_VARIANT[a.lovableStatus]}
+                            className="px-1.5 py-0 text-[10px]"
+                          >
                             {STATUS_LABEL[a.lovableStatus]}
                           </Badge>
                           {a.provider !== "gmail" && (
@@ -437,12 +534,19 @@ export function AccountsView() {
                           </ul>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-[220px] text-xs text-muted-foreground">{a.note ?? "—"}</TableCell>
+                      <TableCell className="max-w-[220px] text-xs text-muted-foreground">
+                        {a.note ?? "—"}
+                      </TableCell>
                       <TableCell className="pr-5">
                         <div className="flex justify-end gap-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon-sm" aria-label={`Edit ${a.email}`} onClick={() => setEditing({ open: true, account: a })}>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Edit ${a.email}`}
+                                onClick={() => setEditing({ open: true, account: a })}
+                              >
                                 <Pencil />
                               </Button>
                             </TooltipTrigger>
@@ -450,7 +554,12 @@ export function AccountsView() {
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost-danger" size="icon-sm" aria-label={`Hapus ${a.email}`} onClick={() => setDeleting(a)}>
+                              <Button
+                                variant="ghost-danger"
+                                size="icon-sm"
+                                aria-label={`Hapus ${a.email}`}
+                                onClick={() => setDeleting(a)}
+                              >
                                 <Trash2 />
                               </Button>
                             </TooltipTrigger>
@@ -462,7 +571,10 @@ export function AccountsView() {
                   ))}
                   {visible.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="py-10 text-center text-sm text-muted-foreground"
+                      >
                         Tidak ada akun yang cocok.
                       </TableCell>
                     </TableRow>
@@ -484,7 +596,9 @@ export function AccountsView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus {deleting?.email}?</AlertDialogTitle>
-            <AlertDialogDescription>Akun, password terenkripsi, dan proyek Lovable-nya akan dihapus permanen.</AlertDialogDescription>
+            <AlertDialogDescription>
+              Akun, password terenkripsi, dan proyek Lovable-nya akan dihapus permanen.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>

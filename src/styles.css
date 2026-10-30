@@ -103,11 +103,7 @@
   --ai-soft: oklch(0.975 0.028 80);
   --ai-contrast: oklch(0.99 0.01 85);
   --gradient-ai: linear-gradient(135deg, oklch(0.8 0.15 80) 0%, oklch(0.68 0.18 50) 100%);
-  --gradient-ai-soft: linear-gradient(
-    135deg,
-    oklch(0.985 0.025 85) 0%,
-    oklch(0.97 0.03 60) 100%
-  );
+  --gradient-ai-soft: linear-gradient(135deg, oklch(0.985 0.025 85) 0%, oklch(0.97 0.03 60) 100%);
   --shadow-ai: 0 8px 24px -10px oklch(0.68 0.18 50 / 0.55);
 
   --success: oklch(0.62 0.15 155);
@@ -127,7 +123,8 @@
   );
 
   --shadow-soft: 0 1px 2px oklch(0.21 0.025 258 / 0.04), 0 1px 1px oklch(0.21 0.025 258 / 0.03);
-  --shadow-card: 0 1px 3px oklch(0.21 0.025 258 / 0.05), 0 8px 24px -12px oklch(0.21 0.025 258 / 0.08);
+  --shadow-card:
+    0 1px 3px oklch(0.21 0.025 258 / 0.05), 0 8px 24px -12px oklch(0.21 0.025 258 / 0.08);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

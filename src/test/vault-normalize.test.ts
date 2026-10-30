@@ -49,7 +49,11 @@ describe("Data Email CSV normalization", () => {
   it("collects several Lovable projects for one email and strips the 'Lovable' prefix", () => {
     expect(by("lima@gmail.com").projects.map((p) => p.name)).toEqual(["Grand Opening", "Perpus"]);
     expect(by("lima@gmail.com").note).toBe("Akun Vendor");
-    expect(by("empat@gmail.com").projects[0]).toEqual({ name: "Happy Meter", url: "https://happy.lovable.app", note: null });
+    expect(by("empat@gmail.com").projects[0]).toEqual({
+      name: "Happy Meter",
+      url: "https://happy.lovable.app",
+      note: null,
+    });
   });
 
   it("maps 'Lovable Kosong' variants to Lovable status", () => {
@@ -85,6 +89,8 @@ describe("password facts", () => {
       matchesEmail: true,
       commonPattern: true,
     });
-    expect(passwordStrengthFacts("q7#Lp9!vRt2x", "febrirhema53@gmail.com").commonPattern).toBe(false);
+    expect(passwordStrengthFacts("q7#Lp9!vRt2x", "febrirhema53@gmail.com").commonPattern).toBe(
+      false,
+    );
   });
 });

@@ -5,10 +5,23 @@ import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { vaultSaveAccount } from "@/lib/vault/vault.functions";
 import { errorMessage } from "../use-ai";
@@ -46,7 +59,14 @@ export function AccountDialog({
     setBusy(true);
     try {
       await saveFn({
-        data: { id: account?.id ?? null, email, password: password || null, lovableStatus: status, usageTag, note },
+        data: {
+          id: account?.id ?? null,
+          email,
+          password: password || null,
+          lovableStatus: status,
+          usageTag,
+          note,
+        },
       });
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
       toast.success(account ? "Akun diperbarui" : "Akun ditambahkan");
@@ -68,16 +88,35 @@ export function AccountDialog({
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="acc-email">Email</Label>
-            <Input id="acc-email" type="email" required disabled={!!account} value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="acc-email"
+              type="email"
+              required
+              disabled={!!account}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="acc-pw">{account ? "Password baru (kosongkan jika tidak diganti)" : "Password"}</Label>
-            <Input id="acc-pw" type="text" autoComplete="off" className="font-mono" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Label htmlFor="acc-pw">
+              {account ? "Password baru (kosongkan jika tidak diganti)" : "Password"}
+            </Label>
+            <Input
+              id="acc-pw"
+              type="text"
+              autoComplete="off"
+              className="font-mono"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Status Lovable</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as VaultAccount["lovableStatus"])}>
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as VaultAccount["lovableStatus"])}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -92,12 +131,22 @@ export function AccountDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="acc-tag">Tag pemakaian</Label>
-              <Input id="acc-tag" placeholder="mis. TIKTOK REPOST ARS" value={usageTag} onChange={(e) => setUsageTag(e.target.value)} />
+              <Input
+                id="acc-tag"
+                placeholder="mis. TIKTOK REPOST ARS"
+                value={usageTag}
+                onChange={(e) => setUsageTag(e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-note">Catatan</Label>
-            <Textarea id="acc-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            <Textarea
+              id="acc-note"
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={busy}>

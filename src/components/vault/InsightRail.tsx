@@ -73,16 +73,27 @@ export function InsightRail() {
           </div>
         </div>
 
-        <div className={cn("mt-4 flex items-end gap-2 transition-opacity", running && "opacity-50")}>
-          <span className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{score}</span>
+        <div
+          className={cn("mt-4 flex items-end gap-2 transition-opacity", running && "opacity-50")}
+        >
+          <span className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">
+            {score}
+          </span>
           <span className="pb-1.5 text-sm text-muted-foreground">/ 100 skor keamanan</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background">
-          <div className="h-full rounded-full bg-gradient-ai transition-[width] duration-700" style={{ width: `${score}%` }} />
+          <div
+            className="h-full rounded-full bg-gradient-ai transition-[width] duration-700"
+            style={{ width: `${score}%` }}
+          />
         </div>
-        {audit?.headline && <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{audit.headline}</p>}
+        {audit?.headline && (
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{audit.headline}</p>
+        )}
 
-        <ul className={cn("mt-5 space-y-3.5 transition-opacity", running && "ai-shimmer opacity-60")}>
+        <ul
+          className={cn("mt-5 space-y-3.5 transition-opacity", running && "ai-shimmer opacity-60")}
+        >
           {insights.map((i) => (
             <li key={i.title} className="flex gap-3">
               <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${toneDot[i.tone]}`} />
@@ -95,17 +106,18 @@ export function InsightRail() {
         </ul>
 
         {!audit && (
-          <p className="mt-4 text-[11px] text-muted-foreground">Contoh insight. Tekan ↻ agar AI menganalisis data terbaru.</p>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            Contoh insight. Tekan ↻ agar AI menganalisis data terbaru.
+          </p>
         )}
 
         <Button variant="outline" size="sm" className="mt-5 w-full" asChild>
           <Link to="/ai">
-          <MessageSquareText className="text-ai" />
-          Tanya AI tentang aset ini
+            <MessageSquareText className="text-ai" />
+            Tanya AI tentang aset ini
           </Link>
         </Button>
       </section>
-
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-card">
         <h3 className="text-sm font-semibold text-foreground">Ringkasan</h3>

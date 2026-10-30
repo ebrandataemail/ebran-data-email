@@ -35,7 +35,9 @@ const SUGGESTIONS = [
 
 function AiAvatar({ className = "size-7" }: { className?: string }) {
   return (
-    <span className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-ai shadow-ai ${className}`}>
+    <span
+      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-ai shadow-ai ${className}`}
+    >
       <Sparkles className="size-1/2 text-ai-contrast" aria-hidden />
     </span>
   );
@@ -120,7 +122,13 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
                   {SUGGESTIONS.map((s) => (
-                    <Button key={s} variant="outline" size="sm" className="h-auto justify-start whitespace-normal py-2 text-left" onClick={() => send(s)}>
+                    <Button
+                      key={s}
+                      variant="outline"
+                      size="sm"
+                      className="h-auto justify-start whitespace-normal py-2 text-left"
+                      onClick={() => send(s)}
+                    >
                       {s}
                     </Button>
                   ))}
@@ -144,8 +152,13 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
                     }
                     if (part.type === "reasoning" && part.text.trim() && m.role === "assistant") {
                       return (
-                        <details key={i} className="rounded-md border border-border bg-subtle px-3 py-2 text-xs text-muted-foreground">
-                          <summary className="cursor-pointer select-none font-medium">Proses berpikir AI</summary>
+                        <details
+                          key={i}
+                          className="rounded-md border border-border bg-subtle px-3 py-2 text-xs text-muted-foreground"
+                        >
+                          <summary className="cursor-pointer select-none font-medium">
+                            Proses berpikir AI
+                          </summary>
                           <p className="mt-1.5 whitespace-pre-wrap">{part.text}</p>
                         </details>
                       );
@@ -165,20 +178,29 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
             </Message>
           )}
           {error && status === "error" && (
-            <p className="text-center text-xs text-destructive">Pesan terakhir gagal. Kirim ulang untuk mencoba lagi.</p>
+            <p className="text-center text-xs text-destructive">
+              Pesan terakhir gagal. Kirim ulang untuk mencoba lagi.
+            </p>
           )}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
 
       <div className="border-t border-border p-4">
-        <PromptInput
-          onSubmit={(msg: PromptInputMessage) => send(msg.text)}
-          className="rounded-xl"
-        >
-          <PromptInputTextarea ref={textareaRef} placeholder="Tanya apa saja tentang akun ini…" autoFocus />
+        <PromptInput onSubmit={(msg: PromptInputMessage) => send(msg.text)} className="rounded-xl">
+          <PromptInputTextarea
+            ref={textareaRef}
+            placeholder="Tanya apa saja tentang akun ini…"
+            autoFocus
+          />
           <PromptInputFooter className="justify-between">
-            <Button type="button" variant="ghost" size="xs" onClick={clear} disabled={busy || messages.length === 0}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={clear}
+              disabled={busy || messages.length === 0}
+            >
               <Eraser />
               Hapus riwayat
             </Button>
@@ -227,7 +249,9 @@ export function AiChatPageContent() {
         <AiAvatar className="size-9" />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">Asisten AI Ebran</p>
-          <p className="truncate text-xs text-muted-foreground">Konteks aset aktif · Rahasia tetap terlindungi</p>
+          <p className="truncate text-xs text-muted-foreground">
+            Konteks aset aktif · Rahasia tetap terlindungi
+          </p>
         </div>
       </div>
       <ChatLoader />

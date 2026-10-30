@@ -25,7 +25,9 @@ describe("AI asset brief", () => {
   });
 
   it("flags a password that contains the account name", () => {
-    expect(passwordFacts("Newt0n#Mabar2026", ["Newton", "Badminton"]).containsAccountName).toBe(true);
+    expect(passwordFacts("Newt0n#Mabar2026", ["Newton", "Badminton"]).containsAccountName).toBe(
+      true,
+    );
     expect(passwordFacts("q7#Lp9!vRt2x", ["Newton", "Badminton"]).containsAccountName).toBe(false);
   });
 });

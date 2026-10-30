@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
 > published git history — force pushing, or rebasing/amending/squashing commits
@@ -7,9 +8,11 @@
 >
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
+
 <!-- LOVABLE:END -->
 
 ## Project rules
+
 - Vault UI lives in `src/components/vault/` (sidebar, header, insight rail, one file per detail tab under `tabs/`); shared field/copy/reveal primitives sit in `primitives.tsx` so every tab renders credentials the same way.
 - Dummy asset data lives in `src/data/asset.ts` until real asset storage exists, so swapping in real data touches one module.
 - AI runs on Lovable AI (Responses API, `LOVABLE_API_KEY`) server-side only: provider/error helpers in `src/lib/ai/lovable.server.ts`, prompts in `src/lib/assistant/assistant.server.ts`, RPCs in `assistant.functions.ts`, streaming chat at `/api/ai/chat` — so the model, keys and prompts never reach the browser.

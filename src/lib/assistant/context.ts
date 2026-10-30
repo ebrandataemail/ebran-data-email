@@ -6,8 +6,15 @@ type Asset = typeof defaultAsset;
 
 export function passwordFacts(password: string, accountWords: string[]) {
   const lower = password.toLowerCase();
-  const normalized = lower.replace(/0/g, "o").replace(/1/g, "i").replace(/3/g, "e").replace(/4/g, "a").replace(/5/g, "s");
-  const containsAccountName = accountWords.some((w) => w.length >= 4 && normalized.includes(w.toLowerCase()));
+  const normalized = lower
+    .replace(/0/g, "o")
+    .replace(/1/g, "i")
+    .replace(/3/g, "e")
+    .replace(/4/g, "a")
+    .replace(/5/g, "s");
+  const containsAccountName = accountWords.some(
+    (w) => w.length >= 4 && normalized.includes(w.toLowerCase()),
+  );
   const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(password)).length;
   const containsYear = /(19|20)\d{2}/.test(password);
   return { length: password.length, characterClasses: classes, containsAccountName, containsYear };

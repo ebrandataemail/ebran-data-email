@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { CircleCheck, KeyRound, LoaderCircle, Mail, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import {
+  CircleCheck,
+  KeyRound,
+  LoaderCircle,
+  Mail,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -98,7 +106,10 @@ export function SecurityTab() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Keamanan & Recovery" description="Two-factor authentication dan jalur pemulihan akun.">
+      <Panel
+        title="Keamanan & Recovery"
+        description="Two-factor authentication dan jalur pemulihan akun."
+      >
         <div className="divide-y divide-border">
           <FieldRow icon={<Mail />} label="Email Pemulihan">
             <span>{s.recoveryEmail}</span>
@@ -120,7 +131,15 @@ export function SecurityTab() {
         title="Backup Codes"
         description="Setiap kode hanya bisa dipakai sekali."
         action={
-          <Button variant="outline" size="xs" onClick={() => navigator.clipboard?.writeText(s.backupCodes.join("\n")).then(() => toast.success("Backup codes disalin"))}>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() =>
+              navigator.clipboard
+                ?.writeText(s.backupCodes.join("\n"))
+                .then(() => toast.success("Backup codes disalin"))
+            }
+          >
             Salin semua
           </Button>
         }
@@ -129,7 +148,9 @@ export function SecurityTab() {
           <pre className="grid grid-cols-2 gap-x-8 gap-y-2 rounded-lg border border-border bg-muted px-5 py-4 font-mono text-sm text-foreground sm:grid-cols-4">
             {s.backupCodes.map((code, i) => (
               <code key={code} className="flex gap-3">
-                <span className="select-none text-muted-foreground/70">{String(i + 1).padStart(2, "0")}</span>
+                <span className="select-none text-muted-foreground/70">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 {code}
               </code>
             ))}
