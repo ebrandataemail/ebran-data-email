@@ -118,7 +118,7 @@ export async function handleAiChat(request: Request) {
     // Try email accounts
     const { data: acc } = await auth.supabase
       .from("email_accounts")
-      .select("*, projects(id, name)")
+       .select("*, projects(id, name, clients(id, name))")
       .eq("id", assetId)
       .eq("user_id", auth.userId)
       .single();
@@ -143,7 +143,7 @@ export async function handleAiChat(request: Request) {
         .single();
 
       if (dev) {
-        const project = dev.projects as unknown as { id: string; name: string } | null;
+        const project = dev.projects as unknown as { id: string; name: string; clients?: { id: string; name: string } | null } | null;
         brief = {
           type: "developer_asset",
           assetType: dev.type,
@@ -156,6 +156,7 @@ export async function handleAiChat(request: Request) {
           status: dev.status,
           expiresAt: dev.expires_at,
           projectName: project?.name,
+          clientName: project?.clients?.name ?? null,
           metadata: dev.metadata,
           updatedAt: dev.updated_at,
         };
