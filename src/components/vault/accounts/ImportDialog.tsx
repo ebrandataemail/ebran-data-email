@@ -41,7 +41,10 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 
   const pick = async (f: File | undefined) => {
     if (!f) return;
-    if (f.size > 2_000_000) return toast.error("File terlalu besar (maks. 2 MB).");
+    if (f.size > 2_000_000) {
+      toast.error("File terlalu besar (maks. 2 MB).");
+      return;
+    }
     setReport(null);
     setFile({ name: f.name, text: await f.text() });
   };
