@@ -33,7 +33,7 @@ export const adsSaveAsset = createServerFn({ method: "POST" }).middleware([requi
       environment: environment!, status: status!, expiresAt: expiresAt || null,
       description: text(input?.description, 1000) || null, projectId: uuid(input?.projectId), metadata };
   }).handler(async ({ data, context }) => saveAdsAsset(context.supabase, context.userId, data));
-export const adsRevealAsset = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth)
+export const adsRevealAsset = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => { const id = uuid(input?.id); if (!id) throw new Error("ID aset tidak valid."); return { id }; })
   .handler(async ({ data, context }) => revealAdsAsset(context.supabase, data.id));
 export const adsDeleteAsset = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
