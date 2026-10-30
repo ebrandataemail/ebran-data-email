@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { LoaderCircle } from "lucide-react";
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { vaultSaveAccount } from "@/lib/vault/vault.functions";
+import { workspaceList } from "@/lib/projects/projects.functions";
 import { errorMessage } from "../use-ai";
 import { ACCOUNTS_KEY, STATUS_LABEL, type VaultAccount } from "./use-accounts";
 
@@ -38,11 +40,14 @@ export function AccountDialog({
 }) {
   const saveFn = useServerFn(vaultSaveAccount);
   const queryClient = useQueryClient();
+  const workspaceFn = useServerFn(workspaceList);
+  const workspace = useQuery({ queryKey: ["workspace", "projects-clients"], queryFn: () => workspaceFn(), staleTime: 30_000 });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<VaultAccount["lovableStatus"]>("unknown");
   const [usageTag, setUsageTag] = useState("");
   const [note, setNote] = useState("");
+  const [projectId, setProjectId] = useState("none");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -52,6 +57,7 @@ export function AccountDialog({
     setStatus(account?.lovableStatus ?? "unknown");
     setUsageTag(account?.usageTag ?? "");
     setNote(account?.note ?? "");
+    setProjectId(account?.projectId ?? "none");
   }, [open, account]);
 
   const submit = async (e: FormEvent) => {
@@ -66,6 +72,7 @@ export function AccountDialog({
           lovableStatus: status,
           usageTag,
           note,
+          projectId: projectId === "none" ? null : projectId,
         },
       });
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
@@ -138,6 +145,16 @@ export function AccountDialog({
                 onChange={(e) => setUsageTag(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Proyek</Label>
+            <Select value={projectId} onValueChange={setProjectId}>
+              <SelectTrigger><SelectValue placeholder="Pilih proyek" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Belum ditetapkan</SelectItem>
+                {workspace.data?.projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-note">Catatan</Label>
