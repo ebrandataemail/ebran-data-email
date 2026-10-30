@@ -12,4 +12,12 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    optimizeDeps: {
+      exclude: ["shiki", "vscode-oniguruma"],
+    },
+    ssr: {
+      noExternal: ["@streamdown/code"],
+    },
+  },
 });

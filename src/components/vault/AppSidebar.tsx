@@ -52,7 +52,14 @@ function SectionLabel({ children, action }: { children: string; action?: boolean
 }
 
 type NavTarget =
-  "/vault" | "/accounts" | "/ai" | "/projects" | "/clients" | "/developer-tools" | "/ads" | "/social";
+  | "/vault"
+  | "/accounts"
+  | "/ai"
+  | "/projects"
+  | "/clients"
+  | "/developer-tools"
+  | "/ads"
+  | "/social";
 
 function NavItem({
   icon,

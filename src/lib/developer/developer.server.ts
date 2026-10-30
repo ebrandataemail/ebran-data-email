@@ -46,7 +46,9 @@ export interface DevAsset {
 export async function listDevAssets(db: Db): Promise<DevAsset[]> {
   const { data, error } = await db
     .from("developer_assets")
-    .select("id, type, name, description, provider, website_url, username, environment, status, expires_at, project_id, metadata, updated_at, created_at, projects(id, name, clients(id, name))")
+    .select(
+      "id, type, name, description, provider, website_url, username, environment, status, expires_at, project_id, metadata, updated_at, created_at, projects(id, name, clients(id, name))",
+    )
     .order("created_at", { ascending: false });
   if (error) {
     console.error("[developer assets list]", error);
@@ -127,7 +129,11 @@ export async function saveDevAsset(db: Db, userId: string, input: DevAssetInput)
     .single();
   if (error || !data) {
     console.error("[developer assets insert]", error);
-    throw new Error(error?.code === "23505" ? "Aset dengan data tersebut sudah ada." : "Gagal menyimpan aset developer.");
+    throw new Error(
+      error?.code === "23505"
+        ? "Aset dengan data tersebut sudah ada."
+        : "Gagal menyimpan aset developer.",
+    );
   }
   return { id: data.id };
 }

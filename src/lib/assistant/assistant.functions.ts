@@ -16,7 +16,7 @@ const cleanAssetId = (value: unknown) => {
 
 export const aiGenerateNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { draft: string }) => ({
+  .validator((input: { draft: string }) => ({
     draft: String(input?.draft ?? "").slice(0, 2000),
   }))
   .handler(async ({ data }) => ({ note: await generateNote(data.draft) }));
@@ -31,7 +31,7 @@ export const aiFormatEnv = createServerFn({ method: "POST" })
 
 export const aiExtractDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { fileName: string; mediaType: string; base64: string }) => {
+  .validator((input: { fileName: string; mediaType: string; base64: string }) => {
     const fileName = String(input?.fileName ?? "dokumen").slice(0, 200);
     const mediaType = String(input?.mediaType ?? "");
     const base64 = String(input?.base64 ?? "");
@@ -45,19 +45,34 @@ export const aiExtractDocument = createServerFn({ method: "POST" })
 
 export const aiChatHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
+  .validator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
     let owned = data.assetId === asset.id;
     if (!owned) {
-      const { data: email } = await context.supabase.from("email_accounts").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      const { data: email } = await context.supabase
+        .from("email_accounts")
+        .select("id")
+        .eq("id", data.assetId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
       owned = Boolean(email);
     }
     if (!owned) {
-      const { data: developer } = await context.supabase.from("developer_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      const { data: developer } = await context.supabase
+        .from("developer_assets")
+        .select("id")
+        .eq("id", data.assetId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
       owned = Boolean(developer);
     }
     if (!owned) {
-      const { data: ads } = await context.supabase.from("ads_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      const { data: ads } = await context.supabase
+        .from("ads_assets")
+        .select("id")
+        .eq("id", data.assetId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
       owned = Boolean(ads);
     }
     if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");
@@ -83,19 +98,34 @@ export const aiChatHistory = createServerFn({ method: "POST" })
 
 export const aiClearChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
+  .validator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
     let owned = data.assetId === asset.id;
     if (!owned) {
-      const { data: email } = await context.supabase.from("email_accounts").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      const { data: email } = await context.supabase
+        .from("email_accounts")
+        .select("id")
+        .eq("id", data.assetId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
       owned = Boolean(email);
     }
     if (!owned) {
-      const { data: developer } = await context.supabase.from("developer_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      const { data: developer } = await context.supabase
+        .from("developer_assets")
+        .select("id")
+        .eq("id", data.assetId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
       owned = Boolean(developer);
     }
     if (!owned) {
-      const { data: ads } = await context.supabase.from("ads_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      const { data: ads } = await context.supabase
+        .from("ads_assets")
+        .select("id")
+        .eq("id", data.assetId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
       owned = Boolean(ads);
     }
     if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");

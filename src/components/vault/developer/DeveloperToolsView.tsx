@@ -20,7 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
- } from "lucide-react";
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -269,14 +269,17 @@ export function DeveloperToolsView() {
                           {TYPE_LABELS[a.type]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{a.provider ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {a.provider ?? "—"}
+                      </TableCell>
                       <TableCell className="text-xs">
                         <span className="capitalize">{a.environment}</span>
                         <span className="text-muted-foreground"> · </span>
                         <span className="capitalize">{a.status}</span>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
-                        {a.projectName ?? "—"}{a.clientName ? ` · ${a.clientName}` : ""}
+                        {a.projectName ?? "—"}
+                        {a.clientName ? ` · ${a.clientName}` : ""}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {new Date(a.updatedAt).toLocaleDateString("id-ID")}
@@ -381,7 +384,13 @@ function DevAssetCard({
               </TooltipTrigger>
               <TooltipContent>Edit aset</TooltipContent>
             </Tooltip>
-            <Button variant="ghost-danger" size="icon-xs" onClick={onDelete} title="Hapus" aria-label="Hapus aset">
+            <Button
+              variant="ghost-danger"
+              size="icon-xs"
+              onClick={onDelete}
+              title="Hapus"
+              aria-label="Hapus aset"
+            >
               <Trash2 className="size-3.5" />
             </Button>
           </div>
@@ -392,7 +401,7 @@ function DevAssetCard({
         </p>
         <div className="flex items-center justify-between gap-3 overflow-hidden rounded-lg bg-subtle p-3">
           <code className="flex-1 truncate font-mono text-xs text-foreground/80">
-            {busy ? "Mendekripsi..." : revealedValue ?? "••••••••••••••••"}
+            {busy ? "Mendekripsi..." : (revealedValue ?? "••••••••••••••••")}
           </code>
           <div className="flex shrink-0 items-center gap-1">
             <RevealButton shown={revealedValue !== null} onToggle={toggleReveal} />
@@ -402,10 +411,15 @@ function DevAssetCard({
 
         <div className="flex items-center justify-between gap-2 border-t border-border pt-4 mt-4">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Badge variant={asset.status === "active" ? "default" : "muted"} className="text-[10px] capitalize">
+            <Badge
+              variant={asset.status === "active" ? "default" : "muted"}
+              className="text-[10px] capitalize"
+            >
               {asset.status}
             </Badge>
-            <Badge variant="outline" className="text-[10px] capitalize">{asset.environment}</Badge>
+            <Badge variant="outline" className="text-[10px] capitalize">
+              {asset.environment}
+            </Badge>
             {asset.projectName ? (
               <Badge variant="muted" className="max-w-full gap-1 px-1.5 py-0 text-[10px]">
                 <StatusDot className="size-1" />
@@ -432,38 +446,79 @@ function DevAssetCard({
         <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/30 p-4 duration-200">
           <Tabs defaultValue="info">
             <TabsList className="mb-4 h-8 w-full justify-start gap-4 rounded-none border-b border-border bg-transparent p-0">
-              <TabsTrigger value="info" className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground">
+              <TabsTrigger
+                value="info"
+                className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
+              >
                 Info Aset
               </TabsTrigger>
-              <TabsTrigger value="catatan" className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground">
+              <TabsTrigger
+                value="catatan"
+                className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
+              >
                 Catatan
               </TabsTrigger>
             </TabsList>
             <TabsContent value="info" className="mt-0">
-              <Panel title="Konfigurasi Teknis" description="Identitas, akses, dan relasi aset developer.">
+              <Panel
+                title="Konfigurasi Teknis"
+                description="Identitas, akses, dan relasi aset developer."
+              >
                 <div className="divide-y divide-border">
-                  <FieldRow icon={<Terminal />} label="Nama Aset">{asset.name}</FieldRow>
-                  <FieldRow icon={<Database />} label="Tipe Aset">{TYPE_LABELS[asset.type]}</FieldRow>
-                  <FieldRow icon={<CodeXml />} label="Provider / Platform">{asset.provider || "—"}</FieldRow>
+                  <FieldRow icon={<Terminal />} label="Nama Aset">
+                    {asset.name}
+                  </FieldRow>
+                  <FieldRow icon={<Database />} label="Tipe Aset">
+                    {TYPE_LABELS[asset.type]}
+                  </FieldRow>
+                  <FieldRow icon={<CodeXml />} label="Provider / Platform">
+                    {asset.provider || "—"}
+                  </FieldRow>
                   <FieldRow icon={<CodeXml />} label="Website / Dashboard">
                     {asset.websiteUrl ? (
-                      <a className="break-all text-primary hover:underline" href={asset.websiteUrl} target="_blank" rel="noreferrer">{asset.websiteUrl}</a>
-                    ) : "—"}
+                      <a
+                        className="break-all text-primary hover:underline"
+                        href={asset.websiteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {asset.websiteUrl}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
                   </FieldRow>
-                  <FieldRow icon={<Terminal />} label="Username / Account ID">{asset.username || "—"}</FieldRow>
-                  <FieldRow icon={<ShieldCheck />} label="Environment">{asset.environment}</FieldRow>
-                  <FieldRow icon={<ShieldCheck />} label="Status">{asset.status}</FieldRow>
+                  <FieldRow icon={<Terminal />} label="Username / Account ID">
+                    {asset.username || "—"}
+                  </FieldRow>
+                  <FieldRow icon={<ShieldCheck />} label="Environment">
+                    {asset.environment}
+                  </FieldRow>
+                  <FieldRow icon={<ShieldCheck />} label="Status">
+                    {asset.status}
+                  </FieldRow>
                   <FieldRow icon={<Calendar />} label="Kedaluwarsa">
-                    {asset.expiresAt ? new Date(asset.expiresAt).toLocaleDateString("id-ID") : "Tidak ditentukan"}
+                    {asset.expiresAt
+                      ? new Date(asset.expiresAt).toLocaleDateString("id-ID")
+                      : "Tidak ditentukan"}
                   </FieldRow>
-                  <FieldRow icon={<Folder />} label="Proyek Workspace">{asset.projectName || "—"}</FieldRow>
-                  <FieldRow icon={<Folder />} label="Client">{asset.clientName || "—"}</FieldRow>
-                  <FieldRow icon={<Calendar />} label="Dibuat Pada">{new Date(asset.createdAt).toLocaleDateString("id-ID")}</FieldRow>
+                  <FieldRow icon={<Folder />} label="Proyek Workspace">
+                    {asset.projectName || "—"}
+                  </FieldRow>
+                  <FieldRow icon={<Folder />} label="Client">
+                    {asset.clientName || "—"}
+                  </FieldRow>
+                  <FieldRow icon={<Calendar />} label="Dibuat Pada">
+                    {new Date(asset.createdAt).toLocaleDateString("id-ID")}
+                  </FieldRow>
                 </div>
               </Panel>
             </TabsContent>
             <TabsContent value="catatan" className="mt-0">
-              <Panel title="Deskripsi & Catatan" description="Konteks teknis dan cara penggunaan aset.">
+              <Panel
+                title="Deskripsi & Catatan"
+                description="Konteks teknis dan cara penggunaan aset."
+              >
                 <div className="p-4">
                   <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
                     {asset.description || "Tidak ada deskripsi."}

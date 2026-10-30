@@ -3,44 +3,618 @@ import { AppSidebar } from "@/components/vault/AppSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AtSign, BarChart3, ExternalLink, Instagram, LoaderCircle, Plus, RefreshCw, Search, Trash2, Users, Video, Youtube } from "lucide-react";
+import {
+  AtSign,
+  BarChart3,
+  ExternalLink,
+  Instagram,
+  LoaderCircle,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Users,
+  Video,
+  Youtube,
+} from "lucide-react";
 
-type SocialAccount = { id:string; platform:string; account_type:string; display_name:string; username:string|null; profile_url:string|null; avatar_url:string|null; bio:string|null; connection_mode:string; connection_status:string; followers_count:number|null; following_count:number|null; posts_count:number|null; total_views:number|null; total_likes:number|null; last_synced_at:string|null; notes:string|null; project_id:string|null };
-type SocialPost = { id:string; social_account_id:string; platform:string; display_name:string; username:string|null; caption:string|null; media_type:string; permalink:string|null; thumbnail_url:string|null; published_at:string|null; views_count:number|null; likes_count:number|null; comments_count:number|null; shares_count:number|null; saves_count:number|null; engagement_rate:number|null; source:string };
+type SocialAccount = {
+  id: string;
+  platform: string;
+  account_type: string;
+  display_name: string;
+  username: string | null;
+  profile_url: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  connection_mode: string;
+  connection_status: string;
+  followers_count: number | null;
+  following_count: number | null;
+  posts_count: number | null;
+  total_views: number | null;
+  total_likes: number | null;
+  last_synced_at: string | null;
+  notes: string | null;
+  project_id: string | null;
+};
+type SocialPost = {
+  id: string;
+  social_account_id: string;
+  platform: string;
+  display_name: string;
+  username: string | null;
+  caption: string | null;
+  media_type: string;
+  permalink: string | null;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  views_count: number | null;
+  likes_count: number | null;
+  comments_count: number | null;
+  shares_count: number | null;
+  saves_count: number | null;
+  engagement_rate: number | null;
+  source: string;
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
-const PLATFORMS = [{value:"instagram",label:"Instagram"},{value:"tiktok",label:"TikTok"},{value:"youtube",label:"YouTube"},{value:"facebook",label:"Facebook Page"},{value:"x",label:"X"},{value:"linkedin",label:"LinkedIn"},{value:"threads",label:"Threads"},{value:"other",label:"Lainnya"}];
-const fmt=(n:number|null|undefined)=>n==null?"—":Intl.NumberFormat("id-ID",{notation:n>=10000?"compact":"standard",maximumFractionDigits:1}).format(n);
-const date=(s:string|null)=>s?new Date(s).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}):"Tanggal tidak tersedia";
-export function SocialMediaView(){
- const [accounts,setAccounts]=useState<SocialAccount[]>([]); const [posts,setPosts]=useState<SocialPost[]>([]);
- const [loading,setLoading]=useState(true); const [search,setSearch]=useState(""); const [platform,setPlatform]=useState("all"); const [account,setAccount]=useState("all"); const [media,setMedia]=useState("all"); const [sort,setSort]=useState("date"); const [period,setPeriod]=useState("all");
- const [tab,setTab]=useState<"accounts"|"posts">("accounts");
- const load=async()=>{setLoading(true);try{
-  const [a,p]=await Promise.all([db.from("social_accounts").select("id,platform,account_type,display_name,username,profile_url,avatar_url,bio,connection_mode,connection_status,followers_count,following_count,posts_count,total_views,total_likes,last_synced_at,notes,project_id").order("updated_at",{ascending:false}),db.from("social_posts").select("id,social_account_id,caption,media_type,permalink,thumbnail_url,published_at,views_count,likes_count,comments_count,shares_count,saves_count,engagement_rate,source,social_accounts!inner(platform,display_name,username)").order("published_at",{ascending:false})]);
-  if(a.error)throw a.error;if(p.error)throw p.error;setAccounts(a.data??[]);setPosts((p.data??[]).map((v:any)=>({...v,platform:v.social_accounts.platform,display_name:v.social_accounts.display_name,username:v.social_accounts.username})));
- }catch(e){toast.error("Gagal memuat data Social Media",{description:e instanceof Error?e.message:"Periksa koneksi database."});}finally{setLoading(false);}};
- useEffect(()=>{void load();},[]);
- const filtered=useMemo(()=>{const q=search.toLowerCase().trim();const cutoff=period==="all"?0:Date.now()-Number(period)*86400000;return posts.filter(p=>(platform==="all"||p.platform===platform)&&(account==="all"||p.social_account_id===account)&&(media==="all"||p.media_type===media)&&(!cutoff||!p.published_at||new Date(p.published_at).getTime()>=cutoff)&&(!q||[p.caption,p.display_name,p.username,p.platform].some(v=>v?.toLowerCase().includes(q)))).sort((a,b)=>sort==="views"?(b.views_count??-1)-(a.views_count??-1):sort==="likes"?(b.likes_count??-1)-(a.likes_count??-1):sort==="comments"?(b.comments_count??-1)-(a.comments_count??-1):sort==="engagement"?(b.engagement_rate??-1)-(a.engagement_rate??-1):sort==="oldest"?new Date(a.published_at??0).getTime()-new Date(b.published_at??0).getTime():new Date(b.published_at??0).getTime()-new Date(a.published_at??0).getTime());},[posts,search,platform,account,media,sort,period]);
- const addAccount=async()=>{const display_name=window.prompt("Nama akun / brand:")?.trim();if(!display_name)return;const platform=window.prompt("Platform (instagram, tiktok, youtube, facebook, x, linkedin, threads):","instagram")?.trim().toLowerCase();if(!platform)return;if(!PLATFORMS.some(p=>p.value===platform)){toast.error("Platform tidak dikenali");return;}const username=window.prompt("Username / handle (opsional):")?.trim()||null;const profile_url=window.prompt("URL profil (opsional):")?.trim()||null;const {data:user}=await supabase.auth.getUser();if(!user.user)return;const {error}=await db.from("social_accounts").insert({display_name,platform,username,profile_url,user_id:user.user.id,connection_mode:"manual",connection_status:"manual"});if(error)toast.error("Gagal menambah akun",{description:error.message});else{toast.success("Akun berhasil ditambahkan");await load();}};
- const addPost=async()=>{if(!accounts.length){toast.error("Tambahkan akun terlebih dahulu");return;}const chosen=window.prompt("Masukkan ID akun dari daftar akun:\n"+accounts.map(a=>a.id+" — "+a.display_name).join("\n"));if(!chosen)return;const target=accounts.find(a=>a.id===chosen.trim());if(!target){toast.error("ID akun tidak ditemukan");return;}const caption=window.prompt("Caption / judul post:")?.trim()||null;const permalink=window.prompt("URL post (opsional):")?.trim()||null;const views=window.prompt("Views (kosongkan jika tidak tersedia):");const likes=window.prompt("Likes (kosongkan jika tidak tersedia):");const {data:user}=await supabase.auth.getUser();if(!user.user)return;const {error}=await db.from("social_posts").insert({user_id:user.user.id,social_account_id:target.id,caption,permalink,views_count:views?Number(views):null,likes_count:likes?Number(likes):null,source:"manual"});if(error)toast.error("Gagal menyimpan post",{description:error.message});else{toast.success("Post tersimpan");await load();setTab("posts");}};
- const remove=async(id:string,kind:"account"|"post")=>{if(!window.confirm("Hapus data ini?"))return;const {error}=await db.from(kind==="account"?"social_accounts":"social_posts").delete().eq("id",id);if(error)toast.error("Gagal menghapus",{description:error.message});else{toast.success("Data dihapus");await load();}};
- const totalFollowers=accounts.reduce((n,a)=>n+(a.followers_count??0),0);const totalViews=accounts.reduce((n,a)=>n+(a.total_views??0),0);
- return <div className="min-h-screen bg-background"><AppSidebar/><main className="lg:pl-64">
- <header className="border-b border-border bg-background/90 sm:sticky sm:top-0 sm:z-20 sm:backdrop-blur-md"><div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8"><div className="flex items-center gap-3"><span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground"><AtSign className="size-5"/></span><div><h1 className="text-xl font-semibold tracking-tight">Social Media</h1><p className="text-sm text-muted-foreground">Kelola akun, insight, dan performa konten lintas platform.</p></div></div><div className="flex gap-2"><Button variant="outline" onClick={()=>void load()}><RefreshCw className="size-4"/>Refresh</Button><Button onClick={()=>void addAccount()}><Plus className="size-4"/>Tambah Akun</Button></div></div></header>
- <section className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
- <div className="grid gap-3 sm:grid-cols-3"><Metric label="Akun terdaftar" value={accounts.length}/><Metric label="Total followers (data tersimpan)" value={fmt(totalFollowers)}/><Metric label="Total views (data tersimpan)" value={fmt(totalViews)}/></div>
- <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 text-sm"><p className="font-medium">Manual + OAuth/API</p><p className="mt-1 text-muted-foreground">Pencatatan manual sudah tersedia. Koneksi otomatis memerlukan aplikasi developer, izin OAuth, dan kredensial resmi tiap platform. Belum ada proses crawl otomatis yang berjalan; angka yang tampil hanya data yang Anda masukkan atau hasil sinkronisasi resmi.</p></div>
- <div className="flex gap-2 border-b border-border"><Button variant={tab==="accounts"?"default":"ghost"} onClick={()=>setTab("accounts")}>Akun ({accounts.length})</Button><Button variant={tab==="posts"?"default":"ghost"} onClick={()=>setTab("posts")}>Posts ({posts.length})</Button></div>
- {tab==="accounts"? <>{loading?<Loading/>:accounts.length===0?<Empty title="Belum ada akun media sosial" detail="Tambahkan Instagram, TikTok, YouTube, Facebook Page, X, atau LinkedIn untuk mulai membangun vault Social Media." action={()=>void addAccount()}/>:<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{accounts.map(a=><article key={a.id} className="rounded-xl border border-border bg-card p-5 shadow-card"><div className="flex items-start gap-3"><div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">{a.avatar_url?<img src={a.avatar_url} alt="" className="size-full object-cover"/>:<PlatformIcon platform={a.platform}/>}</div><div className="min-w-0 flex-1"><h2 className="truncate text-sm font-semibold">{a.display_name}</h2><p className="text-xs text-muted-foreground">{PLATFORMS.find(p=>p.value===a.platform)?.label??a.platform}{a.username?" · @"+a.username:""}</p></div><Button size="icon" variant="ghost" onClick={()=>void remove(a.id,"account")} aria-label="Hapus akun"><Trash2 className="size-4"/></Button></div><div className="mt-4 flex flex-wrap gap-1.5"><Badge variant={a.connection_status==="connected"?"success":"secondary"}>{a.connection_status==="connected"?"Terhubung":a.connection_mode==="manual"?"Manual":a.connection_status}</Badge><Badge variant="outline">{a.account_type}</Badge></div><div className="mt-4 grid grid-cols-2 gap-3"><SmallMetric label="Followers" value={fmt(a.followers_count)}/><SmallMetric label="Following" value={fmt(a.following_count)}/><SmallMetric label="Posts" value={fmt(a.posts_count)}/><SmallMetric label="Total views" value={fmt(a.total_views)}/></div>{a.bio&&<p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>}<div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground"><span>{a.last_synced_at?"Sync "+date(a.last_synced_at):"Belum pernah sync"}</span>{a.profile_url&&<a href={a.profile_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">Profil <ExternalLink className="size-3"/></a>}</div><p className="mt-2 break-all font-mono text-[10px] text-muted-foreground/60">{a.id}</p></article>)}</div>}</>
- :<><div className="flex flex-col gap-3"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari caption, akun, username..." className="pl-9"/></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"><Select value={platform} onValueChange={setPlatform}><SelectTrigger><SelectValue placeholder="Platform"/></SelectTrigger><SelectContent><SelectItem value="all">Semua platform</SelectItem>{PLATFORMS.map(p=><SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent></Select><Select value={account} onValueChange={setAccount}><SelectTrigger><SelectValue placeholder="Akun"/></SelectTrigger><SelectContent><SelectItem value="all">Semua akun</SelectItem>{accounts.map(a=><SelectItem key={a.id} value={a.id}>{a.display_name}</SelectItem>)}</SelectContent></Select><Select value={media} onValueChange={setMedia}><SelectTrigger><SelectValue placeholder="Jenis konten"/></SelectTrigger><SelectContent><SelectItem value="all">Semua jenis</SelectItem>{["image","video","reel","short","carousel","story","text","live","other"].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select><Select value={period} onValueChange={setPeriod}><SelectTrigger><SelectValue placeholder="Periode"/></SelectTrigger><SelectContent><SelectItem value="all">Semua tanggal</SelectItem><SelectItem value="7">7 hari terakhir</SelectItem><SelectItem value="30">30 hari terakhir</SelectItem><SelectItem value="90">90 hari terakhir</SelectItem><SelectItem value="365">1 tahun terakhir</SelectItem></SelectContent></Select><Select value={sort} onValueChange={setSort}><SelectTrigger><SelectValue placeholder="Urutkan"/></SelectTrigger><SelectContent><SelectItem value="date">Terbaru</SelectItem><SelectItem value="oldest">Terlama</SelectItem><SelectItem value="views">Views tertinggi</SelectItem><SelectItem value="likes">Likes tertinggi</SelectItem><SelectItem value="comments">Komentar terbanyak</SelectItem><SelectItem value="engagement">Engagement tertinggi</SelectItem></SelectContent></Select></div><div className="flex justify-between"><p className="text-xs text-muted-foreground">{filtered.length} post cocok</p><Button size="sm" onClick={()=>void addPost()}><Plus className="size-4"/>Tambah Post Manual</Button></div></div>
- {loading?<Loading/>:filtered.length===0?<Empty title="Belum ada data post" detail="Tambahkan post manual atau hubungkan akun melalui OAuth/API setelah konfigurasi developer platform tersedia." action={()=>void addPost()}/>:<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(p=><article key={p.id} className="overflow-hidden rounded-xl border border-border bg-card">{p.thumbnail_url?<img src={p.thumbnail_url} alt="" className="aspect-video w-full object-cover"/>:<div className="flex aspect-video items-center justify-center bg-muted"><Video className="size-8 text-muted-foreground/40"/></div>}<div className="space-y-3 p-4"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-semibold">{p.display_name}</p><p className="text-xs text-muted-foreground">{p.platform} · {p.media_type}</p></div><Button size="icon" variant="ghost" onClick={()=>void remove(p.id,"post")} aria-label="Hapus post"><Trash2 className="size-4"/></Button></div><p className="line-clamp-2 min-h-9 text-xs text-muted-foreground">{p.caption||"Tanpa caption"}</p><div className="grid grid-cols-3 gap-2"><SmallMetric label="Views" value={fmt(p.views_count)}/><SmallMetric label="Likes" value={fmt(p.likes_count)}/><SmallMetric label="Komentar" value={fmt(p.comments_count)}/></div><div className="flex justify-between border-t border-border pt-2 text-[11px] text-muted-foreground"><span>{date(p.published_at)}</span>{p.permalink&&<a href={p.permalink} target="_blank" rel="noreferrer" className="text-primary">Buka post ↗</a>}</div><Badge variant="outline">{p.source==="api"?"API sync":"Manual"}</Badge></div></article>)}</div>}</>}
- </section></main></div>;
+const PLATFORMS = [
+  { value: "instagram", label: "Instagram" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "youtube", label: "YouTube" },
+  { value: "facebook", label: "Facebook Page" },
+  { value: "x", label: "X" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "threads", label: "Threads" },
+  { value: "other", label: "Lainnya" },
+];
+const fmt = (n: number | null | undefined) =>
+  n == null
+    ? "—"
+    : Intl.NumberFormat("id-ID", {
+        notation: n >= 10000 ? "compact" : "standard",
+        maximumFractionDigits: 1,
+      }).format(n);
+const date = (s: string | null) =>
+  s
+    ? new Date(s).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+    : "Tanggal tidak tersedia";
+export function SocialMediaView() {
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [platform, setPlatform] = useState("all");
+  const [account, setAccount] = useState("all");
+  const [media, setMedia] = useState("all");
+  const [sort, setSort] = useState("date");
+  const [period, setPeriod] = useState("all");
+  const [tab, setTab] = useState<"accounts" | "posts">("accounts");
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [a, p] = await Promise.all([
+        db
+          .from("social_accounts")
+          .select(
+            "id,platform,account_type,display_name,username,profile_url,avatar_url,bio,connection_mode,connection_status,followers_count,following_count,posts_count,total_views,total_likes,last_synced_at,notes,project_id",
+          )
+          .order("updated_at", { ascending: false }),
+        db
+          .from("social_posts")
+          .select(
+            "id,social_account_id,caption,media_type,permalink,thumbnail_url,published_at,views_count,likes_count,comments_count,shares_count,saves_count,engagement_rate,source,social_accounts!inner(platform,display_name,username)",
+          )
+          .order("published_at", { ascending: false }),
+      ]);
+      if (a.error) throw a.error;
+      if (p.error) throw p.error;
+      setAccounts(a.data ?? []);
+      setPosts(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p.data ?? []).map((v: any) => ({
+          ...v,
+          platform: v.social_accounts.platform,
+          display_name: v.social_accounts.display_name,
+          username: v.social_accounts.username,
+        })),
+      );
+    } catch (e) {
+      toast.error("Gagal memuat data Social Media", {
+        description: e instanceof Error ? e.message : "Periksa koneksi database.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    void load();
+  }, []);
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    const cutoff = period === "all" ? 0 : Date.now() - Number(period) * 86400000;
+    return posts
+      .filter(
+        (p) =>
+          (platform === "all" || p.platform === platform) &&
+          (account === "all" || p.social_account_id === account) &&
+          (media === "all" || p.media_type === media) &&
+          (!cutoff || !p.published_at || new Date(p.published_at).getTime() >= cutoff) &&
+          (!q ||
+            [p.caption, p.display_name, p.username, p.platform].some((v) =>
+              v?.toLowerCase().includes(q),
+            )),
+      )
+      .sort((a, b) =>
+        sort === "views"
+          ? (b.views_count ?? -1) - (a.views_count ?? -1)
+          : sort === "likes"
+            ? (b.likes_count ?? -1) - (a.likes_count ?? -1)
+            : sort === "comments"
+              ? (b.comments_count ?? -1) - (a.comments_count ?? -1)
+              : sort === "engagement"
+                ? (b.engagement_rate ?? -1) - (a.engagement_rate ?? -1)
+                : sort === "oldest"
+                  ? new Date(a.published_at ?? 0).getTime() -
+                    new Date(b.published_at ?? 0).getTime()
+                  : new Date(b.published_at ?? 0).getTime() -
+                    new Date(a.published_at ?? 0).getTime(),
+      );
+  }, [posts, search, platform, account, media, sort, period]);
+  const addAccount = async () => {
+    const display_name = window.prompt("Nama akun / brand:")?.trim();
+    if (!display_name) return;
+    const platform = window
+      .prompt("Platform (instagram, tiktok, youtube, facebook, x, linkedin, threads):", "instagram")
+      ?.trim()
+      .toLowerCase();
+    if (!platform) return;
+    if (!PLATFORMS.some((p) => p.value === platform)) {
+      toast.error("Platform tidak dikenali");
+      return;
+    }
+    const username = window.prompt("Username / handle (opsional):")?.trim() || null;
+    const profile_url = window.prompt("URL profil (opsional):")?.trim() || null;
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+    const { error } = await db.from("social_accounts").insert({
+      display_name,
+      platform,
+      username,
+      profile_url,
+      user_id: user.user.id,
+      connection_mode: "manual",
+      connection_status: "manual",
+    });
+    if (error) toast.error("Gagal menambah akun", { description: error.message });
+    else {
+      toast.success("Akun berhasil ditambahkan");
+      await load();
+    }
+  };
+  const addPost = async () => {
+    if (!accounts.length) {
+      toast.error("Tambahkan akun terlebih dahulu");
+      return;
+    }
+    const chosen = window.prompt(
+      "Masukkan ID akun dari daftar akun:\n" +
+        accounts.map((a) => a.id + " — " + a.display_name).join("\n"),
+    );
+    if (!chosen) return;
+    const target = accounts.find((a) => a.id === chosen.trim());
+    if (!target) {
+      toast.error("ID akun tidak ditemukan");
+      return;
+    }
+    const caption = window.prompt("Caption / judul post:")?.trim() || null;
+    const permalink = window.prompt("URL post (opsional):")?.trim() || null;
+    const views = window.prompt("Views (kosongkan jika tidak tersedia):");
+    const likes = window.prompt("Likes (kosongkan jika tidak tersedia):");
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+    const { error } = await db.from("social_posts").insert({
+      user_id: user.user.id,
+      social_account_id: target.id,
+      caption,
+      permalink,
+      views_count: views ? Number(views) : null,
+      likes_count: likes ? Number(likes) : null,
+      source: "manual",
+    });
+    if (error) toast.error("Gagal menyimpan post", { description: error.message });
+    else {
+      toast.success("Post tersimpan");
+      await load();
+      setTab("posts");
+    }
+  };
+  const remove = async (id: string, kind: "account" | "post") => {
+    if (!window.confirm("Hapus data ini?")) return;
+    const { error } = await db
+      .from(kind === "account" ? "social_accounts" : "social_posts")
+      .delete()
+      .eq("id", id);
+    if (error) toast.error("Gagal menghapus", { description: error.message });
+    else {
+      toast.success("Data dihapus");
+      await load();
+    }
+  };
+  const totalFollowers = accounts.reduce((n, a) => n + (a.followers_count ?? 0), 0);
+  const totalViews = accounts.reduce((n, a) => n + (a.total_views ?? 0), 0);
+  return (
+    <div className="min-h-screen bg-background">
+      <AppSidebar />
+      <main className="lg:pl-64">
+        <header className="border-b border-border bg-background/90 sm:sticky sm:top-0 sm:z-20 sm:backdrop-blur-md">
+          <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <AtSign className="size-5" />
+              </span>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight">Social Media</h1>
+                <p className="text-sm text-muted-foreground">
+                  Kelola akun, insight, dan performa konten lintas platform.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => void load()}>
+                <RefreshCw className="size-4" />
+                Refresh
+              </Button>
+              <Button onClick={() => void addAccount()}>
+                <Plus className="size-4" />
+                Tambah Akun
+              </Button>
+            </div>
+          </div>
+        </header>
+        <section className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Metric label="Akun terdaftar" value={accounts.length} />
+            <Metric label="Total followers (data tersimpan)" value={fmt(totalFollowers)} />
+            <Metric label="Total views (data tersimpan)" value={fmt(totalViews)} />
+          </div>
+          <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 text-sm">
+            <p className="font-medium">Manual + OAuth/API</p>
+            <p className="mt-1 text-muted-foreground">
+              Pencatatan manual sudah tersedia. Koneksi otomatis memerlukan aplikasi developer, izin
+              OAuth, dan kredensial resmi tiap platform. Belum ada proses crawl otomatis yang
+              berjalan; angka yang tampil hanya data yang Anda masukkan atau hasil sinkronisasi
+              resmi.
+            </p>
+          </div>
+          <div className="flex gap-2 border-b border-border">
+            <Button
+              variant={tab === "accounts" ? "default" : "ghost"}
+              onClick={() => setTab("accounts")}
+            >
+              Akun ({accounts.length})
+            </Button>
+            <Button variant={tab === "posts" ? "default" : "ghost"} onClick={() => setTab("posts")}>
+              Posts ({posts.length})
+            </Button>
+          </div>
+          {tab === "accounts" ? (
+            <>
+              {loading ? (
+                <Loading />
+              ) : accounts.length === 0 ? (
+                <Empty
+                  title="Belum ada akun media sosial"
+                  detail="Tambahkan Instagram, TikTok, YouTube, Facebook Page, X, atau LinkedIn untuk mulai membangun vault Social Media."
+                  action={() => void addAccount()}
+                />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {accounts.map((a) => (
+                    <article
+                      key={a.id}
+                      className="rounded-xl border border-border bg-card p-5 shadow-card"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
+                          {a.avatar_url ? (
+                            <img src={a.avatar_url} alt="" className="size-full object-cover" />
+                          ) : (
+                            <PlatformIcon platform={a.platform} />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h2 className="truncate text-sm font-semibold">{a.display_name}</h2>
+                          <p className="text-xs text-muted-foreground">
+                            {PLATFORMS.find((p) => p.value === a.platform)?.label ?? a.platform}
+                            {a.username ? " · @" + a.username : ""}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => void remove(a.id, "account")}
+                          aria-label="Hapus akun"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        <Badge
+                          variant={a.connection_status === "connected" ? "success" : "secondary"}
+                        >
+                          {a.connection_status === "connected"
+                            ? "Terhubung"
+                            : a.connection_mode === "manual"
+                              ? "Manual"
+                              : a.connection_status}
+                        </Badge>
+                        <Badge variant="outline">{a.account_type}</Badge>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <SmallMetric label="Followers" value={fmt(a.followers_count)} />
+                        <SmallMetric label="Following" value={fmt(a.following_count)} />
+                        <SmallMetric label="Posts" value={fmt(a.posts_count)} />
+                        <SmallMetric label="Total views" value={fmt(a.total_views)} />
+                      </div>
+                      {a.bio && (
+                        <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
+                      )}
+                      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+                        <span>
+                          {a.last_synced_at
+                            ? "Sync " + date(a.last_synced_at)
+                            : "Belum pernah sync"}
+                        </span>
+                        {a.profile_url && (
+                          <a
+                            href={a.profile_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-primary"
+                          >
+                            Profil <ExternalLink className="size-3" />
+                          </a>
+                        )}
+                      </div>
+                      <p className="mt-2 break-all font-mono text-[10px] text-muted-foreground/60">
+                        {a.id}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari caption, akun, username..."
+                    className="pl-9"
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                  <Select value={platform} onValueChange={setPlatform}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua platform</SelectItem>
+                      {PLATFORMS.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={account} onValueChange={setAccount}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Akun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua akun</SelectItem>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={media} onValueChange={setMedia}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Jenis konten" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua jenis</SelectItem>
+                      {[
+                        "image",
+                        "video",
+                        "reel",
+                        "short",
+                        "carousel",
+                        "story",
+                        "text",
+                        "live",
+                        "other",
+                      ].map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Periode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua tanggal</SelectItem>
+                      <SelectItem value="7">7 hari terakhir</SelectItem>
+                      <SelectItem value="30">30 hari terakhir</SelectItem>
+                      <SelectItem value="90">90 hari terakhir</SelectItem>
+                      <SelectItem value="365">1 tahun terakhir</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={sort} onValueChange={setSort}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Urutkan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">Terbaru</SelectItem>
+                      <SelectItem value="oldest">Terlama</SelectItem>
+                      <SelectItem value="views">Views tertinggi</SelectItem>
+                      <SelectItem value="likes">Likes tertinggi</SelectItem>
+                      <SelectItem value="comments">Komentar terbanyak</SelectItem>
+                      <SelectItem value="engagement">Engagement tertinggi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-xs text-muted-foreground">{filtered.length} post cocok</p>
+                  <Button size="sm" onClick={() => void addPost()}>
+                    <Plus className="size-4" />
+                    Tambah Post Manual
+                  </Button>
+                </div>
+              </div>
+              {loading ? (
+                <Loading />
+              ) : filtered.length === 0 ? (
+                <Empty
+                  title="Belum ada data post"
+                  detail="Tambahkan post manual atau hubungkan akun melalui OAuth/API setelah konfigurasi developer platform tersedia."
+                  action={() => void addPost()}
+                />
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((p) => (
+                    <article
+                      key={p.id}
+                      className="overflow-hidden rounded-xl border border-border bg-card"
+                    >
+                      {p.thumbnail_url ? (
+                        <img
+                          src={p.thumbnail_url}
+                          alt=""
+                          className="aspect-video w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-video items-center justify-center bg-muted">
+                          <Video className="size-8 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      <div className="space-y-3 p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{p.display_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {p.platform} · {p.media_type}
+                            </p>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => void remove(p.id, "post")}
+                            aria-label="Hapus post"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                        <p className="line-clamp-2 min-h-9 text-xs text-muted-foreground">
+                          {p.caption || "Tanpa caption"}
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <SmallMetric label="Views" value={fmt(p.views_count)} />
+                          <SmallMetric label="Likes" value={fmt(p.likes_count)} />
+                          <SmallMetric label="Komentar" value={fmt(p.comments_count)} />
+                        </div>
+                        <div className="flex justify-between border-t border-border pt-2 text-[11px] text-muted-foreground">
+                          <span>{date(p.published_at)}</span>
+                          {p.permalink && (
+                            <a
+                              href={p.permalink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary"
+                            >
+                              Buka post ↗
+                            </a>
+                          )}
+                        </div>
+                        <Badge variant="outline">
+                          {p.source === "api" ? "API sync" : "Manual"}
+                        </Badge>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
+    </div>
+  );
 }
-function Metric({label,value}:{label:string;value:string|number}){return <div className="rounded-xl border border-border bg-card p-4"><p className="text-2xl font-semibold tabular-nums">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>}
-function SmallMetric({label,value}:{label:string;value:string}){return <div><p className="text-base font-semibold tabular-nums">{value}</p><p className="text-[11px] text-muted-foreground">{label}</p></div>}
-function Loading(){return <div className="flex justify-center gap-2 py-20 text-sm text-muted-foreground"><LoaderCircle className="size-5 animate-spin"/>Memuat Social Media...</div>}
-function Empty({title,detail,action}:{title:string;detail:string;action:()=>void}){return <div className="rounded-2xl border border-dashed border-border py-16 text-center"><AtSign className="mx-auto mb-3 size-9 text-muted-foreground/40"/><p className="font-medium">{title}</p><p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">{detail}</p><Button className="mt-4" onClick={action}><Plus className="size-4"/>Tambah Data</Button></div>}
-function PlatformIcon({platform}:{platform:string}){const C=platform==="instagram"?Instagram:platform==="youtube"?Youtube:platform==="tiktok"?Video:AtSign;return <C className="size-5 text-muted-foreground"/>}
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+function SmallMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-base font-semibold tabular-nums">{value}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+function Loading() {
+  return (
+    <div className="flex justify-center gap-2 py-20 text-sm text-muted-foreground">
+      <LoaderCircle className="size-5 animate-spin" />
+      Memuat Social Media...
+    </div>
+  );
+}
+function Empty({ title, detail, action }: { title: string; detail: string; action: () => void }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-border py-16 text-center">
+      <AtSign className="mx-auto mb-3 size-9 text-muted-foreground/40" />
+      <p className="font-medium">{title}</p>
+      <p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">{detail}</p>
+      <Button className="mt-4" onClick={action}>
+        <Plus className="size-4" />
+        Tambah Data
+      </Button>
+    </div>
+  );
+}
+function PlatformIcon({ platform }: { platform: string }) {
+  const C =
+    platform === "instagram"
+      ? Instagram
+      : platform === "youtube"
+        ? Youtube
+        : platform === "tiktok"
+          ? Video
+          : AtSign;
+  return <C className="size-5 text-muted-foreground" />;
+}

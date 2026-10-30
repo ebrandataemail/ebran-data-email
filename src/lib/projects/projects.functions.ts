@@ -12,20 +12,33 @@ const text = (value: unknown, max: number) =>
 export const workspaceList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [clientsResult, projectsResult, accountsResult, developerAssetsResult, adsAssetsResult] = await Promise.all([
-      context.supabase
-        .from("clients")
-        .select("id,name,description,website,created_at,updated_at")
-        .order("name"),
-      context.supabase
-        .from("projects")
-        .select("id,name,description,status,client_id,created_at,updated_at")
-        .order("name"),
-      context.supabase.from("email_accounts").select("id,email,project_id").order("email"),
-      context.supabase.from("developer_assets").select("id,project_id").order("created_at", { ascending: false }),
-      context.supabase.from("ads_assets").select("id,project_id").order("created_at", { ascending: false }),
-    ]);
-    if (clientsResult.error || projectsResult.error || accountsResult.error || developerAssetsResult.error || adsAssetsResult.error)
+    const [clientsResult, projectsResult, accountsResult, developerAssetsResult, adsAssetsResult] =
+      await Promise.all([
+        context.supabase
+          .from("clients")
+          .select("id,name,description,website,created_at,updated_at")
+          .order("name"),
+        context.supabase
+          .from("projects")
+          .select("id,name,description,status,client_id,created_at,updated_at")
+          .order("name"),
+        context.supabase.from("email_accounts").select("id,email,project_id").order("email"),
+        context.supabase
+          .from("developer_assets")
+          .select("id,project_id")
+          .order("created_at", { ascending: false }),
+        context.supabase
+          .from("ads_assets")
+          .select("id,project_id")
+          .order("created_at", { ascending: false }),
+      ]);
+    if (
+      clientsResult.error ||
+      projectsResult.error ||
+      accountsResult.error ||
+      developerAssetsResult.error ||
+      adsAssetsResult.error
+    )
       throw new Error("Gagal memuat data proyek dan client.");
     const clients = clientsResult.data ?? [];
     const projects = projectsResult.data ?? [];
@@ -40,7 +53,9 @@ export const workspaceList = createServerFn({ method: "POST" })
           ...client,
           projectCount: clientProjects.length,
           emailCount: accounts.filter((account) => projectIds.has(account.project_id ?? "")).length,
-          developerAssetCount: developerAssets.filter((item) => projectIds.has(item.project_id ?? "")).length,
+          developerAssetCount: developerAssets.filter((item) =>
+            projectIds.has(item.project_id ?? ""),
+          ).length,
           adsAssetCount: adsAssets.filter((item) => projectIds.has(item.project_id ?? "")).length,
         };
       }),
@@ -48,7 +63,8 @@ export const workspaceList = createServerFn({ method: "POST" })
         ...project,
         clientName: clients.find((client) => client.id === project.client_id)?.name ?? null,
         emailCount: accounts.filter((account) => account.project_id === project.id).length,
-        developerAssetCount: developerAssets.filter((item) => item.project_id === project.id).length,
+        developerAssetCount: developerAssets.filter((item) => item.project_id === project.id)
+          .length,
         adsAssetCount: adsAssets.filter((item) => item.project_id === project.id).length,
       })),
       unassignedEmailCount: accounts.filter((account) => !account.project_id).length,
@@ -59,7 +75,7 @@ export const workspaceList = createServerFn({ method: "POST" })
 
 export const workspaceSaveClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       id?: string | null;
       name: string;
@@ -95,7 +111,7 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
 
 export const workspaceDeleteClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => ({ id: uuid(input?.id) }))
+  .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
   .handler(async ({ data, context }) => {
     const { data: projects, error: checkError } = await context.supabase
       .from("projects")
@@ -114,7 +130,7 @@ export const workspaceDeleteClient = createServerFn({ method: "POST" })
 
 export const workspaceSaveProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       id?: string | null;
       name: string;
@@ -123,9 +139,20 @@ export const workspaceSaveProject = createServerFn({ method: "POST" })
       clientId?: string | null;
     }) => {
       const name = text(input?.name, 120);
-      const status = ["active", "paused", "archived"].includes(input?.status ?? "")
-        ? input.status!
-        : "active";
+      const allowedStatuses = [
+        "things-to-do",
+        "on-process",
+        "queue-on-process",
+        "pending",
+        "revision",
+        "done",
+        "finished",
+        "cancel",
+        "active",
+        "paused",
+        "archived",
+      ];
+      const status = allowedStatuses.includes(input?.status ?? "") ? input!.status! : "on-process";
       if (!name) throw new Error("Nama proyek wajib diisi.");
       return {
         id: input?.id ? uuid(input.id) : null,
@@ -159,9 +186,26 @@ export const workspaceSaveProject = createServerFn({ method: "POST" })
     return result.data;
   });
 
+export const workspaceUpdateProjectStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { id: string; status: string }) => {
+    const id = uuid(input?.id);
+    const status = text(input?.status, 50);
+    if (!status) throw new Error("Status wajib diisi.");
+    return { id, status };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("projects")
+      .update({ status: data.status, updated_at: new Date().toISOString() })
+      .eq("id", data.id);
+    if (error) throw new Error("Gagal memperbarui status proyek.");
+    return { ok: true };
+  });
+
 export const workspaceDeleteProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => ({ id: uuid(input?.id) }))
+  .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("projects").delete().eq("id", data.id);
     if (error) throw new Error("Gagal menghapus proyek.");

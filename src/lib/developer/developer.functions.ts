@@ -23,7 +23,8 @@ function requiredUuid(value: unknown) {
   if (!id) throw new Error("ID aset tidak valid.");
   return id;
 }
- const clean = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
+const clean = (value: unknown, max: number) =>
+  typeof value === "string" ? value.trim().slice(0, max) : "";
 
 export const devListAssets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -31,7 +32,7 @@ export const devListAssets = createServerFn({ method: "POST" })
 
 export const devSaveAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: DevAssetInput) => {
+  .validator((input: DevAssetInput) => {
     const name = clean(input?.name, 120);
     if (!name) throw new Error("Nama aset wajib diisi.");
     if (!input?.id && !clean(input?.value, 20_000)) throw new Error("Nilai rahasia wajib diisi.");
@@ -42,12 +43,19 @@ export const devSaveAsset = createServerFn({ method: "POST" })
     if (!DEV_ASSET_STATUSES.includes(status)) throw new Error("Status aset tidak valid.");
     const websiteUrl = clean(input.websiteUrl, 500);
     if (websiteUrl) {
-      try { new URL(websiteUrl); } catch { throw new Error("URL website harus menggunakan format URL lengkap."); }
+      try {
+        new URL(websiteUrl);
+      } catch {
+        throw new Error("URL website harus menggunakan format URL lengkap.");
+      }
     }
     const expiresAt = clean(input.expiresAt, 10);
-    if (expiresAt && !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) throw new Error("Tanggal kedaluwarsa tidak valid.");
-    const metadata = input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)
-      ? input.metadata : {};
+    if (expiresAt && !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt))
+      throw new Error("Tanggal kedaluwarsa tidak valid.");
+    const metadata =
+      input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)
+        ? input.metadata
+        : {};
     return {
       id: optionalUuid(input.id),
       type: input.type,
@@ -68,10 +76,10 @@ export const devSaveAsset = createServerFn({ method: "POST" })
 
 export const devRevealAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => ({ id: requiredUuid(input?.id) }))
+  .validator((input: { id: string }) => ({ id: requiredUuid(input?.id) }))
   .handler(async ({ data, context }) => revealDevAsset(context.supabase, data.id));
 
 export const devDeleteAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => ({ id: requiredUuid(input?.id) }))
+  .validator((input: { id: string }) => ({ id: requiredUuid(input?.id) }))
   .handler(async ({ data, context }) => deleteDevAsset(context.supabase, data.id));

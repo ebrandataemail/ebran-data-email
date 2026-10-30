@@ -24,7 +24,7 @@ export const vaultListAccounts = createServerFn({ method: "POST" })
 
 export const vaultImportCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { csv: string }) => {
+  .validator((input: { csv: string }) => {
     const csv = String(input?.csv ?? "");
     if (!csv.trim()) throw new Error("File CSV kosong.");
     if (csv.length > MAX_CSV_CHARS) throw new Error("File CSV terlalu besar (maks. 2 MB).");
@@ -34,12 +34,12 @@ export const vaultImportCsv = createServerFn({ method: "POST" })
 
 export const vaultRevealPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => ({ id: uuid(input?.id) }))
+  .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
   .handler(async ({ data, context }) => revealPassword(context.supabase, data.id));
 
 export const vaultSaveAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       id: string | null;
       email: string;
@@ -82,7 +82,7 @@ export const vaultSaveAccount = createServerFn({ method: "POST" })
 
 export const vaultDeleteAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => ({ id: uuid(input?.id) }))
+  .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("email_accounts").delete().eq("id", data.id);
     if (error) throw new Error("Gagal menghapus akun.");

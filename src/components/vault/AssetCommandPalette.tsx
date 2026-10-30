@@ -271,7 +271,9 @@ export function AssetCommandPalette() {
                       {item.clientName ? ` · ${item.clientName}` : ""}
                     </p>
                   </div>
-                  <Badge variant={item.status === "active" ? "default" : "muted"}>{item.status}</Badge>
+                  <Badge variant={item.status === "active" ? "default" : "muted"}>
+                    {item.status}
+                  </Badge>
                 </CommandItem>
               ))}
               {developerAssets.slice(0, 6).map((item) => (
@@ -289,27 +291,39 @@ export function AssetCommandPalette() {
           </>
         )}
 
-
         {adsAssets.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading={`Ads & Marketing (${adsAssets.length})`}>
               {adsAssets.slice(0, 10).map((item) => (
-                <CommandItem key={item.id}
+                <CommandItem
+                  key={item.id}
                   value={`Ads Marketing ${item.name} ${item.platform} ${item.accountIdentifier ?? ""} ${item.projectName ?? ""} ${item.clientName ?? ""} ${item.status}`}
-                  onSelect={() => handleNavigate("/ads")} className="flex items-center gap-3">
+                  onSelect={() => handleNavigate("/ads")}
+                  className="flex items-center gap-3"
+                >
                   <Megaphone className="size-4 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-foreground">{item.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{item.platform} · {item.projectName || "Tanpa proyek"}{item.clientName ? ` · ${item.clientName}` : ""}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.platform} · {item.projectName || "Tanpa proyek"}
+                      {item.clientName ? ` · ${item.clientName}` : ""}
+                    </p>
                   </div>
-                  <Badge variant={item.status === "active" ? "default" : "muted"}>{item.status}</Badge>
+                  <Badge variant={item.status === "active" ? "default" : "muted"}>
+                    {item.status}
+                  </Badge>
                 </CommandItem>
               ))}
               {adsAssets.slice(0, 6).map((item) => (
-                <CommandItem key={`ads-ai-${item.id}`} value={`Tanya AI kampanye iklan ${item.name} ${item.platform}`}
-                  onSelect={() => handleNavigate(`/ai?assetId=${item.id}`)}>
-                  <Sparkles className="size-4 text-ai" /><span className="flex-1 truncate">Tanya AI · {item.name}</span><CommandShortcut>AI</CommandShortcut>
+                <CommandItem
+                  key={`ads-ai-${item.id}`}
+                  value={`Tanya AI kampanye iklan ${item.name} ${item.platform}`}
+                  onSelect={() => handleNavigate(`/ai?assetId=${item.id}`)}
+                >
+                  <Sparkles className="size-4 text-ai" />
+                  <span className="flex-1 truncate">Tanya AI · {item.name}</span>
+                  <CommandShortcut>AI</CommandShortcut>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -405,7 +419,17 @@ export function AssetCommandPalette() {
             <CommandItem
               key={c.name}
               value={`Kategori ${c.name}`}
-              onSelect={() => handleNavigate(c.key === "email" ? "/accounts" : c.key === "dev" ? "/developer-tools" : c.key === "ads" ? "/ads" : "/vault")}
+              onSelect={() =>
+                handleNavigate(
+                  c.key === "email"
+                    ? "/accounts"
+                    : c.key === "dev"
+                      ? "/developer-tools"
+                      : c.key === "ads"
+                        ? "/ads"
+                        : "/vault",
+                )
+              }
             >
               <Layers className="size-4 text-muted-foreground" />
               <span className="flex-1 truncate">{c.name}</span>
