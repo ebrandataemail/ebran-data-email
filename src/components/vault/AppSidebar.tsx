@@ -52,7 +52,7 @@ function SectionLabel({ children, action }: { children: string; action?: boolean
 }
 
 type NavTarget =
-  "/vault" | "/accounts" | "/ai" | "/projects" | "/clients" | "/developer-tools" | "/ads";
+  "/vault" | "/accounts" | "/ai" | "/projects" | "/clients" | "/developer-tools" | "/ads" | "/social";
 
 function NavItem({
   icon,
@@ -107,7 +107,7 @@ const categoryRoutes: Partial<Record<string, NavTarget>> = {
   email: "/accounts",
   dev: "/developer-tools",
   ads: "/ads",
-  social: "/vault",
+  social: "/social",
 };
 
 export function SidebarContents() {
