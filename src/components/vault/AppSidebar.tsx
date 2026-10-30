@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import {
+  LogOut,
   AtSign,
   ChevronsUpDown,
   CodeXml,
@@ -14,6 +17,9 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
 import {
   CommandDialog,
   CommandEmpty,
@@ -221,19 +227,46 @@ export function SidebarContents() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent">
-          <div className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground ring-1 ring-border">
-            GG
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-[13px] font-semibold text-foreground">Grey Gandaw</span>
-            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <StatusDot className="size-1.5" />
-              Hermes Agent online
-            </span>
-          </div>
+      <UserFooter />
+    </div>
+  );
+}
+
+function UserFooter() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const email = user.email ?? "Pengguna";
+  const initials = email.slice(0, 2).toUpperCase();
+
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", search: { redirect: "/vault" }, replace: true });
+  };
+
+  return (
+    <div className="border-t border-sidebar-border p-3">
+      <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent">
+        <div className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground ring-1 ring-border">
+          {initials}
         </div>
+        <div className="flex min-w-0 flex-1 flex-col leading-tight">
+          <span className="truncate text-[13px] font-semibold text-foreground">{email}</span>
+          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <StatusDot className="size-1.5" />
+            Hermes Agent online
+          </span>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon-sm" aria-label="Keluar" onClick={signOut}>
+              <LogOut />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Keluar</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

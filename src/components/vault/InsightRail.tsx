@@ -1,10 +1,15 @@
-import { CalendarClock, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import { CalendarClock, LoaderCircle, MessageSquareText, RefreshCw, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { asset } from "@/data/asset";
+import { cn } from "@/lib/utils";
+import { HermesChatSheet } from "./HermesChat";
+import { useHermesAudit } from "./use-hermes";
 
-const insights = [
+// Shown until Hermes runs its first live audit in this session.
+const defaultInsights = [
   {
     icon: CalendarClock,
     title: "Token API kedaluwarsa 12 Des 2026",
@@ -32,6 +37,11 @@ const toneDot = {
 };
 
 export function InsightRail() {
+  const { audit, running, run } = useHermesAudit();
+  const [chatOpen, setChatOpen] = useState(false);
+  const score = audit?.score ?? 86;
+  const insights = audit?.insights ?? defaultInsights;
+
   return (
     <aside className="space-y-4">
       <section className="relative overflow-hidden rounded-xl border border-ai/30 bg-gradient-ai-soft p-5 shadow-card">
@@ -42,18 +52,31 @@ export function InsightRail() {
             </span>
             <h3 className="text-sm font-semibold text-foreground">Hermes Insight</h3>
           </div>
-          <Badge variant="ai">AI</Badge>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ai-ghost"
+              size="icon-sm"
+              aria-label="Analisis ulang dengan Hermes AI"
+              title="Analisis ulang dengan Hermes AI"
+              onClick={run}
+              disabled={running}
+            >
+              {running ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+            </Button>
+            <Badge variant="ai">{audit ? "Live" : "AI"}</Badge>
+          </div>
         </div>
 
-        <div className="mt-4 flex items-end gap-2">
-          <span className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">86</span>
+        <div className={cn("mt-4 flex items-end gap-2 transition-opacity", running && "opacity-50")}>
+          <span className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{score}</span>
           <span className="pb-1.5 text-sm text-muted-foreground">/ 100 skor keamanan</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background">
-          <div className="h-full w-[86%] rounded-full bg-gradient-ai" />
+          <div className="h-full rounded-full bg-gradient-ai transition-[width] duration-700" style={{ width: `${score}%` }} />
         </div>
+        {audit?.headline && <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{audit.headline}</p>}
 
-        <ul className="mt-5 space-y-3.5">
+        <ul className={cn("mt-5 space-y-3.5 transition-opacity", running && "ai-shimmer opacity-60")}>
           {insights.map((i) => (
             <li key={i.title} className="flex gap-3">
               <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${toneDot[i.tone]}`} />
@@ -65,11 +88,17 @@ export function InsightRail() {
           ))}
         </ul>
 
-        <Button variant="outline" size="sm" className="mt-5 w-full">
-          <Sparkles className="text-ai" />
+        {!audit && (
+          <p className="mt-4 text-[11px] text-muted-foreground">Contoh insight. Tekan ↻ agar Hermes menganalisis data terbaru.</p>
+        )}
+
+        <Button variant="outline" size="sm" className="mt-5 w-full" onClick={() => setChatOpen(true)}>
+          <MessageSquareText className="text-ai" />
           Tanya Hermes tentang aset ini
         </Button>
       </section>
+
+      <HermesChatSheet open={chatOpen} onOpenChange={setChatOpen} />
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-card">
         <h3 className="text-sm font-semibold text-foreground">Ringkasan</h3>

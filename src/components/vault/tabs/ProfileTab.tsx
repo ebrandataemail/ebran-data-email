@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { LoaderCircle, Mail, MessageCircle, Phone, ShieldUser, Sparkles } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { asset } from "@/data/asset";
+import { hermesGenerateNote } from "@/lib/hermes/hermes.functions";
 import { CopyButton, FieldRow, Panel } from "../primitives";
-
-const AI_NOTE =
-  "Akun resmi komunitas Newton Badminton. Dipakai untuk posting jadwal mabar tiap Sabtu di GOR Galaxi (07.00–10.00 WIB), rekap skor, dan info pendaftaran member baru. Akses Super Admin dipegang Grey; login wajib via proxy Malang agar tidak memicu verifikasi ulang.";
+import { errorMessage } from "../use-hermes";
 
 export function ProfileTab() {
   const p = asset.profile;
@@ -17,13 +17,19 @@ export function ProfileTab() {
   const [generating, setGenerating] = useState(false);
   const wa = p.whatsapp.replace(/\D/g, "");
 
-  const generate = () => {
+  const generateNote = useServerFn(hermesGenerateNote);
+
+  const generate = async () => {
     setGenerating(true);
-    setTimeout(() => {
-      setNote(AI_NOTE);
-      setGenerating(false);
+    try {
+      const res = await generateNote({ data: { draft: note } });
+      setNote(res.note);
       toast("Catatan dibuat oleh Hermes AI", { icon: "✨" });
-    }, 1400);
+    } catch (err) {
+      toast.error("Hermes gagal menulis catatan", { description: errorMessage(err) });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -68,6 +74,7 @@ export function ProfileTab() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={4}
+            readOnly={generating}
             className={
               generating
                 ? "ai-shimmer resize-none border-ai/40 text-sm leading-relaxed"

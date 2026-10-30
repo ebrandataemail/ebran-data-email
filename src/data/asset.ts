@@ -21,6 +21,7 @@ export const tags = [
 ] as const;
 
 export const asset = {
+  id: "ig-newton-badminton",
   title: "Instagram - Newton Badminton",
   status: "Active",
   publicUrl: "instagram.com/newtonbadminton",
@@ -57,6 +58,7 @@ export const asset = {
     secretToken: "sk_live_9f8e7d6c5b4a3210zyxw",
     webhookUrl: "https://socioapi.com/webhook",
     expiration: "12-Desember-2026",
+    expirationISO: "2026-12-12",
   },
   ops: {
     status: "Active",
@@ -67,7 +69,7 @@ export const asset = {
   },
   attachments: [
     { id: "1", name: "invoice-newton.pdf", size: "248 KB", type: "pdf", status: "done", fields: 12 },
-    { id: "2", name: "ktp-verifikasi.jpg", size: "1.4 MB", type: "image", status: "processing" },
+    { id: "2", name: "ktp-verifikasi.jpg", size: "1.4 MB", type: "image", status: "done", fields: 7 },
   ],
 };
 

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { KeyRound, LoaderCircle, Mail, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import { CircleCheck, KeyRound, LoaderCircle, Mail, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { asset } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { CopyButton, FieldRow, Panel, SecretValue } from "../primitives";
+import { useHermesAudit } from "../use-hermes";
 
 const PERIOD = 30;
 
@@ -93,17 +94,7 @@ function LiveTotp() {
 
 export function SecurityTab() {
   const s = asset.security;
-  const [auditing, setAuditing] = useState(false);
-
-  const audit = () => {
-    setAuditing(true);
-    setTimeout(() => {
-      setAuditing(false);
-      toast.success("Audit selesai — skor keamanan 86/100", {
-        description: "Hermes menyarankan rotasi password setiap 90 hari.",
-      });
-    }, 1800);
-  };
+  const { audit: result, running: auditing, run: audit } = useHermesAudit();
 
   return (
     <div className="space-y-6">
@@ -152,6 +143,23 @@ export function SecurityTab() {
           </div>
         </div>
       </Panel>
+
+      {result && (
+        <Panel
+          title={`Hasil Audit Hermes · ${result.score}/100`}
+          description={result.headline}
+          className="border-ai/30"
+        >
+          <ul className="space-y-3 p-5">
+            {result.recommendations.map((r) => (
+              <li key={r} className="flex gap-3 text-sm text-foreground">
+                <CircleCheck className="mt-0.5 size-4 shrink-0 text-ai" />
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
     </div>
   );
 }
