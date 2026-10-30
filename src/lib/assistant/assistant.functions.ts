@@ -56,6 +56,14 @@ export const aiChatHistory = createServerFn({ method: "POST" })
       const { data: developer } = await context.supabase.from("developer_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
       owned = Boolean(developer);
     }
+    if (!owned) {
+      const { data: ads } = await context.supabase.from("ads_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      owned = Boolean(ads);
+    }
+    if (!owned) {
+      const { data: ads } = await context.supabase.from("ads_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      owned = Boolean(ads);
+    }
     if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");
     const { data: rows, error } = await context.supabase
       .from("ai_chat_messages")
