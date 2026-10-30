@@ -30,7 +30,7 @@ export function createHermesModel() {
   if (!apiKey) {
     throw new HermesError(
       503,
-      "OpenAI API belum dikonfigurasi di server."
+      "OpenAI API belum dikonfigurasi di server.",
     );
   }
 
@@ -44,14 +44,15 @@ export function createHermesModel() {
 }
 
 /**
- * OpenAI provider options.
+ * OpenAI Responses API options.
  * Reasoning is not exposed to the frontend.
  */
 export function hermesProviderOptions(
-  _effort: HermesReasoningEffort = "medium"
+  effort: HermesReasoningEffort = "medium",
 ) {
   return {
     openai: {
+      reasoningEffort: effort,
       store: false,
     },
   };
@@ -62,7 +63,7 @@ export function hermesProviderOptions(
  */
 function findApiCallError(
   error: unknown,
-  depth = 0
+  depth = 0,
 ): APICallError | undefined {
   if (!error || depth > 5) {
     return undefined;
@@ -91,7 +92,7 @@ function findApiCallError(
  * Extract a safe upstream error message.
  */
 function safeOpenAIMessage(
-  err: APICallError
+  err: APICallError,
 ): string | undefined {
   try {
     const body = JSON.parse(err.responseBody ?? "") as {
@@ -101,13 +102,9 @@ function safeOpenAIMessage(
       };
     };
 
-    const message =
-      body.error?.message ?? body.message;
+    const message = body.error?.message ?? body.message;
 
-    return (
-      typeof message === "string" &&
-      message.length < 400
-    )
+    return typeof message === "string" && message.length < 400
       ? message
       : undefined;
   } catch {
@@ -119,7 +116,7 @@ function safeOpenAIMessage(
  * Convert OpenAI errors into safe Indonesian messages.
  */
 export function toHermesError(
-  error: unknown
+  error: unknown,
 ): HermesError {
   if (error instanceof HermesError) {
     return error;
@@ -135,37 +132,37 @@ export function toHermesError(
     case 400:
       return new HermesError(
         400,
-        "Permintaan ke Hermes tidak valid. Coba dengan data lain."
+        "Permintaan ke Hermes tidak valid. Coba dengan data lain.",
       );
 
     case 401:
       return new HermesError(
         401,
-        "Kunci OpenAI API tidak valid. Periksa konfigurasi server."
+        "Kunci OpenAI API tidak valid. Periksa konfigurasi server.",
       );
 
     case 403:
       return new HermesError(
         403,
-        "Akses OpenAI API ditolak. Periksa izin dan konfigurasi proyek."
+        "Akses OpenAI API ditolak. Periksa izin dan konfigurasi proyek.",
       );
 
     case 404:
       return new HermesError(
         503,
-        "Model OpenAI tidak tersedia. Periksa konfigurasi OPENAI_MODEL."
+        "Model OpenAI tidak tersedia. Periksa konfigurasi OPENAI_MODEL.",
       );
 
     case 429:
       return new HermesError(
         429,
-        "Batas penggunaan OpenAI tercapai atau Hermes sedang sibuk. Coba lagi nanti."
+        "Batas penggunaan OpenAI tercapai atau Hermes sedang sibuk. Coba lagi nanti.",
       );
 
     default:
       return new HermesError(
         status >= 500 ? status : 500,
-        "Hermes AI gagal merespons. Coba lagi."
+        "Hermes AI gagal merespons. Coba lagi.",
       );
   }
 }
