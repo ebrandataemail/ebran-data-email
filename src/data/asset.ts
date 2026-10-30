@@ -1,4 +1,4 @@
-// Dummy data for the asset detail view. Will be replaced by Hermes Agent responses.
+// Dummy data for the asset detail view. Will be replaced by real asset storage.
 
 export const projects = [
   { name: "Content Center Web Salute Malang", count: 24 },

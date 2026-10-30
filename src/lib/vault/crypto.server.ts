@@ -1,11 +1,11 @@
 // Server-only password encryption (AES-256-GCM, WebCrypto — works on Workers).
-// Key comes from the HERMES_VAULT_KEY secret; ciphertext format: "v1:<base64(iv | ciphertext)>".
+// Key comes from the VAULT_ENCRYPTION_KEY secret; ciphertext format: "v1:<base64(iv | ciphertext)>".
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 function secret() {
-  const value = process.env["HERMES_VAULT_KEY"];
+  const value = process.env["VAULT_ENCRYPTION_KEY"];
   if (!value) throw new Error("Kunci enkripsi vault belum diatur.");
   return value;
 }

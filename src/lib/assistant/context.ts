@@ -1,4 +1,4 @@
-// Builds the asset brief Hermes AI sees. Raw secrets (password, TOTP secret, backup codes,
+// Builds the asset brief the AI sees. Raw secrets (password, TOTP secret, backup codes,
 // secret token) are NEVER included — only derived, non-reversible facts about them.
 import { asset as defaultAsset } from "@/data/asset";
 

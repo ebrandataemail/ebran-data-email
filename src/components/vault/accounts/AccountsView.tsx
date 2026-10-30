@@ -42,7 +42,7 @@ import { vaultAudit, vaultDeleteAccount, vaultRevealPassword } from "@/lib/vault
 import { cn } from "@/lib/utils";
 import { AppSidebar, SidebarContents } from "../AppSidebar";
 import { CopyButton } from "../primitives";
-import { errorMessage } from "../use-hermes";
+import { errorMessage } from "../use-ai";
 import { AccountDialog } from "./AccountDialog";
 import { ImportDialog } from "./ImportDialog";
 import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, useAccounts, type VaultAccount } from "./use-accounts";
@@ -166,7 +166,7 @@ function VaultAuditCard({ total }: { total: number }) {
           <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-ai shadow-ai">
             <Sparkles className="size-3.5 text-ai-contrast" />
           </span>
-          <h3 className="text-sm font-semibold text-foreground">Hermes Audit Brankas Email</h3>
+          <h3 className="text-sm font-semibold text-foreground">Audit AI Brankas Email</h3>
           <Badge variant="ai">AI</Badge>
         </div>
         <Button variant={audit.data ? "ai-ghost" : "ai"} size="sm" onClick={run} disabled={audit.isFetching || total === 0}>
@@ -177,7 +177,7 @@ function VaultAuditCard({ total }: { total: number }) {
 
       {!audit.data && !audit.isFetching && (
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          Hermes membaca statistik brankas (pemakaian ulang password, pola lemah, akun kosong) — tanpa melihat password.
+          AI membaca statistik brankas (pemakaian ulang password, pola lemah, akun kosong) — tanpa melihat password.
         </p>
       )}
 

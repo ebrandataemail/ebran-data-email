@@ -14,15 +14,15 @@ import { SecurityTab } from "@/components/vault/tabs/SecurityTab";
 export const Route = createFileRoute("/_authenticated/vault")({
   head: () => ({
     meta: [
-      { title: "Instagram - Newton Badminton · Hermes Asset Vault" },
+      { title: "Instagram - Newton Badminton · Ebran Aset Digital" },
       {
         name: "description",
-        content: "Kelola akun, kredensial, 2FA, API key, dan dokumen digital dalam satu vault bertenaga Hermes AI.",
+        content: "Kelola akun, kredensial, 2FA, API key, dan dokumen digital dalam satu vault bertenaga AI.",
       },
-      { property: "og:title", content: "Hermes Asset Vault" },
+      { property: "og:title", content: "Instagram - Newton Badminton · Ebran Aset Digital" },
       {
         property: "og:description",
-        content: "Vault aset & akun digital bertenaga Hermes AI — kredensial, 2FA, API key, dan dokumen.",
+        content: "Vault aset & akun digital bertenaga AI — kredensial, 2FA, API key, dan dokumen.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

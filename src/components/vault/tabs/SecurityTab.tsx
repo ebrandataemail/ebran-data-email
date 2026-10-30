@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { asset } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { CopyButton, FieldRow, Panel, SecretValue } from "../primitives";
-import { useHermesAudit } from "../use-hermes";
+import { useAiAudit } from "../use-ai";
 
 const PERIOD = 30;
 
@@ -94,7 +94,7 @@ function LiveTotp() {
 
 export function SecurityTab() {
   const s = asset.security;
-  const { audit: result, running: auditing, run: audit } = useHermesAudit();
+  const { audit: result, running: auditing, run: audit } = useAiAudit();
 
   return (
     <div className="space-y-6">
@@ -146,7 +146,7 @@ export function SecurityTab() {
 
       {result && (
         <Panel
-          title={`Hasil Audit Hermes · ${result.score}/100`}
+          title={`Hasil Audit AI · ${result.score}/100`}
           description={result.headline}
           className="border-ai/30"
         >

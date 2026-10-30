@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { normalizeCsv } from "@/lib/vault/normalize";
 import { vaultImportCsv } from "@/lib/vault/vault.functions";
-import { errorMessage } from "../use-hermes";
+import { errorMessage } from "../use-ai";
 import { ACCOUNTS_KEY } from "./use-accounts";
 
 type Report = Awaited<ReturnType<typeof vaultImportCsv>>;

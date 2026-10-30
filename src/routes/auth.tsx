@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoaderCircle, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 
-import hermesMark from "@/assets/hermes-mark.png";
+import appMark from "@/assets/app-mark.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +26,10 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({ redirect: safeRedirect(search["redirect"]) }),
   head: () => ({
     meta: [
-      { title: "Masuk · Hermes Asset Vault" },
-      { name: "description", content: "Masuk ke Hermes Asset Vault untuk mengelola akun dan aset digital kamu." },
-      { property: "og:title", content: "Masuk · Hermes Asset Vault" },
-      { property: "og:description", content: "Masuk untuk membuka vault aset digital bertenaga Hermes AI." },
+      { title: "Masuk · Ebran Aset Digital" },
+      { name: "description", content: "Masuk ke Ebran Aset Digital untuk mengelola akun dan aset digital kamu." },
+      { property: "og:title", content: "Masuk · Ebran Aset Digital" },
+      { property: "og:description", content: "Masuk untuk membuka vault aset digital bertenaga AI." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -83,9 +83,9 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-subtle px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src={hermesMark} alt="Hermes" width={56} height={56} className="size-14" />
-          <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">Hermes Asset Vault</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Semua akun & aset digital kamu, dijaga Hermes AI.</p>
+          <img src={appMark} alt="Ebran Aset Digital" width={56} height={56} className="size-14" />
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">Ebran Aset Digital</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Arsip Data Pribadi Aman</p>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-card">

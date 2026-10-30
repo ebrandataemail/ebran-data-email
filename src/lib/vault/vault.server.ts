@@ -1,4 +1,4 @@
-// Server-only email-vault logic: import/sync, listing, password facts for Hermes AI.
+// Server-only email-vault logic: import/sync, listing, password facts for the AI audit.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
@@ -149,7 +149,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
   return { id: data.id };
 }
 
-/** Non-secret facts about the whole vault, for the Hermes AI audit. */
+/** Non-secret facts about the whole vault, for the AI audit. */
 export function vaultFacts(accounts: VaultAccount[]) {
   const withPw = accounts.filter((a) => a.hasPassword);
   const reusedGroups = new Map<number, number>();
