@@ -154,7 +154,7 @@ export function DeveloperToolsView() {
                   Developer Tools
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Kunci API, Webhook, dan Konfigurasi teknis lainnya.
+                  Kelola akun aplikasi, website, API, AI, Agent, Bot, dan kredensial developer.
                 </p>
               </div>
             </div>
