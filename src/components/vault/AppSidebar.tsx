@@ -60,7 +60,7 @@ function SectionLabel({ children, action }: { children: string; action?: boolean
   );
 }
 
-type NavTarget = "/vault" | "/accounts";
+type NavTarget = "/vault" | "/accounts" | "/ai";
 
 function NavItem({
   icon,
@@ -196,6 +196,9 @@ export function SidebarContents() {
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-2 py-5">
+        <div className="px-1">
+          <NavItem icon={<Sparkles />} label="Tanya AI" to="/ai" />
+        </div>
         <div>
           <SectionLabel action>PROYEK & CLIENT</SectionLabel>
           <div className="space-y-0.5">
