@@ -47,6 +47,7 @@ export const vaultSaveAccount = createServerFn({ method: "POST" })
       lovableStatus: string;
       usageTag: string | null;
       note: string | null;
+      projectId?: string | null;
       projects?: { id: string | null; name: string; url: string | null; note: string | null }[];
     }) => {
       const id = input?.id ? uuid(input.id) : null;
@@ -62,6 +63,7 @@ export const vaultSaveAccount = createServerFn({ method: "POST" })
         lovableStatus,
         usageTag: optionalText(input?.usageTag, 80),
         note: optionalText(input?.note, 1000),
+        projectId: input?.projectId ? uuid(input.projectId) : null,
         projects: input?.projects?.map((p) => ({
           id: p.id ? uuid(p.id) : null,
           name: String(p.name || "Proyek Tanpa Nama").slice(0, 100),
