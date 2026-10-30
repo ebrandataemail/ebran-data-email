@@ -89,6 +89,7 @@ export interface FileRoutesByTo {
   '/vault': typeof AuthenticatedVaultRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
