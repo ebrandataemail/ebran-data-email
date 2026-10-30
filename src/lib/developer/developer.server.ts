@@ -46,7 +46,7 @@ export interface DevAsset {
 export async function listDevAssets(db: Db): Promise<DevAsset[]> {
   const { data, error } = await db
     .from("developer_assets")
-    .select("*, projects(id, name, clients(id, name))")
+    .select("id, type, name, description, provider, website_url, username, environment, status, expires_at, project_id, metadata, updated_at, created_at, projects(id, name, clients(id, name))")
     .order("created_at", { ascending: false });
   if (error) {
     console.error("[developer assets list]", error);
@@ -69,7 +69,7 @@ export async function listDevAssets(db: Db): Promise<DevAsset[]> {
       environment: row.environment as DevAssetEnvironment,
       status: row.status as DevAssetStatus,
       expiresAt: row.expires_at,
-      hasValue: Boolean(row.value_enc),
+      hasValue: true,
       projectId: row.project_id,
       projectName: project?.name ?? null,
       clientName: project?.clients?.name ?? null,
