@@ -107,11 +107,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="gap-6 px-5 py-6">
           {messages.length === 0 ? (
-            <ConversationEmptyState
-              icon={<HermesAvatar className="size-12" />}
-              title="Tanya Hermes tentang aset ini"
-              description="Hermes membaca data akun (tanpa password & kode rahasia) lalu menjawab pertanyaanmu."
-            >
+            <ConversationEmptyState>
               <div className="flex flex-col items-center gap-3">
                 <HermesAvatar className="size-12" />
                 <div className="space-y-1 text-center">
@@ -178,7 +174,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
           onSubmit={(msg: PromptInputMessage) => send(msg.text)}
           className="rounded-xl"
         >
-          <PromptInputTextarea ref={textareaRef} placeholder="Tanya apa saja tentang akun ini…" autoFocus disabled={false} />
+          <PromptInputTextarea ref={textareaRef} placeholder="Tanya apa saja tentang akun ini…" autoFocus />
           <PromptInputFooter className="justify-between">
             <Button type="button" variant="ghost" size="xs" onClick={clear} disabled={busy || messages.length === 0}>
               <Eraser />
