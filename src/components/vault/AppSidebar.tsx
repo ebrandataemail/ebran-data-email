@@ -116,11 +116,8 @@ function CommandBar() {
         <span className="flex w-full items-center gap-2 rounded-[7px] bg-gradient-ai-soft px-2.5 py-2">
           <Sparkles className="size-4 shrink-0 text-ai" />
           <span className="flex-1 truncate text-xs text-muted-foreground group-hover:text-foreground">
-            Ask Hermes AI or Search
+            Ask Hermes AI or Search (Cmd+K)
           </span>
-          <kbd className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            ⌘K
-          </kbd>
         </span>
       </button>
 

@@ -52,16 +52,17 @@ function LiveTotp() {
   const [code, setCode] = useState("452891");
   const [remaining, setRemaining] = useState(PERIOD);
 
+  // Synced to the wall clock like a real authenticator, so switching tabs doesn't reset it.
   useEffect(() => {
-    const id = setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          setCode(randomCode());
-          return PERIOD;
-        }
-        return r - 1;
+    const tick = () => {
+      const left = PERIOD - (Math.floor(Date.now() / 1000) % PERIOD);
+      setRemaining((prev) => {
+        if (left > prev) setCode(randomCode());
+        return left;
       });
-    }, 1000);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
