@@ -161,7 +161,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
     lovable_status: input.lovableStatus,
     usage_tag: input.usageTag,
     note: input.note,
-    project_id: input.projectId ?? null,
+    ...(input.projectId !== undefined ? { project_id: input.projectId } : {}),
   };
   const pw = input.password ? await passwordColumns(input.password, input.email) : null;
   let accountId = input.id;
@@ -179,6 +179,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
         user_id: userId,
         email: input.email,
         provider: providerOf(input.email),
+        project_id: input.projectId ?? null,
         ...base,
         ...(pw ?? (await passwordColumns(null, input.email))),
       })
