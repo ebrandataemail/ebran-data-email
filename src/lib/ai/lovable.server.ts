@@ -22,7 +22,6 @@ export class HermesError extends Error {
 /**
  * Create the official OpenAI Responses model.
  * API key is read only on the server.
- * No Lovable gateway or Run ID dependency.
  */
 export function createHermesModel() {
   const apiKey = process.env["OPENAI_API_KEY"];
@@ -45,7 +44,6 @@ export function createHermesModel() {
 
 /**
  * OpenAI Responses API options.
- * Reasoning is not exposed to the frontend.
  */
 export function hermesProviderOptions(
   effort: HermesReasoningEffort = "medium",
