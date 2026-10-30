@@ -1,17 +1,29 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { encryptSecret, decryptSecret } from "../vault/crypto.server";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { decryptSecret, encryptSecret } from "../vault/crypto.server";
 
 type Db = SupabaseClient<Database>;
 
-export type DevAssetType =
-  "api_key" | "webhook" | "env_var" | "ssh_key" | "db_connection" | "other";
+export const DEV_ASSET_TYPES = [
+  "api_key", "webhook", "env_var", "ssh_key", "db_connection", "app_account",
+  "website", "domain", "hosting", "repository", "package", "oauth_app",
+  "cloud_service", "ai_model", "ai_agent", "robot", "automation", "other",
+] as const;
+export type DevAssetType = (typeof DEV_ASSET_TYPES)[number];
+export type DevAssetEnvironment = "production" | "staging" | "development" | "local" | "other";
+export type DevAssetStatus = "active" | "inactive" | "expired" | "revoked" | "maintenance" | "draft";
 
 export type DevAssetInput = {
   id: string | null;
   type: DevAssetType;
   name: string;
   value?: string | null;
+  provider?: string | null;
+  websiteUrl?: string | null;
+  username?: string | null;
+  environment?: DevAssetEnvironment;
+  status?: DevAssetStatus;
+  expiresAt?: string | null;
   description: string | null;
   projectId: string | null;
   metadata: Record<string, unknown>;
@@ -22,8 +34,16 @@ export interface DevAsset {
   type: DevAssetType;
   name: string;
   description: string | null;
+  provider: string | null;
+  websiteUrl: string | null;
+  username: string | null;
+  environment: DevAssetEnvironment;
+  status: DevAssetStatus;
+  expiresAt: string | null;
+  hasValue: boolean;
   projectId: string | null;
   projectName: string | null;
+  clientName: string | null;
   metadata: Record<string, unknown>;
   updatedAt: string;
   createdAt: string;
@@ -32,21 +52,36 @@ export interface DevAsset {
 export async function listDevAssets(db: Db): Promise<DevAsset[]> {
   const { data, error } = await db
     .from("developer_assets")
-    .select("*, projects(id, name)")
+    .select("*, projects(id, name, clients(id, name))")
     .order("created_at", { ascending: false });
-  if (error) throw new Error("Gagal memuat aset developer.");
-  return data.map((r) => {
-    const project = r.projects as unknown as { id: string; name: string } | null;
+  if (error) {
+    console.error("[developer assets list]", error);
+    throw new Error("Gagal memuat aset developer.");
+  }
+  return (data ?? []).map((row) => {
+    const project = row.projects as unknown as {
+      id: string;
+      name: string;
+      clients?: { id: string; name: string } | null;
+    } | null;
     return {
-      id: r.id,
-      type: r.type as DevAssetType,
-      name: r.name,
-      description: r.description,
-      projectId: r.project_id,
+      id: row.id,
+      type: row.type as DevAssetType,
+      name: row.name,
+      description: row.description,
+      provider: row.provider,
+      websiteUrl: row.website_url,
+      username: row.username,
+      environment: row.environment as DevAssetEnvironment,
+      status: row.status as DevAssetStatus,
+      expiresAt: row.expires_at,
+      hasValue: Boolean(row.value_enc),
+      projectId: row.project_id,
       projectName: project?.name ?? null,
-      metadata: r.metadata as Record<string, unknown>,
-      updatedAt: r.updated_at,
-      createdAt: r.created_at,
+      clientName: project?.clients?.name ?? null,
+      metadata: (row.metadata ?? {}) as Record<string, unknown>,
+      updatedAt: row.updated_at,
+      createdAt: row.created_at,
     };
   });
 }
@@ -57,25 +92,42 @@ export async function saveDevAsset(db: Db, userId: string, input: DevAssetInput)
     type: input.type,
     name: input.name,
     description: input.description,
+    provider: input.provider ?? null,
+    website_url: input.websiteUrl ?? null,
+    username: input.username ?? null,
+    environment: input.environment ?? "production",
+    status: input.status ?? "active",
+    expires_at: input.expiresAt || null,
     project_id: input.projectId,
-    metadata: input.metadata,
+    metadata: input.metadata ?? {},
   };
 
-  if (input.value) {
-    payload.value_enc = await encryptSecret(input.value);
-  }
+  if (input.value?.trim()) payload.value_enc = await encryptSecret(input.value);
 
   if (input.id) {
-    const { error } = await db.from("developer_assets").update(payload).eq("id", input.id);
-    if (error) throw new Error("Gagal memperbarui aset developer.");
-    return { id: input.id };
+    const { data, error } = await db
+      .from("developer_assets")
+      .update(payload)
+      .eq("id", input.id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      console.error("[developer assets update]", error);
+      throw new Error("Aset tidak ditemukan atau gagal diperbarui.");
+    }
+    return { id: data.id };
   }
 
-  if (!input.value) throw new Error("Nilai wajib diisi untuk aset baru.");
-  payload.value_enc = await encryptSecret(input.value);
-
-  const { data, error } = await db.from("developer_assets").insert(payload).select("id").single();
-  if (error) throw new Error("Gagal menyimpan aset developer.");
+  if (!input.value?.trim()) throw new Error("Nilai rahasia wajib diisi untuk aset baru.");
+  const { data, error } = await db
+    .from("developer_assets")
+    .insert({ ...payload, value_enc: await encryptSecret(input.value) })
+    .select("id")
+    .single();
+  if (error || !data) {
+    console.error("[developer assets insert]", error);
+    throw new Error(error?.code === "23505" ? "Aset dengan data tersebut sudah ada." : "Gagal menyimpan aset developer.");
+  }
   return { id: data.id };
 }
 
@@ -84,13 +136,18 @@ export async function revealDevAsset(db: Db, id: string) {
     .from("developer_assets")
     .select("value_enc")
     .eq("id", id)
-    .single();
-  if (error || !data) throw new Error("Aset tidak ditemukan.");
+    .maybeSingle();
+  if (error || !data?.value_enc) throw new Error("Aset tidak ditemukan.");
   return { value: await decryptSecret(data.value_enc) };
 }
 
 export async function deleteDevAsset(db: Db, id: string) {
-  const { error } = await db.from("developer_assets").delete().eq("id", id);
-  if (error) throw new Error("Gagal menghapus aset developer.");
+  const { data, error } = await db
+    .from("developer_assets")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) throw new Error("Aset tidak ditemukan atau gagal dihapus.");
   return { ok: true };
 }
