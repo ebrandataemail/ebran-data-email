@@ -22,7 +22,6 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { asset } from "@/data/asset";
 import { supabase } from "@/integrations/supabase/client";
 import { aiChatHistory, aiClearChat } from "@/lib/assistant/assistant.functions";
@@ -221,19 +220,17 @@ function ChatLoader() {
   return <ChatWindow initialMessages={JSON.parse(history.data.json) as UIMessage[]} />;
 }
 
-export function AiChatSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function AiChatPageContent() {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
-        <div className="flex items-center gap-3 border-b border-border px-5 py-4 pr-12">
-          <AiAvatar className="size-8" />
-          <div className="min-w-0">
-            <SheetTitle className="text-sm">Asisten AI</SheetTitle>
-            <SheetDescription className="truncate text-xs">{asset.title}</SheetDescription>
-          </div>
+    <div className="flex min-h-[calc(100vh-13rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card">
+      <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+        <AiAvatar className="size-9" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">Asisten AI Ebran</p>
+          <p className="truncate text-xs text-muted-foreground">Konteks aset aktif · Rahasia tetap terlindungi</p>
         </div>
-        {open && <ChatLoader />}
-      </SheetContent>
-    </Sheet>
+      </div>
+      <ChatLoader />
+    </div>
   );
 }
