@@ -20,9 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
-  X,
-  Check,
-} from "lucide-react";
+ } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -47,15 +45,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { CopyButton, RevealButton, StatusDot } from "@/components/vault/primitives";
 import { errorMessage } from "@/components/vault/use-ai";
-import { devDeleteAsset, devRevealAsset, devSaveAsset } from "@/lib/developer/developer.functions";
-import type { DevAsset, DevAssetType } from "@/lib/developer/developer.server";
+import { devDeleteAsset, devRevealAsset } from "@/lib/developer/developer.functions";
+import type { DevAsset } from "@/lib/developer/developer.server";
 import { DEV_ASSETS_KEY, useDevAssets } from "./use-dev-assets";
 import { DevAssetDialog } from "./DevAssetDialog";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Panel, FieldRow } from "@/components/vault/primitives";
-import { workspaceList } from "@/lib/projects/projects.functions";
-import { useQuery } from "@tanstack/react-query";
 
 const TYPE_ICONS: Record<string, typeof CodeXml> = {
   api_key: KeyRound,
@@ -331,318 +327,150 @@ function DevAssetCard({
   onDelete: () => void;
 }) {
   const Icon = TYPE_ICONS[asset.type] || CodeXml;
-  const queryClient = useQueryClient();
   const [revealedValue, setRevealedValue] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [saveBusy, setSaveBusy] = useState(false);
-
-  // Form states
-  const [name, setName] = useState(asset.name);
-  const [description, setDescription] = useState(asset.description ?? "");
-  const [type, setType] = useState(asset.type);
-  const [projectId, setProjectId] = useState(asset.projectId ?? "none");
-
   const revealFn = useServerFn(devRevealAsset);
-  const saveFn = useServerFn(devSaveAsset);
-
-  const workspaceFn = useServerFn(workspaceList);
-  const workspace = useQuery({
-    queryKey: ["workspace", "projects-clients"],
-    queryFn: () => workspaceFn(),
-    staleTime: 30_000,
-  });
 
   const toggleReveal = async () => {
-    if (revealedValue) {
+    if (revealedValue !== null) {
       setRevealedValue(null);
       return;
     }
     setBusy(true);
     try {
-      const res = await revealFn({ data: { id: asset.id } });
-      setRevealedValue(res.value);
-    } catch (err) {
-      toast.error("Gagal membuka nilai", { description: errorMessage(err) });
+      const result = await revealFn({ data: { id: asset.id } });
+      setRevealedValue(result.value);
+    } catch (error) {
+      toast.error("Gagal membuka nilai", { description: errorMessage(error) });
     } finally {
       setBusy(false);
     }
   };
 
-  const handleSave = async () => {
-    setSaveBusy(true);
-    try {
-      await saveFn({
-        data: {
-          id: asset.id,
-          name,
-          description,
-          type,
-          provider: asset.provider,
-          websiteUrl: asset.websiteUrl,
-          username: asset.username,
-          environment: asset.environment,
-          status: asset.status,
-          expiresAt: asset.expiresAt,
-          projectId: projectId === "none" ? null : projectId,
-          metadata: asset.metadata,
-        },
-      });
-      await queryClient.invalidateQueries({ queryKey: DEV_ASSETS_KEY });
-      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
-      toast.success("Aset diperbarui");
-      setIsEditing(false);
-    } catch (err) {
-      toast.error("Gagal menyimpan", { description: errorMessage(err) });
-    } finally {
-      setSaveBusy(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setName(asset.name);
-    setDescription(asset.description ?? "");
-    setType(asset.type);
-    setProjectId(asset.projectId ?? "none");
-    setIsEditing(false);
-  };
-
   return (
-    <div
-      className={cn(
-        "group flex flex-col rounded-xl border bg-card shadow-card transition-all",
-        isEditing
-          ? "border-primary/50 ring-1 ring-primary/20"
-          : "border-border hover:border-border-strong",
-      )}
-    >
+    <div className="group flex flex-col rounded-xl border border-border bg-card shadow-card transition-all hover:border-border-strong">
       <div className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "flex size-10 items-center justify-center rounded-lg shadow-sm transition-colors",
-                isEditing
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
-              )}
-            >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
               <Icon className="size-5" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-foreground line-clamp-1">{asset.name}</h3>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+            <div className="min-w-0">
+              <h3 className="line-clamp-1 text-sm font-semibold text-foreground">{asset.name}</h3>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 {TYPE_LABELS[asset.type]}
               </span>
             </div>
           </div>
-          <div className="flex gap-1">
-            {!isEditing ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() => setExpanded(!expanded)}
-                  title={expanded ? "Tutup Detail" : "Lihat Detail"}
-                >
-                  {expanded ? (
-                    <ChevronUp className="size-3.5" />
-                  ) : (
-                    <ChevronDown className="size-3.5" />
-                  )}
-                </Button>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon-xs" onClick={onEdit}>
-                      <Pencil className="size-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Edit, Refine & Adjust</TooltipContent>
-                </Tooltip>
-                <Button variant="ghost-danger" size="icon-xs" onClick={onDelete} title="Hapus">
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="icon-xs" onClick={handleCancel} disabled={saveBusy}>
-                  <X className="size-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon-xs" onClick={handleSave} disabled={saveBusy}>
-                  {saveBusy ? (
-                    <LoaderCircle className="size-3.5 animate-spin" />
-                  ) : (
-                    <Check className="size-3.5" />
-                  )}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <p className="text-xs text-muted-foreground line-clamp-2 min-h-8 mb-3">
-            {asset.description || "Tidak ada deskripsi."}
-          </p>
-          <div className="rounded-lg bg-subtle p-3 flex items-center justify-between gap-3 overflow-hidden">
-            <code className="text-xs font-mono truncate text-foreground/80 flex-1">
-              {busy ? "Mendekripsi..." : (revealedValue ?? "••••••••••••••••")}
-            </code>
-            <div className="flex items-center gap-1 shrink-0">
-              <RevealButton shown={!!revealedValue} onToggle={toggleReveal} />
-              {revealedValue && <CopyButton value={revealedValue} label="Kredensial" />}
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {asset.status && <Badge variant={asset.status === "active" ? "default" : "muted"} className="text-[10px]">{asset.status}</Badge>}
-            {asset.projectName ? (
-              <Badge variant="muted" className="text-[10px] gap-1 px-1.5 py-0">
-                <StatusDot className="size-1" />
-                {asset.projectName}
-              </Badge>
-            ) : (
-              <span className="text-[10px] text-muted-foreground italic">Belum ditautkan ke proyek</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 gap-1">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setExpanded((current) => !current)}
+              title={expanded ? "Tutup Detail" : "Lihat Detail"}
+              aria-label={expanded ? "Tutup detail aset" : "Lihat detail aset"}
+            >
+              {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ai-ghost" size="icon-xs" asChild>
-                  <a href={`/ai?assetId=${asset.id}`}>
-                    <Sparkles className="size-3.5" />
-                  </a>
+                <Button variant="ghost" size="icon-xs" onClick={onEdit} aria-label="Edit aset">
+                  <Pencil className="size-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Tanya AI</TooltipContent>
+              <TooltipContent>Edit aset</TooltipContent>
             </Tooltip>
+            <Button variant="ghost-danger" size="icon-xs" onClick={onDelete} title="Hapus" aria-label="Hapus aset">
+              <Trash2 className="size-3.5" />
+            </Button>
           </div>
+        </div>
+
+        <p className="mb-3 line-clamp-2 min-h-8 text-xs text-muted-foreground">
+          {asset.description || "Tidak ada deskripsi."}
+        </p>
+        <div className="flex items-center justify-between gap-3 overflow-hidden rounded-lg bg-subtle p-3">
+          <code className="flex-1 truncate font-mono text-xs text-foreground/80">
+            {busy ? "Mendekripsi..." : revealedValue ?? "••••••••••••••••"}
+          </code>
+          <div className="flex shrink-0 items-center gap-1">
+            <RevealButton shown={revealedValue !== null} onToggle={toggleReveal} />
+            {revealedValue !== null && <CopyButton value={revealedValue} label="Kredensial" />}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t border-border pt-4 mt-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Badge variant={asset.status === "active" ? "default" : "muted"} className="text-[10px] capitalize">
+              {asset.status}
+            </Badge>
+            <Badge variant="outline" className="text-[10px] capitalize">{asset.environment}</Badge>
+            {asset.projectName ? (
+              <Badge variant="muted" className="max-w-full gap-1 px-1.5 py-0 text-[10px]">
+                <StatusDot className="size-1" />
+                <span className="truncate">{asset.projectName}</span>
+              </Badge>
+            ) : (
+              <span className="text-[10px] italic text-muted-foreground">Belum ditautkan</span>
+            )}
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ai-ghost" size="icon-xs" asChild>
+                <a href={`/ai?assetId=${asset.id}`} aria-label={`Tanya AI tentang ${asset.name}`}>
+                  <Sparkles className="size-3.5" />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Tanya AI</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
       {expanded && (
-        <div className="border-t border-border bg-subtle/30 p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/30 p-4 duration-200">
           <Tabs defaultValue="info">
-            <TabsList className="h-8 gap-4 bg-transparent p-0 border-b border-border w-full justify-start rounded-none mb-4">
-              <TabsTrigger
-                value="info"
-                className="relative h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent shadow-none"
-              >
-                Info Asset
+            <TabsList className="mb-4 h-8 w-full justify-start gap-4 rounded-none border-b border-border bg-transparent p-0">
+              <TabsTrigger value="info" className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground">
+                Info Aset
               </TabsTrigger>
-              <TabsTrigger
-                value="catatan"
-                className="relative h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent shadow-none"
-              >
+              <TabsTrigger value="catatan" className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground">
                 Catatan
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="info" className="mt-0 space-y-4">
-              <Panel
-                title="Konfigurasi Teknis"
-                description="Detail identitas dan tipe aset developer."
-              >
+            <TabsContent value="info" className="mt-0">
+              <Panel title="Konfigurasi Teknis" description="Identitas, akses, dan relasi aset developer.">
                 <div className="divide-y divide-border">
-                  <FieldRow icon={<Terminal />} label="Nama Aset">
-                    {isEditing ? (
-                      <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="h-7 text-xs"
-                      />
-                    ) : (
-                      <span className="text-sm font-medium">{asset.name}</span>
-                    )}
-                  </FieldRow>
-                  <FieldRow icon={<Database />} label="Tipe Aset">
-                    {isEditing ? (
-                      <Select value={type} onValueChange={(next) => setType(next as DevAssetType)}>
-                        <SelectTrigger className="h-7 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px]">
-                        {TYPE_LABELS[asset.type]}
-                      </Badge>
-                    )}
-                  </FieldRow>
-                  <FieldRow icon={<CodeXml />} label="Provider / Platform">
-                    <span className="text-sm">{asset.provider || "—"}</span>
-                  </FieldRow>
+                  <FieldRow icon={<Terminal />} label="Nama Aset">{asset.name}</FieldRow>
+                  <FieldRow icon={<Database />} label="Tipe Aset">{TYPE_LABELS[asset.type]}</FieldRow>
+                  <FieldRow icon={<CodeXml />} label="Provider / Platform">{asset.provider || "—"}</FieldRow>
                   <FieldRow icon={<CodeXml />} label="Website / Dashboard">
-                    {asset.websiteUrl ? <a className="text-sm text-primary hover:underline" href={asset.websiteUrl} target="_blank" rel="noreferrer">{asset.websiteUrl}</a> : <span>—</span>}
+                    {asset.websiteUrl ? (
+                      <a className="break-all text-primary hover:underline" href={asset.websiteUrl} target="_blank" rel="noreferrer">{asset.websiteUrl}</a>
+                    ) : "—"}
                   </FieldRow>
-                  <FieldRow icon={<Terminal />} label="Username / Account ID">
-                    <span className="text-sm">{asset.username || "—"}</span>
-                  </FieldRow>
-                  <FieldRow icon={<ShieldCheck />} label="Environment">
-                    <Badge variant="outline">{asset.environment}</Badge>
-                  </FieldRow>
-                  <FieldRow icon={<ShieldCheck />} label="Status">
-                    <Badge variant={asset.status === "active" ? "default" : "muted"}>{asset.status}</Badge>
-                  </FieldRow>
+                  <FieldRow icon={<Terminal />} label="Username / Account ID">{asset.username || "—"}</FieldRow>
+                  <FieldRow icon={<ShieldCheck />} label="Environment">{asset.environment}</FieldRow>
+                  <FieldRow icon={<ShieldCheck />} label="Status">{asset.status}</FieldRow>
                   <FieldRow icon={<Calendar />} label="Kedaluwarsa">
-                    <span className="text-xs text-muted-foreground">{asset.expiresAt ? new Date(asset.expiresAt).toLocaleDateString("id-ID") : "Tidak ditentukan"}</span>
+                    {asset.expiresAt ? new Date(asset.expiresAt).toLocaleDateString("id-ID") : "Tidak ditentukan"}
                   </FieldRow>
-                  <FieldRow icon={<Folder />} label="Proyek Workspace">
-                    {isEditing ? (
-                      <Select value={projectId} onValueChange={setProjectId}>
-                        <SelectTrigger className="h-7 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Belum ditetapkan</SelectItem>
-                          {workspace.data?.projects.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-sm">{asset.projectName ?? "—"}</span>
-                    )}
-                  </FieldRow>
-                  <FieldRow icon={<Calendar />} label="Dibuat Pada">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(asset.createdAt).toLocaleDateString("id-ID")}
-                    </span>
-                  </FieldRow>
+                  <FieldRow icon={<Folder />} label="Proyek Workspace">{asset.projectName || "—"}</FieldRow>
+                  <FieldRow icon={<Folder />} label="Client">{asset.clientName || "—"}</FieldRow>
+                  <FieldRow icon={<Calendar />} label="Dibuat Pada">{new Date(asset.createdAt).toLocaleDateString("id-ID")}</FieldRow>
                 </div>
               </Panel>
             </TabsContent>
-
             <TabsContent value="catatan" className="mt-0">
-              <Panel title="Deskripsi & Catatan" description="Konteks penggunaan kredensial ini.">
+              <Panel title="Deskripsi & Catatan" description="Konteks teknis dan cara penggunaan aset.">
                 <div className="p-4">
-                  {isEditing ? (
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Tambahkan deskripsi teknis atau catatan di sini..."
-                      className="text-xs min-h-[100px]"
-                    />
-                  ) : (
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {asset.description || "Tidak ada deskripsi."}
-                    </p>
-                  )}
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+                    {asset.description || "Tidak ada deskripsi."}
+                  </p>
                 </div>
               </Panel>
             </TabsContent>
-
           </Tabs>
         </div>
       )}
