@@ -220,6 +220,7 @@ export function AccountsView() {
     try {
       await deleteFn({ data: { id: deleting.id } });
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast(`${deleting.email} dihapus`);
     } catch (err) {
       toast.error("Gagal menghapus", { description: errorMessage(err) });

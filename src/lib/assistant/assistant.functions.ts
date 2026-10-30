@@ -8,10 +8,11 @@ import { extractDocument, formatEnv, generateNote, runAudit } from "./assistant.
 const MAX_OCR_BYTES = 8 * 1024 * 1024;
 const OCR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
 
-function assertAsset(assetId: unknown) {
-  if (assetId !== asset.id) throw new Error("Aset tidak ditemukan.");
-  return assetId;
-}
+const cleanAssetId = (value: unknown) => {
+  const id = String(value ?? "").trim();
+  if (!id || id.length > 100) throw new Error("Aset tidak ditemukan.");
+  return id;
+};
 
 export const aiGenerateNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -44,12 +45,23 @@ export const aiExtractDocument = createServerFn({ method: "POST" })
 
 export const aiChatHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { assetId: string }) => ({ assetId: assertAsset(input?.assetId) }))
+  .inputValidator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
+    let owned = data.assetId === asset.id;
+    if (!owned) {
+      const { data: email } = await context.supabase.from("email_accounts").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      owned = Boolean(email);
+    }
+    if (!owned) {
+      const { data: developer } = await context.supabase.from("developer_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      owned = Boolean(developer);
+    }
+    if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");
     const { data: rows, error } = await context.supabase
       .from("ai_chat_messages")
       .select("message_id, role, parts")
       .eq("asset_id", data.assetId)
+      .eq("user_id", context.userId)
       .order("seq", { ascending: true })
       .limit(200);
     if (error) {
@@ -67,8 +79,18 @@ export const aiChatHistory = createServerFn({ method: "POST" })
 
 export const aiClearChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { assetId: string }) => ({ assetId: assertAsset(input?.assetId) }))
+  .inputValidator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
+    let owned = data.assetId === asset.id;
+    if (!owned) {
+      const { data: email } = await context.supabase.from("email_accounts").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      owned = Boolean(email);
+    }
+    if (!owned) {
+      const { data: developer } = await context.supabase.from("developer_assets").select("id").eq("id", data.assetId).eq("user_id", context.userId).maybeSingle();
+      owned = Boolean(developer);
+    }
+    if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");
     const { error } = await context.supabase
       .from("ai_chat_messages")
       .delete()

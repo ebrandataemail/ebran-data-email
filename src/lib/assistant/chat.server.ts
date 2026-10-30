@@ -118,39 +118,54 @@ export async function handleAiChat(request: Request) {
     // Try email accounts
     const { data: acc } = await auth.supabase
       .from("email_accounts")
-      .select("*, projects(id, name)")
+      .select("email, lovable_status, usage_tag, note, updated_at, projects(id, name)")
       .eq("id", assetId)
       .eq("user_id", auth.userId)
       .single();
 
     if (acc) {
+      const linkedProject = acc.projects as unknown as
+        | { id: string; name: string }
+        | { id: string; name: string }[]
+        | null;
+      const projectNames = Array.isArray(linkedProject)
+        ? linkedProject.map((project) => project.name)
+        : linkedProject
+          ? [linkedProject.name]
+          : [];
       brief = {
         type: "email_account",
         email: acc.email,
         status: acc.lovable_status,
         tag: acc.usage_tag,
         note: acc.note,
-        projects: acc.projects.map((p) => p.name),
+        projects: projectNames,
         updatedAt: acc.updated_at,
       };
     } else {
       // Try developer assets
       const { data: dev } = await auth.supabase
         .from("developer_assets")
-        .select("*, projects(id, name)")
+        .select("id, type, name, description, provider, website_url, username, environment, status, expires_at, updated_at, projects(id, name, clients(id, name))")
         .eq("id", assetId)
         .eq("user_id", auth.userId)
         .single();
 
       if (dev) {
-        const project = dev.projects as unknown as { id: string; name: string } | null;
+        const project = dev.projects as unknown as { id: string; name: string; clients?: { id: string; name: string } | null } | null;
         brief = {
           type: "developer_asset",
           assetType: dev.type,
           name: dev.name,
           description: dev.description,
+          provider: dev.provider,
+          websiteUrl: dev.website_url,
+          username: dev.username,
+          environment: dev.environment,
+          status: dev.status,
+          expiresAt: dev.expires_at,
           projectName: project?.name,
-          metadata: dev.metadata,
+          clientName: project?.clients?.name ?? null,
           updatedAt: dev.updated_at,
         };
       }
