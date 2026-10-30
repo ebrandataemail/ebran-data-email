@@ -260,7 +260,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                               {project!.status}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {project!.emailCount} akun email
+                              {project!.emailCount} email · {project!.developerAssetCount} aset developer
                             </span>
                           </>
                         )}
