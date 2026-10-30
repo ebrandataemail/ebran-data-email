@@ -136,7 +136,7 @@ export async function handleAiChat(request: Request) {
     } else {
       // Try developer assets
       const { data: dev } = await auth.supabase
-         .from("developer_assets")
+        .from("developer_assets")
         .select("id, type, name, description, provider, website_url, username, environment, status, expires_at, updated_at, projects(id, name, clients(id, name))")
         .eq("id", assetId)
         .eq("user_id", auth.userId)
