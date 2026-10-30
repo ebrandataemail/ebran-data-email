@@ -2,7 +2,7 @@
 
 Aku butuh Tools untuk Membantuku Mengelola Semua Aset hingg Akun Digital. Act as an Build a modern, responsive Dashboard UI  using React, TypeScript, Tailwind CSS, Lucide Icons, and Shadcn UI components. The design must be in Light Mode, featuring a clean, enterprise-grade aesthetic with white backgrounds.
 
-Since this UI will be powered by an AI backend (Hermes Agent), include AI-themed visual cues (like sparkle icons, AI badges) in specific areas.
+Since this UI will be powered by an AI backend (Lovable AI), include AI-themed visual cues (like sparkle icons, AI badges) in specific areas.
 
 Use this exact layout and data structure:
 
@@ -10,8 +10,8 @@ Use this exact layout and data structure:
 Create a standard dashboard layout with a Left Sidebar (w-64, fixed) and a Right Main Content Area.
 
 2. LEFT SIDEBAR
-- Header: App Logo and Name "Hermes Asset Vault". 
-- Global Search/Command Bar: Instead of a normal search, make it look like an AI Command Bar. Placeholder: "✨ Ask Hermes AI or Search (Cmd+K)".
+- Header: App Logo and Name "Ebran Aset Digital - Arsip Data Pribadi Aman". 
+- Global Search/Command Bar: Instead of a normal search, make it look like an AI Command Bar. Placeholder: "✨ Tanya AI atau Cari (Cmd+K)".
 - Navigation Section 1: "PROYEK & CLIENT". List items: "Content Center Web Salute Malang", "SocioAPI Playground", "Sultan Barokah", "Internal / Pribadi".
 - Navigation Section 2: "KATEGORI". List items: "Email (Core)", "Developer Tools", "Social Media", "Ads & Marketing". Use appropriate Lucide icons.
 - Navigation Section 3: "TAGS". Show badge-style tags: "#Production", "#Banned", "#Urgent".
@@ -56,7 +56,7 @@ Simulate viewing the detail page for "Instagram - Newton Badminton".
   * Creation Date: 15 Agustus 2024
 
 - Tab 5: Attachments (AI Document Scanner)
-  * Include a dashed-border drag-and-drop zone. Add text: "Drag & Drop files here. ✨ Hermes AI will automatically extract data (OCR)."
+  * Include a dashed-border drag-and-drop zone. Add text: "Drag & Drop files here. ✨ AI will automatically extract data (OCR)."
   * Below it, list 2 dummy files ("invoice-newton.pdf", "ktp-verifikasi.jpg") with file icons, a "Processing ✨" badge on one of them, and view/delete action buttons.
 
 Make sure the UI is pixel-perfect, uses nice subtle borders, hover states for buttons, and feels like a production-ready SaaS dashboard. Build the interactive frontend components (tabs, buttons, hover states) without actual backend logic yet.
