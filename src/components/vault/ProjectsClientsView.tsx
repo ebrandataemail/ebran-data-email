@@ -224,8 +224,10 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
 
         {/* Content Section */}
         <section className="mx-auto max-w-[1400px] space-y-5 px-4 py-6 sm:px-8">
-          {/* Summary Metric Cards */}
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {!isClients && (
+            <>
+              {/* Summary Metric Cards */}
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
                 <BriefcaseBusiness className="text-muted-foreground" />
@@ -275,7 +277,9 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                 </div>
               </CardContent>
             </Card>
-          </div>
+              </div>
+            </>
+          )}
 
           {query.isPending ? (
             <p className="py-16 text-center text-sm text-muted-foreground">Memuat data…</p>
