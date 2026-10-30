@@ -157,7 +157,6 @@ export async function handleAiChat(request: Request) {
           expiresAt: dev.expires_at,
           projectName: project?.name,
           clientName: project?.clients?.name ?? null,
-          metadata: dev.metadata,
           updatedAt: dev.updated_at,
         };
       }
