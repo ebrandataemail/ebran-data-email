@@ -118,7 +118,7 @@ export async function handleAiChat(request: Request) {
     // Try email accounts
     const { data: acc } = await auth.supabase
       .from("email_accounts")
-       .select("*, projects(id, name, clients(id, name))")
+      .select("email, lovable_status, usage_tag, note, updated_at, projects(id, name)")
       .eq("id", assetId)
       .eq("user_id", auth.userId)
       .single();
