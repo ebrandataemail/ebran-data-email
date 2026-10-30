@@ -3,19 +3,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { asset } from "@/data/asset";
-import { hermesSecurityAudit } from "@/lib/hermes/hermes.functions";
+import { aiSecurityAudit } from "@/lib/assistant/assistant.functions";
 
-export type SecurityAudit = Awaited<ReturnType<typeof hermesSecurityAudit>>;
+export type SecurityAudit = Awaited<ReturnType<typeof aiSecurityAudit>>;
 
 export function errorMessage(error: unknown) {
-  return error instanceof Error && error.message ? error.message : "Hermes AI gagal merespons. Coba lagi.";
+  return error instanceof Error && error.message ? error.message : "AI gagal merespons. Coba lagi.";
 }
 
-/** Shared AI security audit: the Security tab and the Hermes Insight rail read the same result. */
-export function useHermesAudit() {
-  const auditFn = useServerFn(hermesSecurityAudit);
+/** Shared AI security audit: the Security tab and the AI Insight rail read the same result. */
+export function useAiAudit() {
+  const auditFn = useServerFn(aiSecurityAudit);
   const query = useQuery({
-    queryKey: ["hermes", "audit", asset.id],
+    queryKey: ["ai", "audit", asset.id],
     queryFn: () => auditFn(),
     enabled: false,
     staleTime: Infinity,

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { asset } from "@/data/asset";
-import { buildAssetBrief, daysUntil, passwordFacts } from "@/lib/hermes/context";
+import { buildAssetBrief, daysUntil, passwordFacts } from "@/lib/assistant/context";
 
-describe("Hermes asset brief", () => {
+describe("AI asset brief", () => {
   const brief = JSON.stringify(buildAssetBrief(asset, new Date("2026-10-30T12:00:00Z")));
 
   it("never includes the account password", () => {

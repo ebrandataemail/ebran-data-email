@@ -7,10 +7,10 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Hermes Asset Vault" },
-      { name: "description", content: "Vault aset & akun digital bertenaga Hermes AI." },
-      { property: "og:title", content: "Hermes Asset Vault" },
-      { property: "og:description", content: "Kelola akun, kredensial, 2FA, API key, dan dokumen dengan Hermes AI." },
+      { title: "Ebran Aset Digital" },
+      { name: "description", content: "Vault aset & akun digital bertenaga AI." },
+      { property: "og:title", content: "Ebran Aset Digital" },
+      { property: "og:description", content: "Kelola akun, kredensial, 2FA, API key, dan dokumen dengan AI." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

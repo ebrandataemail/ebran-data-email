@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { asset } from "@/data/asset";
-import { hermesGenerateNote } from "@/lib/hermes/hermes.functions";
+import { aiGenerateNote } from "@/lib/assistant/assistant.functions";
 import { CopyButton, FieldRow, Panel } from "../primitives";
-import { errorMessage } from "../use-hermes";
+import { errorMessage } from "../use-ai";
 
 export function ProfileTab() {
   const p = asset.profile;
@@ -17,16 +17,16 @@ export function ProfileTab() {
   const [generating, setGenerating] = useState(false);
   const wa = p.whatsapp.replace(/\D/g, "");
 
-  const generateNote = useServerFn(hermesGenerateNote);
+  const generateNote = useServerFn(aiGenerateNote);
 
   const generate = async () => {
     setGenerating(true);
     try {
       const res = await generateNote({ data: { draft: note } });
       setNote(res.note);
-      toast("Catatan dibuat oleh Hermes AI", { icon: "✨" });
+      toast("Catatan dibuat oleh AI", { icon: "✨" });
     } catch (err) {
-      toast.error("Hermes gagal menulis catatan", { description: errorMessage(err) });
+      toast.error("AI gagal menulis catatan", { description: errorMessage(err) });
     } finally {
       setGenerating(false);
     }
@@ -65,7 +65,7 @@ export function ProfileTab() {
         action={
           <Button variant="ai-ghost" size="xs" onClick={generate} disabled={generating}>
             {generating ? <LoaderCircle className="animate-spin" /> : <Sparkles />}
-            {generating ? "Hermes sedang menulis…" : "AI Auto-Generate Notes"}
+            {generating ? "AI sedang menulis…" : "AI Auto-Generate Notes"}
           </Button>
         }
       >

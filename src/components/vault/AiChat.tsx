@@ -26,8 +26,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { asset } from "@/data/asset";
 import { supabase } from "@/integrations/supabase/client";
-import { hermesChatHistory, hermesClearChat } from "@/lib/hermes/hermes.functions";
-import { errorMessage } from "./use-hermes";
+import { aiChatHistory, aiClearChat } from "@/lib/assistant/assistant.functions";
+import { errorMessage } from "./use-ai";
 
 const SUGGESTIONS = [
   "Apa risiko keamanan terbesar akun ini?",
@@ -35,19 +35,19 @@ const SUGGESTIONS = [
   "Ringkas status akun ini untuk tim.",
 ];
 
-function HermesAvatar({ className = "size-7" }: { className?: string }) {
+function AiAvatar({ className = "size-7" }: { className?: string }) {
   return <img src={hermesMark} alt="Hermes" width={28} height={28} className={className} />;
 }
 
 function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
   const queryClient = useQueryClient();
-  const clearFn = useServerFn(hermesClearChat);
+  const clearFn = useServerFn(aiClearChat);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/hermes/chat",
+        api: "/api/ai/chat",
         prepareSendMessagesRequest: async ({ messages }) => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
@@ -61,7 +61,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
   );
 
   const { messages, sendMessage, status, stop, setMessages, error } = useChat({
-    id: `hermes-${asset.id}`,
+    id: `ai-${asset.id}`,
     messages: initialMessages,
     transport,
     onError: (err) => {
@@ -72,10 +72,10 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
       } catch {
         /* plain text error */
       }
-      toast.error("Hermes tidak bisa menjawab", { description });
+      toast.error("AI tidak bisa menjawab", { description });
     },
     onFinish: () => {
-      queryClient.invalidateQueries({ queryKey: ["hermes", "chat", asset.id] });
+      queryClient.invalidateQueries({ queryKey: ["ai", "chat", asset.id] });
     },
   });
 
@@ -95,7 +95,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
     try {
       await clearFn({ data: { assetId: asset.id } });
       setMessages([]);
-      queryClient.setQueryData(["hermes", "chat", asset.id], { json: "[]" });
+      queryClient.setQueryData(["ai", "chat", asset.id], { json: "[]" });
       toast("Riwayat chat dihapus");
     } catch (err) {
       toast.error("Gagal menghapus", { description: errorMessage(err) });
@@ -109,11 +109,11 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
           {messages.length === 0 ? (
             <ConversationEmptyState>
               <div className="flex flex-col items-center gap-3">
-                <HermesAvatar className="size-12" />
+                <AiAvatar className="size-12" />
                 <div className="space-y-1 text-center">
-                  <p className="text-sm font-semibold text-foreground">Tanya Hermes tentang aset ini</p>
+                  <p className="text-sm font-semibold text-foreground">Tanya AI tentang aset ini</p>
                   <p className="text-xs text-muted-foreground">
-                    Hermes membaca data akun (tanpa password & kode rahasia) lalu menjawab.
+                    AI membaca data akun (tanpa password & kode rahasia) lalu menjawab.
                   </p>
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
@@ -128,7 +128,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
           ) : (
             messages.map((m) => (
               <Message key={m.id} from={m.role}>
-                {m.role === "assistant" && <HermesAvatar className="size-6" />}
+                {m.role === "assistant" && <AiAvatar className="size-6" />}
                 <MessageContent className="group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground">
                   {m.parts.map((part, i) => {
                     if (part.type === "text") {
@@ -143,7 +143,7 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
                     if (part.type === "reasoning" && part.text.trim() && m.role === "assistant") {
                       return (
                         <details key={i} className="rounded-md border border-border bg-subtle px-3 py-2 text-xs text-muted-foreground">
-                          <summary className="cursor-pointer select-none font-medium">Proses berpikir Hermes</summary>
+                          <summary className="cursor-pointer select-none font-medium">Proses berpikir AI</summary>
                           <p className="mt-1.5 whitespace-pre-wrap">{part.text}</p>
                         </details>
                       );
@@ -156,9 +156,9 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
           )}
           {status === "submitted" && (
             <Message from="assistant">
-              <HermesAvatar className="size-6" />
+              <AiAvatar className="size-6" />
               <MessageContent>
-                <Shimmer>Hermes sedang berpikir…</Shimmer>
+                <Shimmer>AI sedang berpikir…</Shimmer>
               </MessageContent>
             </Message>
           )}
@@ -189,9 +189,9 @@ function ChatWindow({ initialMessages }: { initialMessages: UIMessage[] }) {
 }
 
 function ChatLoader() {
-  const historyFn = useServerFn(hermesChatHistory);
+  const historyFn = useServerFn(aiChatHistory);
   const history = useQuery({
-    queryKey: ["hermes", "chat", asset.id],
+    queryKey: ["ai", "chat", asset.id],
     queryFn: () => historyFn({ data: { assetId: asset.id } }),
     staleTime: Infinity,
     retry: false,
@@ -218,14 +218,14 @@ function ChatLoader() {
   return <ChatWindow initialMessages={JSON.parse(history.data.json) as UIMessage[]} />;
 }
 
-export function HermesChatSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function AiChatSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <div className="flex items-center gap-3 border-b border-border px-5 py-4 pr-12">
-          <HermesAvatar className="size-8" />
+          <AiAvatar className="size-8" />
           <div className="min-w-0">
-            <SheetTitle className="text-sm">Hermes</SheetTitle>
+            <SheetTitle className="text-sm">Asisten AI</SheetTitle>
             <SheetDescription className="truncate text-xs">{asset.title}</SheetDescription>
           </div>
         </div>

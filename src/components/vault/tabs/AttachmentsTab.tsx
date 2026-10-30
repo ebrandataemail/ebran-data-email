@@ -7,12 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { asset } from "@/data/asset";
-import { hermesExtractDocument } from "@/lib/hermes/hermes.functions";
+import { aiExtractDocument } from "@/lib/assistant/assistant.functions";
 import { cn } from "@/lib/utils";
 import { CopyButton, Panel } from "../primitives";
-import { errorMessage } from "../use-hermes";
+import { errorMessage } from "../use-ai";
 
-type OcrResult = Awaited<ReturnType<typeof hermesExtractDocument>>;
+type OcrResult = Awaited<ReturnType<typeof aiExtractDocument>>;
 
 type FileItem = {
   id: string;
@@ -61,7 +61,7 @@ function StatusBadge({ f }: { f: FileItem }) {
 }
 
 export function AttachmentsTab() {
-  const extract = useServerFn(hermesExtractDocument);
+  const extract = useServerFn(aiExtractDocument);
   const [files, setFiles] = useState<FileItem[]>(asset.attachments as FileItem[]);
   const [dragging, setDragging] = useState(false);
   const [viewing, setViewing] = useState<FileItem | null>(null);
@@ -101,7 +101,7 @@ export function AttachmentsTab() {
     });
     setFiles((prev) => [...entries.map((e) => e.item), ...prev]);
     const toScan = entries.filter((e) => e.item.status === "processing");
-    if (toScan.length) toast("Hermes AI mulai memindai dokumen", { icon: "✨" });
+    if (toScan.length) toast("AI mulai memindai dokumen", { icon: "✨" });
     if (entries.some((e) => e.item.status === "unsupported")) toast("Hanya PDF, JPG, dan PNG yang bisa dipindai.");
     if (entries.some((e) => e.item.error)) toast.error("Ada file lebih dari 8 MB yang dilewati.");
     toScan.forEach((e) => void scan(e.item, e.file));
@@ -149,7 +149,7 @@ export function AttachmentsTab() {
         <div>
           <p className="text-sm font-semibold text-foreground">Drag & Drop files here.</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            ✨ <span className="font-medium text-ai-foreground">Hermes AI</span> will automatically extract data (OCR).
+            ✨ <span className="font-medium text-ai-foreground">AI</span> will automatically extract data (OCR).
           </p>
         </div>
         <span className="text-xs text-muted-foreground/80">PDF, JPG, PNG · maks. 8 MB</span>

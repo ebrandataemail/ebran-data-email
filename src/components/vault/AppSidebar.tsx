@@ -137,16 +137,16 @@ function CommandBar() {
         <span className="flex w-full items-center gap-1.5 rounded-[7px] bg-gradient-ai-soft px-2 py-2">
           <Sparkles className="size-3.5 shrink-0 text-ai" />
           <span className="flex-1 truncate text-[11px] tracking-tight text-muted-foreground group-hover:text-foreground">
-            Ask Hermes AI or Search (Cmd+K)
+            Tanya AI atau Cari (Cmd+K)
           </span>
         </span>
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="✨ Ask Hermes AI or Search (Cmd+K)" />
+        <CommandInput placeholder="✨ Tanya AI atau Cari (Cmd+K)" />
         <CommandList>
-          <CommandEmpty>Tidak ada hasil. Tekan Enter untuk bertanya ke Hermes AI.</CommandEmpty>
-          <CommandGroup heading="Hermes AI">
+          <CommandEmpty>Tidak ada hasil. Tekan Enter untuk bertanya ke AI.</CommandEmpty>
+          <CommandGroup heading="AI">
             <CommandItem onSelect={() => setOpen(false)}>
               <Sparkles className="text-ai" />
               Akun mana yang token API-nya hampir kedaluwarsa?
@@ -190,7 +190,7 @@ export function SidebarContents() {
           </span>
         </div>
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
-          <span className="truncate text-sm font-semibold text-foreground">Hermes Asset Vault</span>
+          <span className="truncate text-sm font-semibold text-foreground">Ebran Aset Digital</span>
           <span className="text-[11px] text-muted-foreground">Workspace Grey</span>
         </div>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
@@ -272,7 +272,7 @@ function UserFooter() {
           <span className="truncate text-[13px] font-semibold text-foreground">{email}</span>
           <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <StatusDot className="size-1.5" />
-            Hermes Agent online
+            AI aktif
           </span>
         </div>
         <Tooltip>

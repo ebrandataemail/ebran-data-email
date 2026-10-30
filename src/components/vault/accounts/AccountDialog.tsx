@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { vaultSaveAccount } from "@/lib/vault/vault.functions";
-import { errorMessage } from "../use-hermes";
+import { errorMessage } from "../use-ai";
 import { ACCOUNTS_KEY, STATUS_LABEL, type VaultAccount } from "./use-accounts";
 
 export function AccountDialog({

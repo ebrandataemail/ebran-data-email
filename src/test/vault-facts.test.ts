@@ -21,7 +21,7 @@ const acc = (over: Partial<VaultAccount>): VaultAccount => ({
   ...over,
 });
 
-describe("vault facts sent to Hermes AI", () => {
+describe("vault facts sent to the AI", () => {
   it("counts shared-password groups, not accounts", () => {
     const facts = vaultFacts([
       acc({ passwordReusedBy: 1 }),

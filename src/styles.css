@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Hermes Asset Vault — design system.
- * Light, enterprise-grade. Ink-navy primary, Hermes gold for every AI cue.
+ * Ebran Aset Digital — design system.
+ * Light, enterprise-grade. Ink-navy primary, gold for every AI cue.
  * All colors MUST use oklch format.
  */
 
@@ -97,7 +97,7 @@
   --input: oklch(0.91 0.008 255);
   --ring: oklch(0.7 0.13 65);
 
-  /* Hermes AI — winged gold */
+  /* AI cues — gold */
   --ai: oklch(0.74 0.16 65);
   --ai-foreground: oklch(0.47 0.12 52);
   --ai-soft: oklch(0.975 0.028 80);

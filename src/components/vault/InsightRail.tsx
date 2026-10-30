@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { asset } from "@/data/asset";
 import { cn } from "@/lib/utils";
-import { HermesChatSheet } from "./HermesChat";
-import { useHermesAudit } from "./use-hermes";
+import { AiChatSheet } from "./AiChat";
+import { useAiAudit } from "./use-ai";
 
-// Shown until Hermes runs its first live audit in this session.
+// Shown until the AI runs its first live audit in this session.
 const defaultInsights = [
   {
     icon: CalendarClock,
@@ -37,7 +37,7 @@ const toneDot = {
 };
 
 export function InsightRail() {
-  const { audit, running, run } = useHermesAudit();
+  const { audit, running, run } = useAiAudit();
   const [chatOpen, setChatOpen] = useState(false);
   const score = audit?.score ?? 86;
   const insights = audit?.insights ?? defaultInsights;
@@ -50,14 +50,14 @@ export function InsightRail() {
             <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-ai shadow-ai">
               <Sparkles className="size-3.5 text-ai-contrast" />
             </span>
-            <h3 className="text-sm font-semibold text-foreground">Hermes Insight</h3>
+            <h3 className="text-sm font-semibold text-foreground">AI Insight</h3>
           </div>
           <div className="flex items-center gap-1">
             <Button
               variant="ai-ghost"
               size="icon-sm"
-              aria-label="Analisis ulang dengan Hermes AI"
-              title="Analisis ulang dengan Hermes AI"
+              aria-label="Analisis ulang dengan AI"
+              title="Analisis ulang dengan AI"
               onClick={run}
               disabled={running}
             >
@@ -89,16 +89,16 @@ export function InsightRail() {
         </ul>
 
         {!audit && (
-          <p className="mt-4 text-[11px] text-muted-foreground">Contoh insight. Tekan ↻ agar Hermes menganalisis data terbaru.</p>
+          <p className="mt-4 text-[11px] text-muted-foreground">Contoh insight. Tekan ↻ agar AI menganalisis data terbaru.</p>
         )}
 
         <Button variant="outline" size="sm" className="mt-5 w-full" onClick={() => setChatOpen(true)}>
           <MessageSquareText className="text-ai" />
-          Tanya Hermes tentang aset ini
+          Tanya AI tentang aset ini
         </Button>
       </section>
 
-      <HermesChatSheet open={chatOpen} onOpenChange={setChatOpen} />
+      <AiChatSheet open={chatOpen} onOpenChange={setChatOpen} />
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-card">
         <h3 className="text-sm font-semibold text-foreground">Ringkasan</h3>
