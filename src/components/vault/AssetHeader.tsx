@@ -31,7 +31,7 @@ function QuickChip({ icon, label, children }: { icon: React.ReactNode; label: st
 
 export function AssetHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-md">
+    <header className="z-20 border-b sm:sticky sm:top-0 border-border bg-background/90 backdrop-blur-md">
       {/* Breadcrumb bar */}
       <div className="flex h-12 items-center gap-2 border-b border-border px-4 sm:px-8">
         <Sheet>
