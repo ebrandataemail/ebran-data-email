@@ -13,8 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
-import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
+import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -56,16 +56,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
-  '/vault': typeof AuthenticatedVaultRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/vault': typeof AuthenticatedVaultRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
-  '/vault': typeof AuthenticatedVaultRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/vault': typeof AuthenticatedVaultRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -74,23 +74,23 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
-  '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
+  '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/accounts' | '/vault' | '/ai' | '/api/ai/chat'
+  fullPaths: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/api/ai/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/accounts' | '/vault' | '/ai' | '/api/ai/chat'
+  to: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/api/ai/chat'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/accounts'
-    | '/_authenticated/vault'
     | '/_authenticated/ai'
+    | '/_authenticated/vault'
     | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
@@ -157,14 +157,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
-  AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
+  AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
-  AuthenticatedVaultRoute: AuthenticatedVaultRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
+  AuthenticatedVaultRoute: AuthenticatedVaultRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
