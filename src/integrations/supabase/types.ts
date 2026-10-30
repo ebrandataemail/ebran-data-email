@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_messages: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          message_id: string
+          parts: Json
+          role: string
+          seq: number
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          message_id: string
+          parts: Json
+          role: string
+          seq?: never
+          user_id?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          parts?: Json
+          role?: string
+          seq?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_accounts: {
         Row: {
           alt_password_enc: string | null
@@ -67,39 +100,6 @@ export type Database = {
           pw_matches_email?: boolean
           updated_at?: string
           usage_tag?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      hermes_chat_messages: {
-        Row: {
-          asset_id: string
-          created_at: string
-          id: string
-          message_id: string
-          parts: Json
-          role: string
-          seq: number
-          user_id: string
-        }
-        Insert: {
-          asset_id: string
-          created_at?: string
-          id?: string
-          message_id: string
-          parts: Json
-          role: string
-          seq?: never
-          user_id?: string
-        }
-        Update: {
-          asset_id?: string
-          created_at?: string
-          id?: string
-          message_id?: string
-          parts?: Json
-          role?: string
-          seq?: never
           user_id?: string
         }
         Relationships: []
