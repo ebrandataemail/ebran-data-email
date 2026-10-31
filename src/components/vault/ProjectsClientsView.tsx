@@ -233,6 +233,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
               onEdit={() => startClientEdit(data.clients.find((client) => client.id === selectedClientId)!)}
             />
           ) : (
+          <>
           {!isClients && (
             <>
               {/* Summary Metric Cards */}
@@ -413,6 +414,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
             </div>
           )}
           {isClients && data && <ClientWorkspacePanel clients={data.clients} />}
+          </>
           )}
         </section>
       </main>
