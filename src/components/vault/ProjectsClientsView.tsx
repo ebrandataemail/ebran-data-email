@@ -54,6 +54,7 @@ import {
 } from "@/lib/projects/deadline";
 import { ClientDialog, type ClientData } from "./clients/ClientDialog";
 import { ClientWorkspacePanel } from "./clients/ClientWorkspacePanel";
+import { ClientDetailWorkspace } from "./clients/ClientDetailWorkspace";
 import { KanbanBoard } from "./projects/KanbanBoard";
 
 const KEY = ["workspace", "projects-clients"] as const;
@@ -75,6 +76,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
   const [open, setOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -224,6 +226,14 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
 
         {/* Content Section */}
         <section className="mx-auto max-w-[1400px] space-y-5 px-4 py-6 sm:px-8">
+          {isClients && selectedClientId && data?.clients.some((client) => client.id === selectedClientId) ? (
+            <ClientDetailWorkspace
+              client={data.clients.find((client) => client.id === selectedClientId)! as Client & ClientData}
+              onBack={() => setSelectedClientId(null)}
+              onEdit={() => startClientEdit(data.clients.find((client) => client.id === selectedClientId)!)}
+            />
+          ) : (
+          <>
           {!isClients && (
             <>
               {/* Summary Metric Cards */}
@@ -310,7 +320,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                 const priorityInfo = parsedDesc ? getPriorityInfo(parsedDesc.priority) : null;
 
                 return (
-                  <Card key={item.id} className="shadow-sm">
+                  <Card key={item.id} className={isClients ? "cursor-pointer shadow-sm transition hover:border-primary/50 hover:shadow-md" : "shadow-sm"}>
                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
@@ -321,7 +331,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                           )}
                         </span>
                         <div>
-                          <CardTitle className="text-sm">{title}</CardTitle>
+                          <CardTitle className="text-sm">{isClients ? <button type="button" className="text-left hover:text-primary" onClick={() => setSelectedClientId(item.id)}>{title}</button> : title}</CardTitle>
                           <p className="mt-1 text-xs text-muted-foreground">
                             {isClients
                               ? client!.website || "Client"
@@ -404,6 +414,8 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
             </div>
           )}
           {isClients && data && <ClientWorkspacePanel clients={data.clients} />}
+          </>
+          )}
         </section>
       </main>
 
