@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Building2, CalendarDays, Check, ExternalLink, FileText, Globe, ImagePlus, MessageSquare, Plus, Send, ShieldCheck, Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ClientData } from "./ClientDialog";
 
 type Row = Record<string, any>;
-const tabs = ["Timeline", "Profile Client", "Daftar Aset Digital", "Brand Kit", "Dokumen", "Scope of Work", "Invoice"] as const;
+const tabs = ["Timeline", "Profile Client", "Daftar Aset Digital", "Brand Kit", "Dokumen", "Scope of Work", "Invoice", "Graphic Workspace"] as const;
 type Tab = typeof tabs[number];
 const fmt = (v?: string | null) => v ? new Date(v).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
