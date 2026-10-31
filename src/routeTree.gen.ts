@@ -13,12 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
+import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
-import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
-import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedDeveloperToolsRouteImport } from './routes/_authenticated/developer-tools'
-import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
+import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,19 +41,14 @@ const AuthenticatedAccountsRoute = AuthenticatedAccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   id: '/ai',
   path: '/ai',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedVaultRoute = AuthenticatedVaultRouteImport.update({
-  id: '/vault',
-  path: '/vault',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -60,14 +56,25 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedDeveloperToolsRoute = AuthenticatedDeveloperToolsRouteImport.update({
-  id: '/developer-tools',
-  path: '/developer-tools',
+const AuthenticatedDeveloperToolsRoute =
+  AuthenticatedDeveloperToolsRouteImport.update({
+    id: '/developer-tools',
+    path: '/developer-tools',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
-  id: '/ads',
-  path: '/ads',
+const AuthenticatedSocialRoute = AuthenticatedSocialRouteImport.update({
+  id: '/social',
+  path: '/social',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVaultRoute = AuthenticatedVaultRouteImport.update({
+  id: '/vault',
+  path: '/vault',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
@@ -80,23 +87,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
+  '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
-  '/vault': typeof AuthenticatedVaultRoute
-  '/projects': typeof AuthenticatedProjectsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
-  '/ads': typeof AuthenticatedAdsRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/social': typeof AuthenticatedSocialRoute
+  '/vault': typeof AuthenticatedVaultRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
+  '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
-  '/vault': typeof AuthenticatedVaultRoute
-  '/projects': typeof AuthenticatedProjectsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/social': typeof AuthenticatedSocialRoute
+  '/vault': typeof AuthenticatedVaultRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -105,31 +115,55 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
+  '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
-  '/_authenticated/vault': typeof AuthenticatedVaultRoute
-  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/developer-tools': typeof AuthenticatedDeveloperToolsRoute
-  '/_authenticated/ads': typeof AuthenticatedAdsRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/social': typeof AuthenticatedSocialRoute
+  '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/projects' | '/clients' | '/developer-tools' | '/ads' | '/api/ai/chat'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/accounts'
+    | '/ads'
+    | '/ai'
+    | '/clients'
+    | '/developer-tools'
+    | '/projects'
+    | '/social'
+    | '/vault'
+    | '/api/ai/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/accounts' | '/ai' | '/vault' | '/projects' | '/clients' | '/developer-tools' | '/api/ai/chat'
+  to:
+    | '/'
+    | '/auth'
+    | '/accounts'
+    | '/ads'
+    | '/ai'
+    | '/clients'
+    | '/developer-tools'
+    | '/projects'
+    | '/social'
+    | '/vault'
+    | '/api/ai/chat'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/accounts'
+    | '/_authenticated/ads'
     | '/_authenticated/ai'
-    | '/_authenticated/vault'
-    | '/_authenticated/projects'
     | '/_authenticated/clients'
     | '/_authenticated/developer-tools'
-    | '/_authenticated/ads'
+    | '/_authenticated/projects'
+    | '/_authenticated/social'
+    | '/_authenticated/vault'
     | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
@@ -170,25 +204,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ads': {
+      id: '/_authenticated/ads'
+      path: '/ads'
+      fullPath: '/ads'
+      preLoaderRoute: typeof AuthenticatedAdsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai': {
       id: '/_authenticated/ai'
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof AuthenticatedAiRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/vault': {
-      id: '/_authenticated/vault'
-      path: '/vault'
-      fullPath: '/vault'
-      preLoaderRoute: typeof AuthenticatedVaultRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projects': {
-      id: '/_authenticated/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -205,11 +232,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeveloperToolsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/ads': {
-      id: '/_authenticated/ads'
-      path: '/ads'
-      fullPath: '/ads'
-      preLoaderRoute: typeof AuthenticatedAdsRouteImport
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/social': {
+      id: '/_authenticated/social'
+      path: '/social'
+      fullPath: '/social'
+      preLoaderRoute: typeof AuthenticatedSocialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vault': {
+      id: '/_authenticated/vault'
+      path: '/vault'
+      fullPath: '/vault'
+      preLoaderRoute: typeof AuthenticatedVaultRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/ai/chat': {
@@ -224,22 +265,24 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
+  AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
-  AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
-  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedDeveloperToolsRoute: typeof AuthenticatedDeveloperToolsRoute
-  AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
+  AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
+  AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
-  AuthenticatedVaultRoute: AuthenticatedVaultRoute,
-  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedDeveloperToolsRoute: AuthenticatedDeveloperToolsRoute,
-  AuthenticatedAdsRoute: AuthenticatedAdsRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedSocialRoute: AuthenticatedSocialRoute,
+  AuthenticatedVaultRoute: AuthenticatedVaultRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

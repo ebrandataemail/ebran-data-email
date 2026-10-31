@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { asset } from "@/data/asset";
 import { createAiModel, aiProviderOptions, toAiError } from "@/lib/ai/lovable.server";
 import { chatInstructions } from "./assistant.server";
+import { buildAssetBrief } from "./context";
 
 const HISTORY_LIMIT = 40;
 

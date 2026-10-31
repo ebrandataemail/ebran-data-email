@@ -23,7 +23,8 @@ export function ClientDetailWorkspace({ client, onBack, onEdit }: { client: Clie
  const [assetName,setAssetName]=useState(""); const [assetType,setAssetType]=useState("website"); const [assetUrl,setAssetUrl]=useState("");
  const [brandName,setBrandName]=useState(""); const [brandType,setBrandType]=useState("logo"); const [brandValue,setBrandValue]=useState("");
  const [docTitle,setDocTitle]=useState(""); const [docType,setDocType]=useState("contract");
- const [taskTitle,setTaskTitle]=useState(""); const [taskDue,setTaskDue]=useState(""); const [taskPriority,setTaskPriority]=useState("medium");\n const [designTitle,setDesignTitle]=useState(""); const [comment,setComment]=useState(""); const [pin,setPin]=useState<{x:number;y:number}|null>(null);
+ const [taskTitle,setTaskTitle]=useState(""); const [taskDue,setTaskDue]=useState(""); const [taskPriority,setTaskPriority]=useState("medium");
+ const [designTitle,setDesignTitle]=useState(""); const [comment,setComment]=useState(""); const [pin,setPin]=useState<{x:number;y:number}|null>(null);
  const [busy,setBusy]=useState(false); const key=["client-detail",client.id];
  const refresh=()=>qc.invalidateQueries({queryKey:key});
  const query=useQuery({queryKey:key,queryFn:async()=>{
@@ -43,7 +44,7 @@ export function ClientDetailWorkspace({ client, onBack, onEdit }: { client: Clie
  const upload=async(file:File,folder:string)=>{if(!d?.userId)throw new Error("Sesi login tidak ditemukan");if(file.size>20*1024*1024)throw new Error("Ukuran file maksimal 20 MB");const path=`${d.userId}/${client.id}/${folder}/${crypto.randomUUID()}-${file.name.replace(/[^\\w.-]/g,"-")}`;const {error}=await supabase.storage.from("client-files").upload(path,file,{contentType:file.type});if(error)throw error;return path;};
  const versions=d?.client_design_versions??[]; const activeVersion=versions[0]; const activeComments=(d?.comments??[]).filter(x=>x.version_id===activeVersion?.id);
  const projects=d?.projects??[]; const tasks=d?.client_tasks??[]; const docs=d?.client_documents??[];
- const timeline=useMemo(()=>[...(d?.client_timeline_events??[]).map(x=>({...x,kind:"event"})),...tasks.map(x=>({id:x.id,title:x.title,description:x.description,occurred_at:x.created_at,event_type:"task",kind:"task"})),...docs.map(x=>({id:x.id,title:x.title,description:x.document_type,occurred_at:x.created_at,event_type:"document",kind:"document"}))].sort((a,b)=>new Date(b.occurred_at).getTime()-new Date(a.occurred_at).getTime()),[d]);
+ const timeline=useMemo(()=>[...(d?.client_timeline_events??[]).map((x:any)=>({...x,kind:"event"})),...tasks.map(x=>({id:x.id,title:x.title,description:x.description,occurred_at:x.created_at,event_type:"task",kind:"task"})),...docs.map(x=>({id:x.id,title:x.title,description:x.document_type,occurred_at:x.created_at,event_type:"document",kind:"document"}))].sort((a,b)=>new Date(b.occurred_at).getTime()-new Date(a.occurred_at).getTime()),[d]);
  const status=client.clientStatus??"active";
  return <div className="space-y-4">
   <Card className="overflow-hidden border-slate-200 shadow-sm">

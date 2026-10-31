@@ -20,7 +20,7 @@ export type DevAssetInput = {
   expiresAt?: string | null;
   description: string | null;
   projectId: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
 };
 
 export interface DevAsset {
@@ -38,7 +38,7 @@ export interface DevAsset {
   projectId: string | null;
   projectName: string | null;
   clientName: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
   updatedAt: string;
   createdAt: string;
 }
@@ -75,7 +75,7 @@ export async function listDevAssets(db: Db): Promise<DevAsset[]> {
       projectId: row.project_id,
       projectName: project?.name ?? null,
       clientName: project?.clients?.name ?? null,
-      metadata: (row.metadata ?? {}) as Record<string, unknown>,
+      metadata: (row.metadata ?? {}) as Record<string, any>,
       updatedAt: row.updated_at,
       createdAt: row.created_at,
     };

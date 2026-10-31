@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { asset } from "@/data/asset";
+import { asset as baseAsset } from "@/data/asset";
 import { buildAssetBrief, daysUntil, passwordFacts } from "@/lib/assistant/context";
 
+const asset = {
+  ...baseAsset,
+  password: "Secret#Pass2026",
+  security: { ...baseAsset.security, totpSecret: "JBSWY3DPEHPK3PXP", backupCodes: ["1111-2222", "3333-4444"] },
+  api: { ...baseAsset.api, secretToken: "sk_live_testsecret123", publicKey: "pk_live_testpublic456" },
+};
+
 describe("AI asset brief", () => {
-  const brief = JSON.stringify(buildAssetBrief(asset, new Date("2026-10-30T12:00:00Z")));
+  const brief = JSON.stringify(buildAssetBrief(asset as unknown as typeof baseAsset, new Date("2026-10-30T12:00:00Z")));
 
   it("never includes the account password", () => {
     expect(brief).not.toContain(asset.password);
