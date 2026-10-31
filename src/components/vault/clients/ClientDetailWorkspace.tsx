@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Building2, CalendarDays, Check, ExternalLink, FileText, Globe, ImagePlus, MessageSquare, Plus, Send, ShieldCheck, Upload, X } from "lucide-react";
+import { ArrowLeft, Building2, Check, ExternalLink, ImagePlus, Plus, Send, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
