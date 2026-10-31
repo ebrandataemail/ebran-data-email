@@ -64,7 +64,7 @@ function ChatWindow({
           const token = data.session?.access_token;
           return {
             body: { assetId, message: messages.at(-1) },
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            headers: (token ? { Authorization: `Bearer ${token}` } : {}) as Record<string, string>,
           };
         },
       }),
