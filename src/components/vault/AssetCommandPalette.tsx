@@ -225,7 +225,7 @@ export function AssetCommandPalette() {
               {accounts.slice(0, 6).map((acc) => (
                 <CommandItem
                   key={acc.id}
-                  value={`${acc.email} ${acc.project_name ?? ""} ${acc.recovery_email ?? ""} ${acc.tag ?? ""}`}
+                  value={`${acc.email} ${acc.projects[0]?.name ?? ""} ${acc.usageTag ?? ""}`}
                   onSelect={() => handleNavigate("/accounts")}
                   className="flex items-center gap-3"
                 >
@@ -234,13 +234,13 @@ export function AssetCommandPalette() {
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">{acc.email}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {acc.project_name ?? "Tanpa Proyek"}
-                        {acc.recovery_email ? ` · Recovery: ${acc.recovery_email}` : ""}
+                        {acc.projects[0]?.name ?? "Tanpa Proyek"}
+                        
                       </p>
                     </div>
-                    {acc.tag && (
+                    {acc.usageTag && (
                       <Badge variant="outline" className="text-[10px]">
-                        {acc.tag}
+                        {acc.usageTag}
                       </Badge>
                     )}
                   </div>

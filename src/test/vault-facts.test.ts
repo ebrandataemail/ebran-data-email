@@ -5,6 +5,7 @@ import { vaultFacts, type VaultAccount } from "@/lib/vault/vault.server";
 const acc = (over: Partial<VaultAccount>): VaultAccount => ({
   id: crypto.randomUUID(),
   email: "x@gmail.com",
+  projectId: null,
   provider: "gmail",
   hasPassword: true,
   hasAltPassword: false,
