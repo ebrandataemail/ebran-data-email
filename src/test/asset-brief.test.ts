@@ -11,7 +11,7 @@ const asset = {
 };
 
 describe("AI asset brief", () => {
-  const brief = JSON.stringify(buildAssetBrief(asset, new Date("2026-10-30T12:00:00Z")));
+  const brief = JSON.stringify(buildAssetBrief(asset as unknown as typeof baseAsset, new Date("2026-10-30T12:00:00Z")));
 
   it("never includes the account password", () => {
     expect(brief).not.toContain(asset.password);
