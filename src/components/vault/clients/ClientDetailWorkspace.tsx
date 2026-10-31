@@ -23,7 +23,8 @@ export function ClientDetailWorkspace({ client, onBack, onEdit }: { client: Clie
  const [assetName,setAssetName]=useState(""); const [assetType,setAssetType]=useState("website"); const [assetUrl,setAssetUrl]=useState("");
  const [brandName,setBrandName]=useState(""); const [brandType,setBrandType]=useState("logo"); const [brandValue,setBrandValue]=useState("");
  const [docTitle,setDocTitle]=useState(""); const [docType,setDocType]=useState("contract");
- const [taskTitle,setTaskTitle]=useState(""); const [taskDue,setTaskDue]=useState(""); const [taskPriority,setTaskPriority]=useState("medium");\n const [designTitle,setDesignTitle]=useState(""); const [comment,setComment]=useState(""); const [pin,setPin]=useState<{x:number;y:number}|null>(null);
+ const [taskTitle,setTaskTitle]=useState(""); const [taskDue,setTaskDue]=useState(""); const [taskPriority,setTaskPriority]=useState("medium");
+ const [designTitle,setDesignTitle]=useState(""); const [comment,setComment]=useState(""); const [pin,setPin]=useState<{x:number;y:number}|null>(null);
  const [busy,setBusy]=useState(false); const key=["client-detail",client.id];
  const refresh=()=>qc.invalidateQueries({queryKey:key});
  const query=useQuery({queryKey:key,queryFn:async()=>{
