@@ -226,6 +226,13 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
 
         {/* Content Section */}
         <section className="mx-auto max-w-[1400px] space-y-5 px-4 py-6 sm:px-8">
+          {isClients && selectedClientId && data?.clients.some((client) => client.id === selectedClientId) ? (
+            <ClientDetailWorkspace
+              client={data.clients.find((client) => client.id === selectedClientId)! as Client & ClientData}
+              onBack={() => setSelectedClientId(null)}
+              onEdit={() => startClientEdit(data.clients.find((client) => client.id === selectedClientId)!)}
+            />
+          ) : (
           {!isClients && (
             <>
               {/* Summary Metric Cards */}
@@ -406,6 +413,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
             </div>
           )}
           {isClients && data && <ClientWorkspacePanel clients={data.clients} />}
+          )}
         </section>
       </main>
 
