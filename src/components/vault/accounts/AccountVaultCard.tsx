@@ -558,7 +558,7 @@ export function AccountVaultCard({
                               {isEditing ? (
                                 <Button
                                   variant="ghost-danger"
-                                  size="icon-xs"
+                                  size="icon-sm"
                                   onClick={() => removeProject(p.id)}
                                 >
                                   <Trash2 className="size-3.5" />

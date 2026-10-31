@@ -369,7 +369,7 @@ function DevAssetCard({
           <div className="flex shrink-0 gap-1">
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={() => setExpanded((current) => !current)}
               title={expanded ? "Tutup Detail" : "Lihat Detail"}
               aria-label={expanded ? "Tutup detail aset" : "Lihat detail aset"}
@@ -378,7 +378,7 @@ function DevAssetCard({
             </Button>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-xs" onClick={onEdit} aria-label="Edit aset">
+                <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Edit aset">
                   <Pencil className="size-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -386,7 +386,7 @@ function DevAssetCard({
             </Tooltip>
             <Button
               variant="ghost-danger"
-              size="icon-xs"
+              size="icon-sm"
               onClick={onDelete}
               title="Hapus"
               aria-label="Hapus aset"
@@ -431,7 +431,7 @@ function DevAssetCard({
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ai-ghost" size="icon-xs" asChild>
+              <Button variant="ai-ghost" size="icon-sm" asChild>
                 <a href={`/ai?assetId=${asset.id}`} aria-label={`Tanya AI tentang ${asset.name}`}>
                   <Sparkles className="size-3.5" />
                 </a>
