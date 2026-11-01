@@ -57,6 +57,30 @@
   --color-warning-soft: var(--warning-soft);
   --color-brand-contrast: var(--brand-contrast);
 
+  --color-wb-canvas: var(--wb-canvas);
+  --color-wb-ink: var(--wb-ink);
+  --color-wb-green: var(--wb-green);
+  --color-wb-green-strong: var(--wb-green-strong);
+  --color-wb-blue: var(--wb-blue);
+  --color-wb-blue-strong: var(--wb-blue-strong);
+  --color-wb-yellow: var(--wb-yellow);
+  --color-wb-yellow-strong: var(--wb-yellow-strong);
+  --color-wb-teal: var(--wb-teal);
+  --color-wb-beige: var(--wb-beige);
+  --color-wb-beige-deep: var(--wb-beige-deep);
+  --color-wb-orange: var(--wb-orange);
+  --color-wb-lavender: var(--wb-lavender);
+  --color-wb-cyan: var(--wb-cyan);
+  --color-wb-cyan-soft: var(--wb-cyan-soft);
+  --color-wb-purple: var(--wb-purple);
+  --color-wb-purple-soft: var(--wb-purple-soft);
+  --color-wb-red: var(--wb-red);
+  --color-wb-pink: var(--wb-pink);
+  --color-wb-amber: var(--wb-amber);
+  --color-wb-freelance: var(--wb-freelance);
+  --color-wb-office: var(--wb-office);
+  --color-wb-other: var(--wb-other);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -114,6 +138,31 @@
   --warning-soft: oklch(0.975 0.055 95);
 
   --brand-contrast: oklch(1 0 0);
+
+  /* Papan Kerja (workboard) palette */
+  --wb-canvas: oklch(0.985 0.004 250);
+  --wb-ink: oklch(0.24 0.03 260);
+  --wb-green: oklch(0.93 0.07 145);
+  --wb-green-strong: oklch(0.63 0.15 145);
+  --wb-blue: oklch(0.86 0.07 255);
+  --wb-blue-strong: oklch(0.5 0.18 260);
+  --wb-yellow: oklch(0.96 0.07 95);
+  --wb-yellow-strong: oklch(0.82 0.16 85);
+  --wb-teal: oklch(0.38 0.05 210);
+  --wb-beige: oklch(0.95 0.014 80);
+  --wb-beige-deep: oklch(0.9 0.02 80);
+  --wb-orange: oklch(0.68 0.16 40);
+  --wb-lavender: oklch(0.76 0.12 290);
+  --wb-cyan: oklch(0.8 0.11 210);
+  --wb-cyan-soft: oklch(0.96 0.03 215);
+  --wb-purple: oklch(0.58 0.22 300);
+  --wb-purple-soft: oklch(0.96 0.03 300);
+  --wb-red: oklch(0.55 0.2 25);
+  --wb-pink: oklch(0.68 0.17 350);
+  --wb-amber: oklch(0.76 0.16 60);
+  --wb-freelance: oklch(0.42 0.04 170);
+  --wb-office: oklch(0.5 0.18 260);
+  --wb-other: oklch(0.6 0.09 50);
   --gradient-instagram: linear-gradient(
     45deg,
     oklch(0.83 0.17 85) 0%,
@@ -208,4 +257,15 @@
   kbd {
     font-family: var(--font-mono);
   }
+}
+
+@utility wb-hex-pattern {
+  background-color: var(--card);
+  background-image:
+    linear-gradient(30deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%),
+    linear-gradient(150deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%),
+    linear-gradient(30deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%),
+    linear-gradient(150deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%);
+  background-size: 40px 70px;
+  background-position: 0 0, 0 0, 20px 35px, 20px 35px;
 }
