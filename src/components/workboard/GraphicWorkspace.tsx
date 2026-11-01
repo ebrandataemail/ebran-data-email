@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { images, initialChat, type ChatMessage } from "./data";
+import { images, initialChat,  } from "./data";
 import type { WorkboardActivity, WorkboardClient, WorkboardDocument, WorkboardProject, WorkboardTask } from "./useWorkboardData";
 import { supabase } from "@/integrations/supabase/client";
 
