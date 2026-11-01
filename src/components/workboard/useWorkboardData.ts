@@ -22,6 +22,19 @@ export type WorkboardDocument = {
   file_size: number | null; document_date: string | null; expiry_date: string | null;
   notes: string | null; created_at: string;
 };
+export type WorkboardDesignVersion = {
+  id: string; client_id: string; title: string; version_label: string; file_path: string;
+  file_name: string; mime_type: string | null; status: "pending" | "approved" | "revision";
+  created_at: string; reviewed_at: string | null;
+};
+export type WorkboardDesignComment = {
+  id: string; client_id: string; version_id: string; comment: string;
+  x: number | null; y: number | null; created_at: string;
+};
+export type WorkboardDesignReview = {
+  id: string; client_id: string; version_id: string; decision: "approved" | "revision";
+  note: string | null; created_at: string;
+};
 export type WorkboardActivity = {
   id: string; client_id: string; event_type: string; title: string;
   description: string | null; occurred_at: string; metadata: Record<string, unknown>;
@@ -33,6 +46,9 @@ export function useWorkboardData() {
   const [tasks,setTasks]=useState<WorkboardTask[]>([]);
   const [documents,setDocuments]=useState<WorkboardDocument[]>([]);
   const [activities,setActivities]=useState<WorkboardActivity[]>([]);
+  const [designVersions,setDesignVersions]=useState<WorkboardDesignVersion[]>([]);
+  const [designComments,setDesignComments]=useState<WorkboardDesignComment[]>([]);
+  const [designReviews,setDesignReviews]=useState<WorkboardDesignReview[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<string|null>(null);
 
@@ -44,6 +60,9 @@ export function useWorkboardData() {
       (supabase.from("client_tasks" as any) as any).select("id,client_id,title,description,status,priority,due_date,assignee,created_at,updated_at,sort_order").order("due_date",{ascending:true,nullsFirst:false}).order("sort_order"),
       (supabase.from("client_documents" as any) as any).select("id,client_id,title,document_type,file_path,file_name,mime_type,file_size,document_date,expiry_date,notes,created_at").order("created_at",{ascending:false}),
       (supabase.from("client_timeline_events" as any) as any).select("id,client_id,event_type,title,description,occurred_at,metadata").order("occurred_at",{ascending:false}).limit(100),
+      (supabase.from("client_design_versions" as any) as any).select("id,client_id,title,version_label,file_path,file_name,mime_type,status,created_at,reviewed_at").order("created_at",{ascending:false}),
+      (supabase.from("client_design_comments" as any) as any).select("id,client_id,version_id,comment,x,y,created_at").order("created_at",{ascending:true}),
+      (supabase.from("client_design_reviews" as any) as any).select("id,client_id,version_id,decision,note,created_at").order("created_at",{ascending:false}),
     ]);
     const failed=results.find((r:any)=>r.error);
     if(failed?.error) throw failed.error;
@@ -52,6 +71,9 @@ export function useWorkboardData() {
     setTasks((results[2].data??[]) as WorkboardTask[]);
     setDocuments((results[3].data??[]) as WorkboardDocument[]);
     setActivities((results[4].data??[]) as WorkboardActivity[]);
+    setDesignVersions((results[5].data??[]) as WorkboardDesignVersion[]);
+    setDesignComments((results[6].data??[]) as WorkboardDesignComment[]);
+    setDesignReviews((results[7].data??[]) as WorkboardDesignReview[]);
   },[]);
 
   const createTask=useCallback(async(input:{client_id:string;title:string;description?:string;status:string;priority:string;due_date:string|null;assignee:string|null})=>{
@@ -91,9 +113,12 @@ export function useWorkboardData() {
       .on("postgres_changes",{event:"*",schema:"public",table:"client_tasks"},()=>{if(alive)void refresh().catch(e=>setError(e.message));})
       .on("postgres_changes",{event:"*",schema:"public",table:"client_documents"},()=>{if(alive)void refresh().catch(e=>setError(e.message));})
       .on("postgres_changes",{event:"*",schema:"public",table:"client_timeline_events"},()=>{if(alive)void refresh().catch(e=>setError(e.message));})
+      .on("postgres_changes",{event:"*",schema:"public",table:"client_design_versions"},()=>{if(alive)void refresh().catch(e=>setError(e.message));})
+      .on("postgres_changes",{event:"*",schema:"public",table:"client_design_comments"},()=>{if(alive)void refresh().catch(e=>setError(e.message));})
+      .on("postgres_changes",{event:"*",schema:"public",table:"client_design_reviews"},()=>{if(alive)void refresh().catch(e=>setError(e.message));})
       .subscribe();
     return ()=>{alive=false;void supabase.removeChannel(channel);};
   },[refresh]);
 
-  return {clients,projects,tasks,documents,activities,loading,error,refresh,createTask,updateTask,deleteTask,duplicateTask};
+  return {clients,projects,tasks,documents,activities,designVersions,designComments,designReviews,loading,error,refresh,createTask,updateTask,deleteTask,duplicateTask};
 }
