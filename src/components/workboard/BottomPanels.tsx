@@ -38,7 +38,7 @@ const highlights: Record<number, "orange" | "teal" | "lavender"> = {
   18: "lavender", 21: "lavender", 29: "lavender",
 };
 
-export function CalendarPanel() {
+export function CalendarPanel({ dueDates = [] }: { dueDates?: string[] }) {
   // October 2025 starts on a Wednesday, matching the reference grid (29, 30, 1…).
   const [cursor, setCursor] = useState({ year: 2025, month: 9 });
   const [selected, setSelected] = useState<number | null>(null);
@@ -118,6 +118,7 @@ export function CalendarPanel() {
         ))}
         {cells.map((c, i) => {
           const hasDue = c.current && dueDaySet.has(c.day);
+          const tone = c.current ? highlights[c.day] : undefined;
           const isSel = c.current && selected === c.day;
           return (
             <button
@@ -129,6 +130,7 @@ export function CalendarPanel() {
                 "h-7 rounded-md text-[12px] transition",
                 !c.current && "text-muted-foreground/60",
                 c.current && !tone && "bg-card/70 text-wb-ink hover:bg-card",
+                hasDue && !tone && "ring-1 ring-wb-blue-strong",
                 tone === "orange" && "bg-wb-orange text-brand-contrast",
                 tone === "teal" && "bg-wb-teal text-brand-contrast",
                 tone === "lavender" && "bg-wb-lavender text-wb-ink",
