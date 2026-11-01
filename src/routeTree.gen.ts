@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as WbPreviewTmpRouteImport } from './routes/wb-preview-tmp'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
@@ -20,6 +21,7 @@ import { Route as AuthenticatedDeveloperToolsRouteImport } from './routes/_authe
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
+import { Route as AuthenticatedWorkboardRouteImport } from './routes/_authenticated/workboard'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -34,6 +36,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WbPreviewTmpRoute = WbPreviewTmpRouteImport.update({
+  id: '/wb-preview-tmp',
+  path: '/wb-preview-tmp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAccountsRoute = AuthenticatedAccountsRouteImport.update({
@@ -77,6 +84,11 @@ const AuthenticatedVaultRoute = AuthenticatedVaultRouteImport.update({
   path: '/vault',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWorkboardRoute = AuthenticatedWorkboardRouteImport.update({
+  id: '/workboard',
+  path: '/workboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai/chat',
   path: '/api/ai/chat',
@@ -86,6 +98,7 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/wb-preview-tmp': typeof WbPreviewTmpRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
@@ -94,11 +107,13 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
+  '/workboard': typeof AuthenticatedWorkboardRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/wb-preview-tmp': typeof WbPreviewTmpRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
@@ -107,6 +122,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
+  '/workboard': typeof AuthenticatedWorkboardRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -114,6 +130,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/wb-preview-tmp': typeof WbPreviewTmpRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
@@ -122,6 +139,7 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
+  '/_authenticated/workboard': typeof AuthenticatedWorkboardRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
@@ -129,6 +147,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/wb-preview-tmp'
     | '/accounts'
     | '/ads'
     | '/ai'
@@ -137,11 +156,13 @@ export interface FileRouteTypes {
     | '/projects'
     | '/social'
     | '/vault'
+    | '/workboard'
     | '/api/ai/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/wb-preview-tmp'
     | '/accounts'
     | '/ads'
     | '/ai'
@@ -150,12 +171,14 @@ export interface FileRouteTypes {
     | '/projects'
     | '/social'
     | '/vault'
+    | '/workboard'
     | '/api/ai/chat'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/wb-preview-tmp'
     | '/_authenticated/accounts'
     | '/_authenticated/ads'
     | '/_authenticated/ai'
@@ -164,6 +187,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/social'
     | '/_authenticated/vault'
+    | '/_authenticated/workboard'
     | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
@@ -171,6 +195,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  WbPreviewTmpRoute: typeof WbPreviewTmpRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
 }
 
@@ -195,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wb-preview-tmp': {
+      id: '/wb-preview-tmp'
+      path: '/wb-preview-tmp'
+      fullPath: '/wb-preview-tmp'
+      preLoaderRoute: typeof WbPreviewTmpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/accounts': {
@@ -253,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVaultRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workboard': {
+      id: '/_authenticated/workboard'
+      path: '/workboard'
+      fullPath: '/workboard'
+      preLoaderRoute: typeof AuthenticatedWorkboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/ai/chat': {
       id: '/api/ai/chat'
       path: '/api/ai/chat'
@@ -272,6 +311,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
+  AuthenticatedWorkboardRoute: typeof AuthenticatedWorkboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -283,6 +323,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedVaultRoute: AuthenticatedVaultRoute,
+  AuthenticatedWorkboardRoute: AuthenticatedWorkboardRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -292,6 +333,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  WbPreviewTmpRoute: WbPreviewTmpRoute,
   ApiAiChatRoute: ApiAiChatRoute,
 }
 export const routeTree = rootRouteImport
