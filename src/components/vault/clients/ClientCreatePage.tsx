@@ -113,7 +113,7 @@ export function ClientCreatePage() {
       } });
       const clientId = saved.id;
       if (projectName.trim()) {
-        const project = await saveProject({ data: { name: projectName.trim(), description: projectDescription, clientId, status: "on-process" } });
+        const project = await saveProject({ data: { name: projectName.trim(), description: projectDescription, clientId, status: "active" } });
         const timelineRows = [
           startAt ? { user_id: userId, client_id: clientId, event_type: "project", title: "Project dimulai", description: projectName.trim(), occurred_at: new Date(startAt).toISOString(), metadata: { project_id: project.id, milestone: "start" } } : null,
           targetAt ? { user_id: userId, client_id: clientId, event_type: "project", title: "Target penyelesaian project", description: projectName.trim(), occurred_at: new Date(targetAt).toISOString(), metadata: { project_id: project.id, milestone: "target" } } : null,
