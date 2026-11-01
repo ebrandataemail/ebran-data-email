@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -63,6 +64,7 @@ type Client = Workspace["clients"][number];
 type Project = Workspace["projects"][number];
 
 export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const listFn = useServerFn(workspaceList);
   const saveClient = useServerFn(workspaceSaveClient);
@@ -87,6 +89,10 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
   const [busy, setBusy] = useState(false);
 
   const startCreate = () => {
+    if (mode === "clients") {
+      void navigate({ to: "/clients/new" });
+      return;
+    }
     setEditingClient(null);
     setEditingProject(null);
     setName("");
