@@ -16,6 +16,7 @@ import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedClientsNewRouteImport } from './routes/_authenticated/clients.new'
 import { Route as AuthenticatedDeveloperToolsRouteImport } from './routes/_authenticated/developer-tools'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
@@ -57,6 +58,11 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientsNewRoute = AuthenticatedClientsNewRouteImport.update({
+  id: '/clients/new',
+  path: '/clients/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDeveloperToolsRoute =
   AuthenticatedDeveloperToolsRouteImport.update({
     id: '/developer-tools',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/clients/new': typeof AuthenticatedClientsNewRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
@@ -126,6 +133,7 @@ export interface FileRoutesById {
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/clients/new': typeof AuthenticatedClientsNewRoute
   '/_authenticated/developer-tools': typeof AuthenticatedDeveloperToolsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
@@ -142,6 +150,7 @@ export interface FileRouteTypes {
     | '/ads'
     | '/ai'
     | '/clients'
+    | '/clients/new'
     | '/developer-tools'
     | '/projects'
     | '/social'
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ads'
     | '/_authenticated/ai'
     | '/_authenticated/clients'
+    | '/_authenticated/clients/new'
     | '/_authenticated/developer-tools'
     | '/_authenticated/projects'
     | '/_authenticated/social'
@@ -237,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clients/new': {
+      id: '/_authenticated/clients/new'
+      path: '/clients/new'
+      fullPath: '/clients/new'
+      preLoaderRoute: typeof AuthenticatedClientsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/developer-tools': {
       id: '/_authenticated/developer-tools'
       path: '/developer-tools'
@@ -287,6 +304,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedClientsNewRoute: typeof AuthenticatedClientsNewRoute
   AuthenticatedDeveloperToolsRoute: typeof AuthenticatedDeveloperToolsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
@@ -299,6 +317,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedClientsNewRoute: AuthenticatedClientsNewRoute,
   AuthenticatedDeveloperToolsRoute: AuthenticatedDeveloperToolsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
