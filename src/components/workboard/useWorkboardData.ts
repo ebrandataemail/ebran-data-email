@@ -54,6 +54,32 @@ export function useWorkboardData() {
     setActivities((results[4].data??[]) as WorkboardActivity[]);
   },[]);
 
+  const createTask=useCallback(async(input:{client_id:string;title:string;description?:string;status:string;priority:string;due_date:string|null;assignee:string|null})=>{
+    const {data,error}=await (supabase.from("client_tasks" as any) as any).insert(input).select("id").single();
+    if(error)throw error;
+    await refresh();
+    return data;
+  },[refresh]);
+
+  const updateTask=useCallback(async(id:string,patch:Partial<{client_id:string;title:string;description:string|null;status:string;priority:string;due_date:string|null;assignee:string|null}>)=>{
+    const {data,error}=await (supabase.from("client_tasks" as any) as any).update({...patch,updated_at:new Date().toISOString()}).eq("id",id).select("id").maybeSingle();
+    if(error)throw error;
+    if(!data)throw new Error("Task tidak ditemukan atau akses ditolak oleh kebijakan keamanan.");
+    await refresh();
+    return data;
+  },[refresh]);
+
+  const deleteTask=useCallback(async(id:string)=>{
+    const {data,error}=await (supabase.from("client_tasks" as any) as any).delete().eq("id",id).select("id").maybeSingle();
+    if(error)throw error;
+    if(!data)throw new Error("Task tidak ditemukan atau akses hapus ditolak oleh kebijakan keamanan.");
+    await refresh();
+  },[refresh]);
+
+  const duplicateTask=useCallback(async(task:WorkboardTask)=>{
+    return createTask({client_id:task.client_id,title:task.title.slice(0,145)+" (Salinan)",description:task.description??"",status:task.status,priority:task.priority,due_date:task.due_date,assignee:task.assignee});
+  },[createTask]);
+
   useEffect(()=>{
     let alive=true;
     setLoading(true);
@@ -69,5 +95,5 @@ export function useWorkboardData() {
     return ()=>{alive=false;void supabase.removeChannel(channel);};
   },[refresh]);
 
-  return {clients,projects,tasks,documents,activities,loading,error,refresh};
+  return {clients,projects,tasks,documents,activities,loading,error,refresh,createTask,updateTask,deleteTask,duplicateTask};
 }
