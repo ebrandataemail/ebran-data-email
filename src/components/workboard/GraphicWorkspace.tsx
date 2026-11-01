@@ -35,7 +35,7 @@ type Pin = { id: number; x: number; y: number; fresh?: boolean };
 
 export function GraphicWorkspace({clients,projects,tasks,documents,activities}:{clients:WorkboardClient[];projects:WorkboardProject[];tasks:WorkboardTask[];documents:WorkboardDocument[];activities:WorkboardActivity[]}) {
   const client=clients[0];
-  const project=projects[0];
+  const project=projects.find(p=>p.client_id===client?.id);
   const clientTasks=tasks.filter(t=>t.client_id===client?.id);
   const clientDocs=documents.filter(d=>d.client_id===client?.id);
   const clientActivities=activities.filter(a=>a.client_id===client?.id).slice(0,3);
