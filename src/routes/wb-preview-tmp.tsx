@@ -1,3 +1,3 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { WorkboardView } from "@/components/workboard/WorkboardView";
-export const Route = createFileRoute("/wb-preview-tmp")({ ssr: false, component: WorkboardView });
+import { WorkboardContent } from "@/components/workboard/WorkboardContent";
+export const Route = createFileRoute("/wb-preview-tmp")({ ssr: false, component: () => <div className="min-h-screen bg-wb-canvas"><WorkboardContent /></div> });
