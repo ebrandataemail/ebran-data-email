@@ -1,4 +1,4 @@
-import { CalendarDays, AlertTriangle, Check, Clock3, UserRound } from "lucide-react";
+import { CalendarDays, AlertTriangle, Clock3, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WorkboardClient, WorkboardTask } from "./useWorkboardData";
 
