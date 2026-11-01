@@ -238,7 +238,7 @@ export function GraphicWorkspace() {
                   key={p.id}
                   style={{ left: `${p.x}%`, top: `${p.y}%` }}
                   className={cn(
-                    "absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-card bg-wb-blue-strong text-[9px] font-bold text-brand-contrast opacity-0 shadow-card transition-opacity",
+                    "absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-card bg-wb-blue-strong text-[9px] font-bold text-brand-contrast shadow-card transition-opacity",
                     p.fresh ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                   )}
                 >

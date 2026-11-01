@@ -56,6 +56,7 @@ type NavTarget =
   | "/accounts"
   | "/ai"
   | "/projects"
+  | "/workboard"
   | "/clients"
   | "/developer-tools"
   | "/ads"
@@ -144,6 +145,7 @@ export function SidebarContents() {
           <SectionLabel action>PROYEK & CLIENT</SectionLabel>
           <div className="space-y-0.5">
             <NavItem icon={<Folder />} label="Semua Proyek" to="/projects" />
+            <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
           </div>
         </div>
