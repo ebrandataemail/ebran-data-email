@@ -43,7 +43,7 @@ export function WorkboardContent() {
     </div>
     <TaskBoard query={query} tasks={tasks} clients={clients} loading={loading} onCreate={createTask} onUpdate={updateTask} onDelete={deleteTask} onDuplicate={duplicateTask}/>
     <section className="grid gap-4 lg:grid-cols-[1fr_1.15fr_0.95fr]">
-      <CalendarPanel dueDates={tasks.map(t=>t.due_date).filter((d):d is string=>!!d)}/>
+      <CalendarPanel tasks={tasks} activities={activities}/>
       <WorkListPanel tasks={tasks} clients={clients}/>
       <AiSecretaryPanel/>
     </section>
