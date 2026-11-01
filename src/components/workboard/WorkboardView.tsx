@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, SlidersHorizontal, RefreshCw, Users, FolderKanban, ListTodo, FileText, Activity } from "lucide-react";
+import { Search, RefreshCw, Users, FolderKanban, ListTodo, FileText, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { GraphicWorkspace } from "./GraphicWorkspace";
