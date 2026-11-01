@@ -88,6 +88,7 @@ export function GraphicWorkspace({
     }
     setUploading(true);
     let uploadedPath = "";
+    let versionSaved = false;
     try {
       const { data: userResult, error: userError } = await supabase.auth.getUser();
       if (userError || !userResult.user) throw userError ?? new Error("Sesi login tidak ditemukan");
@@ -104,12 +105,13 @@ export function GraphicWorkspace({
           file_path: uploadedPath, file_name: file.name, mime_type: file.type, status: "pending",
         }).select("id").single();
       if (error) throw error;
-      await onDataChanged();
+      versionSaved = true;
       setSelectedVersionId(data.id);
+      await onDataChanged();
       setPinDraft(null);
       toast.success(`Desain ${nextLabel} tersimpan permanen`);
     } catch (error) {
-      if (uploadedPath) await supabase.storage.from("client-files").remove([uploadedPath]);
+      if (uploadedPath && !versionSaved) await supabase.storage.from("client-files").remove([uploadedPath]);
       toast.error(error instanceof Error ? error.message : "Upload desain gagal");
     } finally {
       setUploading(false);
