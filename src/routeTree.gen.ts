@@ -20,6 +20,7 @@ import { Route as AuthenticatedDeveloperToolsRouteImport } from './routes/_authe
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
+import { Route as AuthenticatedWorkboardRouteImport } from './routes/_authenticated/workboard'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,11 @@ const AuthenticatedVaultRoute = AuthenticatedVaultRouteImport.update({
   path: '/vault',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWorkboardRoute = AuthenticatedWorkboardRouteImport.update({
+  id: '/workboard',
+  path: '/workboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai/chat',
   path: '/api/ai/chat',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
+  '/workboard': typeof AuthenticatedWorkboardRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
+  '/workboard': typeof AuthenticatedWorkboardRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
+  '/_authenticated/workboard': typeof AuthenticatedWorkboardRoute
   '/api/ai/chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/social'
     | '/vault'
+    | '/workboard'
     | '/api/ai/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/social'
     | '/vault'
+    | '/workboard'
     | '/api/ai/chat'
   id:
     | '__root__'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/social'
     | '/_authenticated/vault'
+    | '/_authenticated/workboard'
     | '/api/ai/chat'
   fileRoutesById: FileRoutesById
 }
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVaultRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workboard': {
+      id: '/_authenticated/workboard'
+      path: '/workboard'
+      fullPath: '/workboard'
+      preLoaderRoute: typeof AuthenticatedWorkboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/ai/chat': {
       id: '/api/ai/chat'
       path: '/api/ai/chat'
@@ -272,6 +291,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
+  AuthenticatedWorkboardRoute: typeof AuthenticatedWorkboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -283,6 +303,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedVaultRoute: AuthenticatedVaultRoute,
+  AuthenticatedWorkboardRoute: AuthenticatedWorkboardRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

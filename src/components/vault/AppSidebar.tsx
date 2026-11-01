@@ -6,6 +6,7 @@ import {
   ChevronsUpDown,
   CodeXml,
   Folder,
+  LayoutDashboard,
   Mail,
   Megaphone,
   Plus,
