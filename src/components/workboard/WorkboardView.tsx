@@ -14,7 +14,7 @@ export function WorkboardView() {
 export function WorkboardContent() {
   const [query,setQuery]=useState("");
   const [selectedClientId,setSelectedClientId]=useState("");
-  const {clients,projects,tasks,documents,activities,loading,error,refresh}=useWorkboardData();
+  const {clients,projects,tasks,documents,activities,loading,error,refresh,createTask,updateTask,deleteTask,duplicateTask}=useWorkboardData();
   useEffect(()=>{if(!selectedClientId&&clients.length)setSelectedClientId(clients[0].id);},[clients,selectedClientId]);
   const latestActivities=activities.slice(0,8);
   const counts=[
@@ -41,7 +41,7 @@ export function WorkboardContent() {
       {loading&&!clients.length?<div className="rounded-xl border bg-card p-10 text-center text-xs text-muted-foreground">Menghubungkan ke Supabase…</div>:
       <GraphicWorkspace clients={clients} projects={projects} tasks={tasks} documents={documents} activities={activities} selectedClientId={selectedClientId}/>}
     </div>
-    <TaskBoard query={query} tasks={tasks} clients={clients} loading={loading}/>
+    <TaskBoard query={query} tasks={tasks} clients={clients} loading={loading} onCreate={createTask} onUpdate={updateTask} onDelete={deleteTask} onDuplicate={duplicateTask}/>
     <section className="grid gap-4 lg:grid-cols-[1fr_1.15fr_0.95fr]">
       <CalendarPanel dueDates={tasks.map(t=>t.due_date).filter((d):d is string=>!!d)}/>
       <WorkListPanel tasks={tasks} clients={clients}/>
