@@ -14,7 +14,7 @@ export function WorkboardView() {
 export function WorkboardContent() {
   const [query,setQuery]=useState("");
   const [selectedClientId,setSelectedClientId]=useState("");
-  const {clients,projects,tasks,documents,activities,loading,error,refresh,createTask,updateTask,deleteTask,duplicateTask}=useWorkboardData();
+  const {clients,projects,tasks,documents,activities,designVersions,designComments,designReviews,loading,error,refresh,createTask,updateTask,deleteTask,duplicateTask}=useWorkboardData();
   useEffect(()=>{if(!selectedClientId&&clients.length)setSelectedClientId(clients[0].id);},[clients,selectedClientId]);
   const latestActivities=activities.slice(0,8);
   const counts=[
