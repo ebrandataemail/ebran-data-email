@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { images, initialChat, type ChatMessage } from "./data";
 
-type Pin = { id: number; x: number; y: number };
+type Pin = { id: number; x: number; y: number; fresh?: boolean };
 
 export function GraphicWorkspace() {
   const [version, setVersion] = useState<"V1" | "V2" | "V3">("V3");
@@ -46,7 +46,7 @@ export function GraphicWorkspace() {
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     const id = pins.length + 1;
-    setPins((p) => [...p, { id, x, y }]);
+    setPins((p) => [...p, { id, x, y, fresh: true }]);
     toast.success(`Pinpoint #${id} ditambahkan`, {
       description: "Tulis catatan revisi di kolom komentar.",
     });
@@ -220,7 +220,7 @@ export function GraphicWorkspace() {
               aria-label="Tambah pinpoint revisi"
               onClick={addPin}
               onKeyDown={(e) => e.key === "Enter" && toast("Klik dengan mouse untuk menaruh pinpoint")}
-              className="relative mx-auto mt-2 w-[92%] cursor-crosshair"
+              className="group relative mx-auto mt-2 w-[92%] cursor-crosshair"
             >
               <img
                 src={images.labelV3}
@@ -237,7 +237,10 @@ export function GraphicWorkspace() {
                 <span
                   key={p.id}
                   style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                  className="absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-card bg-wb-blue-strong text-[9px] font-bold text-brand-contrast opacity-0 shadow-card transition-opacity hover:opacity-100 [div:hover>&]:opacity-100"
+                  className={cn(
+                    "absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-card bg-wb-blue-strong text-[9px] font-bold text-brand-contrast opacity-0 shadow-card transition-opacity",
+                    p.fresh ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                  )}
                 >
                   {p.id}
                 </span>
