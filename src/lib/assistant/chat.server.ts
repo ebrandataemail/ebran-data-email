@@ -109,10 +109,64 @@ export async function handleAiChat(request: Request) {
   const assetId = String(body.assetId || "");
   const message = body.message;
 
-  // 2b. Fetch asset context for the AI.
+  // 2b. Fetch the authenticated user's complete workspace context for Tanya AI.
   let brief: Record<string, unknown> | null = null;
 
-  if (assetId === asset.id) {
+  if (assetId === "workspace") {
+    const [clientsResult, projectsResult, tasksResult, assetsResult, documentsResult, timelineResult] =
+      await Promise.all([
+        auth.supabase.from("clients")
+          .select("id,name,legal_name,industry,contact_email,contact_phone,website,address,city,description,client_status,company_profile,scope_of_work,created_at,updated_at")
+          .eq("user_id", auth.userId).order("name").limit(100),
+        auth.supabase.from("projects")
+          .select("id,client_id,name,description,status,created_at,updated_at")
+          .eq("user_id", auth.userId).order("name").limit(200),
+        auth.supabase.from("client_tasks")
+          .select("id,client_id,title,description,status,priority,due_date,assignee,updated_at")
+          .eq("user_id", auth.userId).order("updated_at", { ascending: false }).limit(300),
+        auth.supabase.from("client_digital_assets")
+          .select("id,client_id,asset_name,asset_type,platform,asset_url,username,owner_email,notes,created_at")
+          .eq("user_id", auth.userId).order("created_at", { ascending: false }).limit(300),
+        auth.supabase.from("client_documents")
+          .select("id,client_id,title,document_type,file_name,mime_type,file_size,document_date,expiry_date,notes,created_at")
+          .eq("user_id", auth.userId).order("created_at", { ascending: false }).limit(200),
+        auth.supabase.from("client_timeline_events")
+          .select("id,client_id,event_type,title,description,occurred_at,metadata")
+          .eq("user_id", auth.userId).order("occurred_at", { ascending: false }).limit(300),
+      ]);
+
+    const errors = [clientsResult.error, projectsResult.error, tasksResult.error,
+      assetsResult.error, documentsResult.error, timelineResult.error].filter(Boolean);
+    if (errors.length) {
+      console.error("[AI workspace context]", errors);
+      return json(500, "Gagal memuat konteks workspace untuk AI.");
+    }
+
+    const clients = clientsResult.data ?? [];
+    const projects = projectsResult.data ?? [];
+    const byClient = (rows: Array<{ client_id: string }>, clientId: string) =>
+      rows.filter((row) => row.client_id === clientId);
+    brief = {
+      type: "workspace",
+      sourceOfTruth: "Supabase workspace tables",
+      totals: {
+        clients: clients.length, projects: projects.length,
+        tasks: tasksResult.data?.length ?? 0, digitalAssets: assetsResult.data?.length ?? 0,
+        documents: documentsResult.data?.length ?? 0, timelineEvents: timelineResult.data?.length ?? 0,
+      },
+      clients: clients.map((client) => ({
+        ...client,
+        projects: byClient(projects, client.id),
+        tasks: byClient(tasksResult.data ?? [], client.id),
+        digitalAssets: byClient(assetsResult.data ?? [], client.id),
+        documents: byClient(documentsResult.data ?? [], client.id),
+        timeline: byClient(timelineResult.data ?? [], client.id),
+      })),
+      unassignedProjects: projects.filter((project) => !project.client_id),
+      consistencyNote: "Gunakan client_id sebagai relasi utama. Status proyek mengikuti active/paused/archived; status task mengikuti things-to-do/queue-on-process/on-process/pending/revision/finished/cancel. Jangan menyamakan kedua jenis status.",
+      securityNote: "Konteks ini hanya memuat metadata operasional. Password, encrypted values, API secrets, token, dan kode 2FA tidak pernah dimuat.",
+    };
+  } else if (assetId === asset.id) {
     // Dummy asset fallback (legacy/home page)
     brief = buildAssetBrief();
   } else {

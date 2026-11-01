@@ -221,7 +221,7 @@ function ChatWindow({
 
 function ChatLoader() {
   const search = useSearch({ from: "/_authenticated/ai" }) as { assetId?: string };
-  const assetId = search.assetId || asset.id;
+  const assetId = search.assetId || "workspace";
   const historyFn = useServerFn(aiChatHistory);
   const history = useQuery({
     queryKey: ["ai", "chat", assetId],
@@ -255,7 +255,7 @@ function ChatLoader() {
 
 export function AiChatPageContent() {
   const search = useSearch({ from: "/_authenticated/ai" }) as { assetId?: string };
-  const assetId = search.assetId || asset.id;
+  const assetId = search.assetId || "workspace";
 
   return (
     <div className="flex min-h-[calc(100vh-13rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card">
@@ -264,7 +264,7 @@ export function AiChatPageContent() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">Asisten AI Ebran</p>
           <p className="truncate text-xs text-muted-foreground">
-            Aset: {assetId === asset.id ? "Instagram Newton" : assetId.slice(0, 8)} · Rahasia
+            Konteks: {assetId === "workspace" ? "Seluruh Workspace Client & Proyek" : assetId === asset.id ? "Instagram Newton" : assetId.slice(0, 8)} · Rahasia
             terlindungi
           </p>
         </div>

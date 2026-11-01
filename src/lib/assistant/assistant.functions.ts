@@ -47,7 +47,7 @@ export const aiChatHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
-    let owned = data.assetId === asset.id;
+    let owned = data.assetId === asset.id || data.assetId === "workspace";
     if (!owned) {
       const { data: email } = await context.supabase
         .from("email_accounts")
@@ -100,7 +100,7 @@ export const aiClearChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
-    let owned = data.assetId === asset.id;
+    let owned = data.assetId === asset.id || data.assetId === "workspace";
     if (!owned) {
       const { data: email } = await context.supabase
         .from("email_accounts")
