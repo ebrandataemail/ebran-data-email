@@ -28,10 +28,18 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { images, initialChat, type ChatMessage } from "./data";
+import type { WorkboardActivity, WorkboardClient, WorkboardDocument, WorkboardProject, WorkboardTask } from "./useWorkboardData";
+import { supabase } from "@/integrations/supabase/client";
 
 type Pin = { id: number; x: number; y: number; fresh?: boolean };
 
-export function GraphicWorkspace() {
+export function GraphicWorkspace({clients,projects,tasks,documents,activities}:{clients:WorkboardClient[];projects:WorkboardProject[];tasks:WorkboardTask[];documents:WorkboardDocument[];activities:WorkboardActivity[]}) {
+  const client=clients[0];
+  const project=projects.find(p=>p.client_id===client?.id);
+  const clientTasks=tasks.filter(t=>t.client_id===client?.id);
+  const clientDocs=documents.filter(d=>d.client_id===client?.id);
+  const clientActivities=activities.filter(a=>a.client_id===client?.id).slice(0,3);
+  async function openDocument(path:string){const {data,error}=await supabase.storage.from("client-files").createSignedUrl(path,300);if(error||!data?.signedUrl){toast.error(error?.message??"File tidak dapat dibuka");return;}window.open(data.signedUrl,"_blank","noopener,noreferrer");}
   const [version, setVersion] = useState<"V1" | "V2" | "V3">("V3");
   const [pins, setPins] = useState<Pin[]>([
     { id: 1, x: 50, y: 22 },
@@ -82,107 +90,38 @@ export function GraphicWorkspace() {
       </header>
 
       <div className="grid gap-3 p-3 lg:grid-cols-[minmax(200px,0.95fr)_minmax(0,1.85fr)_minmax(200px,0.85fr)]">
-        {/* Left column */}
+        {/* Left column: live client/project data */}
         <div className="space-y-3">
           <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <h3 className="text-[13px] font-bold leading-snug text-wb-ink">
-              PT. Maju Mundur Bersama — Project &amp; Account Overview
-            </h3>
+            <h3 className="text-[13px] font-bold leading-snug text-wb-ink">{client?.legal_name||client?.name||"Belum ada client"} — Project &amp; Account Overview</h3>
             <dl className="mt-4 space-y-3 text-[11px]">
-              <Row icon={<Clock />} label="Created time">
-                <span className="font-semibold text-wb-ink">October 15, 2026 10:35 AM</span>
-              </Row>
-              <Row icon={<Circle className="fill-current" />} label="Status" smallIcon>
-                <span className="inline-flex items-center gap-1 rounded-full border border-wb-orange/40 bg-wb-orange/10 px-2 py-0.5 text-[10px] font-semibold text-wb-orange">
-                  <span className="size-1.5 rounded-full bg-wb-orange" />
-                  Revisi
-                </span>
-              </Row>
-              <Row icon={<CircleCheck />} label="Priority">
-                <span className="rounded-full bg-wb-purple-soft px-2 py-0.5 text-[10px] font-semibold text-wb-purple">
-                  Enterprise
-                </span>
-              </Row>
-              <Row icon={<Calendar />} label="Due Date">
-                <span className="font-semibold text-wb-ink">Oct 28, 2026 - 15:00 WIB</span>
-              </Row>
-              <Row icon={<Tag />} label="Tags">
-                <div className="flex flex-wrap gap-1">
-                  {["Spanduk", "Cetak & Digital", "Umrah"].map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-wb-ink"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </Row>
-              <Row icon={<User />} label="Assignees">
-                <div className="flex -space-x-1.5">
-                  <Initials text="DS" className="bg-wb-ink" />
-                  <Initials text="AM" className="bg-wb-blue-strong" />
-                  <Initials text="CL" className="bg-wb-purple" />
-                </div>
-              </Row>
+              <Row icon={<Clock />} label="Created time"><span className="font-semibold text-wb-ink">{project?new Date(project.created_at).toLocaleString("id-ID"):client?new Date(client.created_at).toLocaleDateString("id-ID"):"—"}</span></Row>
+              <Row icon={<Circle className="fill-current" />} label="Project" smallIcon><span className="font-semibold text-wb-ink">{project?.name??"Belum ada proyek"}</span></Row>
+              <Row icon={<CircleCheck />} label="Status"><span className="rounded-full bg-wb-purple-soft px-2 py-0.5 text-[10px] font-semibold text-wb-purple">{project?.status??client?.client_status??"—"}</span></Row>
+              <Row icon={<Calendar />} label="Open Tasks"><span className="font-semibold text-wb-ink">{clientTasks.filter(t=>!["finished","cancel"].includes(t.status)).length} task</span></Row>
+              <Row icon={<Tag />} label="Industri"><span className="font-semibold text-wb-ink">{client?.industry??"—"}</span></Row>
+              <Row icon={<User />} label="PIC"><span className="font-semibold text-wb-ink">{client?.contact_name??"—"}</span></Row>
             </dl>
           </div>
-
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-3 py-2 text-muted-foreground">
-              {[Bold, Italic, Underline].map((Icon, i) => (
-                <button key={i} type="button" className="rounded p-0.5 hover:bg-muted hover:text-foreground">
-                  <Icon className="size-3.5" />
-                </button>
-              ))}
-              <span className="h-3.5 w-px bg-border" />
-              <button type="button" className="rounded p-0.5 hover:bg-muted hover:text-foreground">
-                <Link2 className="size-3.5" />
-              </button>
-              <button type="button" className="rounded p-0.5 hover:bg-muted hover:text-foreground">
-                <ImagePlus className="size-3.5" />
-              </button>
-            </div>
-            <div className="p-3">
-              <h4 className="flex items-center gap-1.5 text-[12px] font-bold text-wb-ink">
-                <FileText className="size-3.5 text-wb-blue-strong" /> Isi Brief
-              </h4>
-              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                Spanduk Keberangkatan Umrah (Kantor Cabang Utama). Desain harus menonjolkan kesan
-                premium dan islami.
-              </p>
-              <div className="mt-2 border-l-2 border-wb-blue pl-2 text-[11px] leading-relaxed text-muted-foreground">
-                <p>
-                  <b className="text-wb-ink">Spesifikasi Layout:</b> Landscape (3m x 1m).
-                </p>
-                <p>
-                  <b className="text-wb-ink">Spesifikasi Fisik:</b> Bahan Flexi 340gsm, Mata Ayam 4
-                  sudut untuk kebutuhan gantung.
-                </p>
-              </div>
+            <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-3 py-2 text-muted-foreground"><FileText className="size-3.5"/><span className="text-[11px] font-semibold text-wb-ink">Client Brief &amp; Scope</span></div>
+            <div className="space-y-2 p-3">
+              <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">{client?.company_profile||client?.description||"Profil client belum diisi."}</p>
+              <div className="border-l-2 border-wb-blue pl-2 text-[11px] leading-relaxed text-muted-foreground"><b className="text-wb-ink">Scope of Work:</b><p className="whitespace-pre-wrap">{client?.scope_of_work||project?.description||"Belum ada scope of work."}</p></div>
             </div>
           </div>
-
           <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
-            <h4 className="flex items-center gap-1.5 text-[12px] font-bold text-wb-ink">
-              <Paperclip className="size-3.5 text-wb-blue-strong" /> Asset Uploader &amp; Links
-            </h4>
+            <h4 className="flex items-center gap-1.5 text-[12px] font-bold text-wb-ink"><Paperclip className="size-3.5 text-wb-blue-strong"/> Dokumen Client</h4>
             <div className="mt-3 space-y-2">
-              <FileRow name="Brand_Guidelines.pdf" size="2.4 MB" kind="pdf" />
-              <FileRow name="Logo_Perusahaan.png" size="1.1 MB" kind="image" />
+              {clientDocs.map(doc=><button key={doc.id} type="button" onClick={()=>void openDocument(doc.file_path)} className="flex w-full items-center gap-2 rounded-lg border border-border bg-card p-2 text-left hover:bg-muted">
+                <span className="flex size-6 items-center justify-center rounded bg-wb-blue/40 text-wb-blue-strong"><FileText className="size-3.5"/></span><span className="min-w-0 flex-1"><span className="block truncate text-[10px] font-semibold text-wb-ink">{doc.title||doc.file_name}</span><span className="block text-[9px] text-muted-foreground">{doc.document_type} · {doc.file_name}</span></span><CloudDownload className="size-3.5 text-muted-foreground"/>
+              </button>)}
+              {!clientDocs.length&&<p className="rounded-lg border border-dashed p-3 text-center text-[10px] text-muted-foreground">Belum ada dokumen untuk client ini.</p>}
             </div>
-            <div className="mt-3 border-t border-border pt-3">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-                List Link External
-              </p>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-wb-blue-strong hover:underline"
-              >
-                <ExternalLink className="size-3" /> Aset Foto Mentah (Google Drive)
-              </a>
-            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
+            <h4 className="text-[11px] font-semibold text-wb-ink">Aktivitas Terbaru</h4>
+            <div className="mt-2 space-y-2">{clientActivities.map(a=><div key={a.id} className="border-l-2 border-wb-blue pl-2"><p className="text-[10px] font-semibold text-wb-ink">{a.title}</p><p className="text-[9px] text-muted-foreground">{new Date(a.occurred_at).toLocaleString("id-ID")} · {a.event_type}</p></div>)}{!clientActivities.length&&<p className="text-[9px] text-muted-foreground">Belum ada aktivitas client.</p>}</div>
           </div>
         </div>
 
