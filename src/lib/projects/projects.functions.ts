@@ -172,20 +172,23 @@ export const workspaceSaveProject = createServerFn({ method: "POST" })
       clientId?: string | null;
     }) => {
       const name = text(input?.name, 120);
-      const allowedStatuses = [
-        "things-to-do",
-        "on-process",
-        "queue-on-process",
-        "pending",
-        "revision",
-        "done",
-        "finished",
-        "cancel",
-        "active",
-        "paused",
-        "archived",
-      ];
-      const status = allowedStatuses.includes(input?.status ?? "") ? input!.status! : "on-process";
+      // Keep the projects.status values aligned with the database CHECK constraint.
+      // Workboard workflow labels are normalized into the canonical project lifecycle.
+      const statusAliases: Record<string, string> = {
+        "things-to-do": "active",
+        "queue-on-process": "active",
+        "on-process": "active",
+        pending: "paused",
+        revision: "paused",
+        done: "archived",
+        finished: "archived",
+        cancel: "archived",
+        active: "active",
+        paused: "paused",
+        archived: "archived",
+      };
+      const requestedStatus = input?.status ?? "active";
+      const status = statusAliases[requestedStatus] ?? "active";
       if (!name) throw new Error("Nama proyek wajib diisi.");
       return {
         id: input?.id ? uuid(input.id) : null,
@@ -223,8 +226,14 @@ export const workspaceUpdateProjectStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { id: string; status: string }) => {
     const id = uuid(input?.id);
-    const status = text(input?.status, 50);
-    if (!status) throw new Error("Status wajib diisi.");
+    const requestedStatus = text(input?.status, 50);
+    const statusAliases: Record<string, string> = {
+      "things-to-do": "active", "queue-on-process": "active", "on-process": "active",
+      pending: "paused", revision: "paused", done: "archived", finished: "archived",
+      cancel: "archived", active: "active", paused: "paused", archived: "archived",
+    };
+    const status = statusAliases[requestedStatus];
+    if (!status) throw new Error("Status proyek tidak valid.");
     return { id, status };
   })
   .handler(async ({ data, context }) => {
