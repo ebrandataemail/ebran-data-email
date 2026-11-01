@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { images, workItems, type WorkItem } from "./data";
+import { images } from "./data";
+import type { WorkboardClient, WorkboardTask } from "./useWorkboardData";
 
 /* ---------------------------------------------------------------- Calendar */
 
@@ -55,7 +56,7 @@ export function CalendarPanel() {
     return out;
   }, [cursor]);
 
-  const isReferenceMonth = cursor.year === 2025 && cursor.month === 9;
+  const dueDaySet = new Set(dueDates.filter(d=>{const date=new Date(d+"T00:00:00");return date.getFullYear()===cursor.year&&date.getMonth()===cursor.month;}).map(d=>new Date(d+"T00:00:00").getDate()));
 
   function shift(delta: number) {
     setSelected(null);
@@ -116,7 +117,7 @@ export function CalendarPanel() {
           </span>
         ))}
         {cells.map((c, i) => {
-          const tone = c.current && isReferenceMonth ? highlights[c.day] : undefined;
+          const hasDue = c.current && dueDaySet.has(c.day);
           const isSel = c.current && selected === c.day;
           return (
             <button
@@ -145,92 +146,21 @@ export function CalendarPanel() {
 
 /* ---------------------------------------------------------- Work list */
 
-const avatarColor: Record<WorkItem["color"], string> = {
-  red: "bg-wb-red",
-  pink: "bg-wb-pink",
-  amber: "bg-wb-amber",
-};
-
-export function WorkListPanel() {
-  const [q, setQ] = useState("");
-  const [active, setActive] = useState("w1");
-  const items = workItems.filter(
-    (w) => !q || `${w.name} ${w.preview}`.toLowerCase().includes(q.toLowerCase()),
-  );
-
-  return (
-    <div className="min-w-0">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[15px] font-extrabold tracking-tight text-wb-ink">DAFTAR PEKERJAAN</h3>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-[10px] text-wb-ink shadow-soft transition-colors hover:bg-muted"
-        >
-          Thursday, April 17th <ChevronDown className="size-3" />
-        </button>
-      </div>
-      <label className="mt-2 flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 shadow-soft">
-        <Search className="size-3 text-wb-ink" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search Task/Project/client."
-          className="min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-wb-ink outline-none placeholder:text-wb-ink"
-        />
-        <kbd className="rounded border border-border bg-muted px-1 font-mono text-[7px] text-muted-foreground">
-          ⌘ K
-        </kbd>
-      </label>
-
-      <ul className="mt-2 border-r border-border bg-card">
-        {items.map((w) => (
-          <li key={w.id}>
-            <button
-              type="button"
-              onClick={() => setActive(w.id)}
-              className={cn(
-                "flex w-full items-start gap-3 px-2 py-3.5 text-left transition-colors hover:bg-muted/60",
-                active === w.id && "bg-muted/70",
-              )}
-            >
-              <span className="relative shrink-0">
-                {w.photo ? (
-                  <img
-                    src={w.photo}
-                    alt=""
-                    width={28}
-                    height={28}
-                    loading="lazy"
-                    className="size-7 rounded-md object-cover"
-                  />
-                ) : (
-                  <span
-                    className={cn(
-                      "flex size-7 items-center justify-center rounded-md text-[9px] font-semibold text-brand-contrast",
-                      avatarColor[w.color],
-                    )}
-                  >
-                    {w.initials}
-                  </span>
-                )}
-                <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-card bg-wb-orange" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-[12px] font-medium text-wb-ink">{w.name}</span>
-                  <span className="shrink-0 text-[9.5px] text-muted-foreground">{w.time}</span>
-                </span>
-                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{w.preview}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-        {!items.length && (
-          <li className="px-2 py-6 text-center text-[11px] text-muted-foreground">Tidak ada pekerjaan cocok.</li>
-        )}
-      </ul>
-    </div>
-  );
+export function WorkListPanel({tasks,clients}:{tasks:WorkboardTask[];clients:WorkboardClient[]}) {
+  const [q,setQ]=useState("");
+  const [active,setActive]=useState<string|null>(null);
+  const clientById=new Map(clients.map(c=>[c.id,c]));
+  const items=tasks.filter(t=>!q||[t.title,t.description??"",t.assignee??"",clientById.get(t.client_id)?.name??""].join(" ").toLowerCase().includes(q.toLowerCase()));
+  const selected=items.find(t=>t.id===active)??items[0];
+  return <div className="min-w-0">
+    <div className="flex items-center justify-between gap-2"><h3 className="text-[15px] font-extrabold tracking-tight text-wb-ink">DAFTAR PEKERJAAN</h3><span className="rounded-full bg-card px-3 py-1 text-[10px] text-wb-ink shadow-soft">{items.length} task</span></div>
+    <label className="mt-2 flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 shadow-soft"><Search className="size-3 text-wb-ink"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Cari task / proyek / client" className="min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-wb-ink outline-none placeholder:text-muted-foreground"/></label>
+    <ul className="mt-2 border-r border-border bg-card">
+      {items.slice(0,12).map(t=><li key={t.id}><button type="button" onClick={()=>setActive(t.id)} className={cn("flex w-full items-start gap-3 border-b border-border px-2 py-3 text-left hover:bg-muted/60",selected?.id===t.id&&"bg-muted/70")}><span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-wb-blue text-[9px] font-bold text-wb-ink">{(clientById.get(t.client_id)?.name??"C").slice(0,2).toUpperCase()}</span><span className="min-w-0 flex-1"><span className="flex items-baseline justify-between gap-2"><span className="truncate text-[11px] font-semibold text-wb-ink">{t.title}</span><span className="shrink-0 text-[8px] text-muted-foreground">{t.due_date?new Date(t.due_date+"T00:00:00").toLocaleDateString("id-ID"):"Tanpa deadline"}</span></span><span className="mt-0.5 block truncate text-[9px] text-muted-foreground">{clientById.get(t.client_id)?.name??"Client tidak ditemukan"} · {t.status}</span></span></button></li>)}
+      {!items.length&&<li className="px-2 py-6 text-center text-[10px] text-muted-foreground">Belum ada task sesuai pencarian.</li>}
+    </ul>
+    {selected&&<div className="mt-2 rounded-lg border bg-card p-3"><p className="text-[10px] font-bold text-wb-ink">{selected.title}</p><p className="mt-1 text-[9px] text-muted-foreground">{selected.description||"Tidak ada deskripsi."}</p><p className="mt-2 text-[9px] text-muted-foreground">PIC: {selected.assignee||"Belum ditentukan"} · Prioritas: {selected.priority}</p></div>}
+  </div>;
 }
 
 /* -------------------------------------------------------- AI secretary */
