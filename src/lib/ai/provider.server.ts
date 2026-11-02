@@ -27,7 +27,6 @@ export function createAiModel() {
   const provider = createOpenAI({
     baseURL,
     apiKey,
-    name: "external-ai-provider",
   });
 
   return { model: provider.chat(modelId) };
