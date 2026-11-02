@@ -127,6 +127,8 @@ export function ClientDetailWorkspace({
   const [brandSourceSocial, setBrandSourceSocial] = useState("");
   const [brandSourcePrompt, setBrandSourcePrompt] = useState("");
   const [brandSourceFile, setBrandSourceFile] = useState<File | null>(null);
+  const [editingBrandProfile, setEditingBrandProfile] = useState(false);
+  const [brandProfileForm, setBrandProfileForm] = useState<DBRow>({});
 
   // Digital Assets & Kredensial Form State
   const [masterEmail, setMasterEmail] = useState("");
@@ -242,6 +244,24 @@ export function ClientDetailWorkspace({
 
   const dbData = query.data;
 
+  useEffect(() => {
+    const profile = dbData?.brandProfile ?? {};
+    setBrandProfileForm({
+      primary_color: profile.primary_color || "#C9A75D",
+      secondary_color: profile.secondary_color || "#003837",
+      tone_of_voice: profile.tone_of_voice || "",
+      company_overview: profile.company_overview || "",
+      pain_points: profile.pain_points || "",
+      agency_goals: profile.agency_goals || "",
+      do_rules: profile.do_rules || "",
+      dont_rules: profile.dont_rules || "",
+      important_notes: profile.important_notes || "",
+      vault_notes: profile.vault_notes || "",
+      tags: Array.isArray(profile.tags) ? profile.tags.join(", ") : "",
+      service_priority: profile.service_priority || "standard",
+    });
+  }, [dbData?.brandProfile, client.id]);
+
   // Initialize master email asset fields if present
   useEffect(() => {
     if (dbData?.assets) {
@@ -344,6 +364,44 @@ export function ClientDetailWorkspace({
 
   const removeAttachedFile = (index: number) => {
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveBrandProfile = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Sesi login tidak ditemukan.");
+      const payload = {
+        user_id: authData.user.id,
+        client_id: client.id,
+        primary_color: String(brandProfileForm.primary_color || "#C9A75D"),
+        secondary_color: String(brandProfileForm.secondary_color || "#003837"),
+        tone_of_voice: String(brandProfileForm.tone_of_voice || "").trim() || null,
+        company_overview: String(brandProfileForm.company_overview || "").trim() || null,
+        pain_points: String(brandProfileForm.pain_points || "").trim() || null,
+        agency_goals: String(brandProfileForm.agency_goals || "").trim() || null,
+        do_rules: String(brandProfileForm.do_rules || "").trim() || null,
+        dont_rules: String(brandProfileForm.dont_rules || "").trim() || null,
+        important_notes: String(brandProfileForm.important_notes || "").trim() || null,
+        vault_notes: String(brandProfileForm.vault_notes || "").trim() || null,
+        tags: String(brandProfileForm.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean),
+        service_priority: ["standard", "priority", "enterprise"].includes(String(brandProfileForm.service_priority))
+          ? String(brandProfileForm.service_priority)
+          : "standard",
+      };
+      const { error } = await (supabase.from("client_brand_profiles" as any) as any)
+        .upsert(payload, { onConflict: "client_id" });
+      if (error) throw error;
+      setEditingBrandProfile(false);
+      await qc.invalidateQueries({ queryKey });
+      await qc.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
+      toast.success("Brand profile berhasil diperbarui dan disinkronkan.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal memperbarui brand profile.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSaveBrandSource = async () => {
@@ -867,6 +925,9 @@ export function ClientDetailWorkspace({
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-bold text-slate-900">Brand Profile Tersimpan</h2>
+                    <button type="button" onClick={() => setEditingBrandProfile((value) => !value)} className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
+                      {editingBrandProfile ? "Tutup Edit" : "Edit Profile"}
+                    </button>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
                       Prioritas {dbData.brandProfile.service_priority || "standard"}
                     </span>
@@ -876,23 +937,67 @@ export function ClientDetailWorkspace({
                     <span className="flex items-center gap-1.5"><i className="size-4 rounded border" style={{ backgroundColor: dbData.brandProfile.secondary_color }} /> Warna sekunder</span>
                     {dbData.brandProfile.tags?.map((tag: string) => <span key={tag} className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">{tag}</span>)}
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {[
-                      ["Overview", dbData.brandProfile.company_overview],
-                      ["Tone of Voice", dbData.brandProfile.tone_of_voice],
-                      ["Pain Points", dbData.brandProfile.pain_points],
-                      ["Agency Goals", dbData.brandProfile.agency_goals],
-                      ["DOs", dbData.brandProfile.do_rules],
-                      ["DONTs", dbData.brandProfile.dont_rules],
-                      ["Catatan Penting", dbData.brandProfile.important_notes],
-                      ["Catatan Vault", dbData.brandProfile.vault_notes],
-                    ].filter((item) => item[1]).map(([label, value]) => (
-                      <div key={label} className="rounded-lg bg-slate-50 p-3">
-                        <h3 className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</h3>
-                        <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">{value}</p>
+                  {editingBrandProfile ? (
+                    <form onSubmit={handleSaveBrandProfile} className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        ["company_overview", "Overview"],
+                        ["tone_of_voice", "Tone of Voice"],
+                        ["pain_points", "Pain Points"],
+                        ["agency_goals", "Agency Goals"],
+                        ["do_rules", "DOs"],
+                        ["dont_rules", "DONTs"],
+                        ["important_notes", "Catatan Penting"],
+                        ["vault_notes", "Catatan Vault"],
+                      ].map(([key, label]) => (
+                        <label key={key} className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                          {label}
+                          <textarea rows={3} value={String(brandProfileForm[key] || "")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, [key]: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700" />
+                        </label>
+                      ))}
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Warna Utama
+                        <input type="color" value={String(brandProfileForm.primary_color || "#C9A75D")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, primary_color: event.target.value }))} className="h-9 w-full rounded border border-slate-200" />
+                      </label>
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Warna Sekunder
+                        <input type="color" value={String(brandProfileForm.secondary_color || "#003837")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, secondary_color: event.target.value }))} className="h-9 w-full rounded border border-slate-200" />
+                      </label>
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Tags (pisahkan koma)
+                        <input value={String(brandProfileForm.tags || "")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, tags: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700" />
+                      </label>
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Prioritas Layanan
+                        <select value={String(brandProfileForm.service_priority || "standard")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, service_priority: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700">
+                          <option value="standard">Standard</option>
+                          <option value="priority">Priority</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
+                      </label>
+                      <div className="flex items-end justify-end gap-2 sm:col-span-2">
+                        <button type="button" onClick={() => setEditingBrandProfile(false)} className="rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-600">Batal</button>
+                        <button type="submit" disabled={busy} className="rounded-md bg-[#003837] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{busy ? "Menyimpan..." : "Simpan Profile"}</button>
                       </div>
-                    ))}
-                  </div>
+                    </form>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        ["Overview", dbData.brandProfile.company_overview],
+                        ["Tone of Voice", dbData.brandProfile.tone_of_voice],
+                        ["Pain Points", dbData.brandProfile.pain_points],
+                        ["Agency Goals", dbData.brandProfile.agency_goals],
+                        ["DOs", dbData.brandProfile.do_rules],
+                        ["DONTs", dbData.brandProfile.dont_rules],
+                        ["Catatan Penting", dbData.brandProfile.important_notes],
+                        ["Catatan Vault", dbData.brandProfile.vault_notes],
+                      ].filter((item) => item[1]).map(([label, value]) => (
+                        <div key={label} className="rounded-lg bg-slate-50 p-3">
+                          <h3 className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</h3>
+                          <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
               )}
 
