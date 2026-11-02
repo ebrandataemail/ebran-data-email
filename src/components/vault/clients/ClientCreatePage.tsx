@@ -381,13 +381,32 @@ export function ClientCreatePage() {
       });
       const clientId = savedClient.id;
 
+      // Persist the form's brand/profile fields as structured, reusable data.
+      const { error: profileError } = await (supabase.from("client_brand_profiles" as any) as any)
+        .insert({
+          user_id: userId,
+          client_id: clientId,
+          primary_color: color1,
+          secondary_color: color2,
+          tone_of_voice: toneOfVoice.trim() || null,
+          company_overview: companyOverview.trim() || null,
+          pain_points: painPoints.trim() || null,
+          agency_goals: agencyGoals.trim() || null,
+          do_rules: dosRules.trim() || null,
+          dont_rules: dontsRules.trim() || null,
+          important_notes: catatanPenting.trim() || null,
+          tags: tagsInput.split(",").map((tag) => tag.trim()).filter(Boolean),
+          service_priority: priority === "basic" ? "standard" : priority,
+        });
+      if (profileError) throw new Error(`Profil brand gagal disimpan: ${profileError.message}`);
+
       // 3. Create Project & Initial Timeline Agenda
       const project = await saveProject({
         data: {
           name: `${name.trim()} - Proyek Utama`,
           description: briefRingkasan || `Timeline project: Start ${startAt} -> Target ${targetAt}. Priority: ${priority}`,
           clientId,
-          status: status === "completed" ? "finished" : status === "active" ? "on-process" : "pending",
+          status: status === "completed" ? "archived" : status === "active" ? "active" : "paused",
         },
       });
 
@@ -423,7 +442,8 @@ export function ClientCreatePage() {
       ].filter(Boolean);
 
       if (timelineRows.length) {
-        await supabase.from("client_timeline_events").insert(timelineRows);
+        const { error: timelineError } = await supabase.from("client_timeline_events").insert(timelineRows);
+        if (timelineError) throw new Error(`Timeline gagal disimpan: ${timelineError.message}`);
       }
 
       // 4. Save Master Account & Custom Digital Assets
@@ -435,13 +455,7 @@ export function ClientCreatePage() {
           asset_name: "Akun Utama Klien (Master Email)",
           asset_type: "email",
           username: masterEmail.trim(),
-          notes: [
-            masterPassword ? `Password: ${masterPassword}` : null,
-            recoveryPhone ? `Recovery HP: ${recoveryPhone}` : null,
-            recovery2fa ? `2FA Secret: ${recovery2fa}` : null,
-          ]
-            .filter(Boolean)
-            .join(" | "),
+          notes: null,
         });
       }
 
@@ -454,21 +468,20 @@ export function ClientCreatePage() {
             asset_type: "other",
             platform: acc.platform.trim() || null,
             username: acc.username.trim() || null,
-            notes: [acc.password ? `Password: ${acc.password}` : null, acc.note ? `Note: ${acc.note}` : null]
-              .filter(Boolean)
-              .join(" | "),
+            notes: acc.note.trim() || null,
           });
         }
       });
 
       if (digitalAssets.length) {
-        await supabase.from("client_digital_assets").insert(digitalAssets);
+        const { error: assetsError } = await supabase.from("client_digital_assets").insert(digitalAssets);
+        if (assetsError) throw new Error(`Aset digital gagal disimpan: ${assetsError.message}`);
       }
 
       // 5. Upload Supporting Documents
       for (const file of documents) {
         const path = await uploadPrivateFile(userId, clientId, file, "documents");
-        await supabase.from("client_documents").insert({
+        const { error: documentError } = await supabase.from("client_documents").insert({
           user_id: userId,
           client_id: clientId,
           title: file.name,
@@ -478,6 +491,10 @@ export function ClientCreatePage() {
           mime_type: file.type || null,
           file_size: file.size,
         });
+        if (documentError) {
+          await supabase.storage.from("client-files").remove([path]);
+          throw new Error(`Dokumen ${file.name} gagal disimpan: ${documentError.message}`);
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: KEY });
