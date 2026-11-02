@@ -116,6 +116,7 @@ export function ClientDetailWorkspace({
       do_rules?: string | null;
       dont_rules?: string | null;
       important_notes?: string | null;
+      vault_notes?: string | null;
       tags?: string[];
       service_priority?: string;
     } | null;
@@ -229,6 +230,39 @@ export function ClientDetailWorkspace({
       };
     },
   });
+
+  useEffect(() => {
+    const tables = [
+      "clients",
+      "client_brand_profiles",
+      "client_tasks",
+      "client_documents",
+      "client_digital_assets",
+      "client_timeline_events",
+      "client_design_versions",
+      "client_design_comments",
+      "client_design_reviews",
+    ];
+    let active = true;
+    let channel = supabase.channel(`client-detail-live-${client.id}`);
+    for (const table of tables) {
+      channel = channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `client_id=eq.${client.id}` },
+        () => {
+          if (active) {
+            void qc.invalidateQueries({ queryKey });
+            void qc.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
+          }
+        },
+      );
+    }
+    channel.subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [client.id, qc]);
 
   const dbData = query.data;
 
@@ -347,6 +381,7 @@ export function ClientDetailWorkspace({
     try {
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id;
+      if (!userId) throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");
 
       const uploadedPaths: string[] = [];
       for (const file of attachedFiles) {
@@ -354,7 +389,8 @@ export function ClientDetailWorkspace({
           const safeName = file.name.replace(/[^\w.-]/g, "-");
           const path = `${userId}/${client.id}/timeline/${crypto.randomUUID()}-${safeName}`;
           const { error } = await supabase.storage.from("client-files").upload(path, file);
-          if (!error) uploadedPaths.push(path);
+          if (error) throw new Error(`Upload lampiran ${file.name} gagal: ${error.message}`);
+          uploadedPaths.push(path);
         }
       }
 
@@ -376,7 +412,10 @@ export function ClientDetailWorkspace({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (uploadedPaths.length) await supabase.storage.from("client-files").remove(uploadedPaths);
+        throw error;
+      }
 
       await qc.invalidateQueries({ queryKey });
       toast.success(`Brief "${judul}" berhasil ditambahkan ke Timeline!`);
@@ -415,6 +454,7 @@ export function ClientDetailWorkspace({
     try {
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id;
+      if (!userId) throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");
 
       const { error } = await supabase.from("client_digital_assets").insert({
         client_id: client.id,
@@ -434,7 +474,7 @@ export function ClientDetailWorkspace({
       setNewAssetNote("");
       toast.success("Aset digital baru berhasil ditambahkan!");
     } catch (err) {
-      toast.error("Gagal menambahkan aset digital.");
+      toast.error(err instanceof Error ? err.message : "Gagal menambahkan aset digital.");
     } finally {
       setBusy(false);
     }
@@ -834,6 +874,7 @@ export function ClientDetailWorkspace({
                       ["DOs", dbData.brandProfile.do_rules],
                       ["DONTs", dbData.brandProfile.dont_rules],
                       ["Catatan Penting", dbData.brandProfile.important_notes],
+                      ["Catatan Vault", dbData.brandProfile.vault_notes],
                     ].filter((item) => item[1]).map(([label, value]) => (
                       <div key={label} className="rounded-lg bg-slate-50 p-3">
                         <h3 className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</h3>
