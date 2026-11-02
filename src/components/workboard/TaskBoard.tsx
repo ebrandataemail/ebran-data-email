@@ -1,41 +1,92 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ArrowRightLeft,
   CalendarDays,
-  AlertTriangle,
-  Clock3,
-  UserRound,
-  Plus,
-  Pencil,
-  Trash2,
   Copy,
+  Flag,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  UserRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { WorkboardClient, WorkboardTask } from "./useWorkboardData";
 
+/** Status lanes. `dot` uses design tokens only (see styles.css). */
 const columns = [
-  { id: "things-to-do", title: "TERTUNDA" },
-  { id: "queue-on-process", title: "ANTRIAN" },
-  { id: "on-process", title: "ON PROSES" },
-  { id: "pending", title: "PENDING" },
-  { id: "revision", title: "REVIEW CLIENT" },
-  { id: "finished", title: "SELESAI" },
-  { id: "cancel", title: "CANCEL / STOP" },
+  { id: "things-to-do", title: "TERTUNDA", dot: "bg-warning" },
+  { id: "queue-on-process", title: "ANTRIAN", dot: "bg-wb-cyan" },
+  { id: "on-process", title: "ON PROSES", dot: "bg-wb-blue-strong" },
+  { id: "pending", title: "PENDING", dot: "bg-muted-foreground" },
+  { id: "revision", title: "REVIEW CLIENT", dot: "bg-wb-purple" },
+  { id: "finished", title: "SELESAI", dot: "bg-success" },
+  { id: "cancel", title: "CANCEL / STOP", dot: "bg-destructive" },
 ] as const;
 const priorities = [
   { id: "low", label: "Rendah" },
   { id: "medium", label: "Sedang" },
   { id: "high", label: "Tinggi" },
 ] as const;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const dueEnd = (value: string) => new Date(value + "T23:59:59").getTime();
 const dateLabel = (value: string) =>
   new Date(value + "T00:00:00").toLocaleDateString("id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
-const isLate = (value: string | null) =>
-  !!value && new Date(value + "T23:59:59").getTime() < Date.now();
+const isLate = (value: string | null) => !!value && dueEnd(value) < Date.now();
+
+/** Only color in the board: urgency. Everything else stays neutral. */
+function urgencyOf(task: WorkboardTask): { label: string; className: string } | null {
+  if (task.status === "finished") {
+    return { label: "Selesai", className: "bg-success-soft text-success-foreground" };
+  }
+  if (task.status === "cancel") {
+    return { label: "Dihentikan", className: "bg-muted text-muted-foreground" };
+  }
+  if (!task.due_date) return null;
+  const end = dueEnd(task.due_date);
+  const now = Date.now();
+  if (end < now) {
+    const days = Math.floor((now - end) / DAY_MS) + 1;
+    return { label: "Telat " + days + " hari", className: "bg-destructive-soft text-destructive" };
+  }
+  if (end - now <= 2 * DAY_MS) {
+    return { label: "Nyaris deadline", className: "bg-warning-soft text-warning-foreground" };
+  }
+  return { label: "Masih aman", className: "bg-success-soft text-success-foreground" };
+}
+
+/** Group tasks by deadline (ascending); tasks without deadline go last. */
+function groupByDate(rows: WorkboardTask[]): [string, WorkboardTask[]][] {
+  const map = new Map<string, WorkboardTask[]>();
+  for (const t of rows) {
+    const key = t.due_date ?? "";
+    map.set(key, [...(map.get(key) ?? []), t]);
+  }
+  return [...map.entries()].sort(([a], [b]) => {
+    if (a === b) return 0;
+    if (a === "") return 1;
+    if (b === "") return -1;
+    return a.localeCompare(b);
+  });
+}
+
 type TaskDraft = {
   client_id: string;
   title: string;
@@ -45,15 +96,112 @@ type TaskDraft = {
   due_date: string;
   assignee: string;
 };
-const emptyDraft = (clientId: string): TaskDraft => ({
+const emptyDraft = (clientId: string, status = "things-to-do"): TaskDraft => ({
   client_id: clientId,
   title: "",
   description: "",
-  status: "things-to-do",
+  status,
   priority: "medium",
   due_date: "",
   assignee: "",
 });
+
+type CreateInput = {
+  client_id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  assignee: string | null;
+};
+type UpdatePatch = Partial<{
+  client_id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  assignee: string | null;
+}>;
+
+function TaskMenu({
+  task,
+  onEdit,
+  onDuplicate,
+  onMove,
+  onPriority,
+  onDelete,
+}: {
+  task: WorkboardTask;
+  onEdit: (task: WorkboardTask) => void;
+  onDuplicate: (task: WorkboardTask) => void;
+  onMove: (id: string, status: string) => void;
+  onPriority: (id: string, priority: string) => void;
+  onDelete: (task: WorkboardTask) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={"Aksi untuk " + task.title}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <MoreHorizontal className="size-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => onEdit(task)}>
+          <Pencil /> Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onDuplicate(task)}>
+          <Copy /> Duplikat
+        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <ArrowRightLeft /> Pindah status
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {columns.map((c) => (
+              <DropdownMenuItem
+                key={c.id}
+                disabled={c.id === task.status}
+                onSelect={() => onMove(task.id, c.id)}
+              >
+                <span className={cn("size-2 rounded-full", c.dot)} />
+                {c.title}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Flag /> Prioritas
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {priorities.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                disabled={p.id === task.priority}
+                onSelect={() => onPriority(task.id, p.id)}
+              >
+                {p.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => onDelete(task)}
+          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+        >
+          <Trash2 /> Hapus
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function TaskBoard({
   query,
@@ -69,27 +217,8 @@ export function TaskBoard({
   tasks: WorkboardTask[];
   clients: WorkboardClient[];
   loading: boolean;
-  onCreate: (input: {
-    client_id: string;
-    title: string;
-    description?: string;
-    status: string;
-    priority: string;
-    due_date: string | null;
-    assignee: string | null;
-  }) => Promise<unknown>;
-  onUpdate: (
-    id: string,
-    patch: Partial<{
-      client_id: string;
-      title: string;
-      description: string | null;
-      status: string;
-      priority: string;
-      due_date: string | null;
-      assignee: string | null;
-    }>,
-  ) => Promise<unknown>;
+  onCreate: (input: CreateInput) => Promise<unknown>;
+  onUpdate: (id: string, patch: UpdatePatch) => Promise<unknown>;
   onDelete: (id: string) => Promise<void>;
   onDuplicate: (task: WorkboardTask) => Promise<unknown>;
 }) {
@@ -106,9 +235,10 @@ export function TaskBoard({
         .toLowerCase()
         .includes(q),
   );
-  const openNew = () => {
+
+  const openNew = (status = "things-to-do") => {
     setEditing("new");
-    setDraft(emptyDraft(clients[0]?.id ?? ""));
+    setDraft(emptyDraft(clients[0]?.id ?? "", status));
   };
   const openEdit = (task: WorkboardTask) => {
     setEditing(task.id);
@@ -125,6 +255,16 @@ export function TaskBoard({
   const close = () => {
     if (!saving) setEditing(null);
   };
+
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !saving) setEditing(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editing, saving]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft.client_id) {
@@ -154,8 +294,8 @@ export function TaskBoard({
         toast.success("Task berhasil diperbarui.");
       }
       setEditing(null);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menyimpan task.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan task.");
     } finally {
       setSaving(false);
     }
@@ -164,198 +304,190 @@ export function TaskBoard({
     try {
       await onUpdate(id, { status });
       toast.success("Status task diperbarui.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal memindahkan task.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal memindahkan task.");
     }
   };
   const changePriority = async (id: string, priority: string) => {
     try {
       await onUpdate(id, { priority });
       toast.success("Prioritas diperbarui.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal mengubah prioritas.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengubah prioritas.");
+    }
+  };
+  const restore = async (task: WorkboardTask) => {
+    try {
+      await onCreate({
+        client_id: task.client_id,
+        title: task.title,
+        description: task.description ?? "",
+        status: task.status,
+        priority: task.priority,
+        due_date: task.due_date,
+        assignee: task.assignee,
+      });
+      toast.success("Task dikembalikan.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengembalikan task.");
     }
   };
   const remove = async (task: WorkboardTask) => {
-    if (!window.confirm("Hapus task '" + task.title + "' secara permanen?")) return;
     try {
       await onDelete(task.id);
-      toast.success("Task dihapus.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menghapus task.");
+      toast("Task “" + task.title + "” dihapus", {
+        duration: 10000,
+        action: { label: "Urungkan", onClick: () => void restore(task) },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus task.");
     }
   };
   const duplicate = async (task: WorkboardTask) => {
     try {
       await onDuplicate(task);
       toast.success("Task berhasil diduplikasi.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menduplikasi task.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menduplikasi task.");
     }
   };
+
   return (
-    <section className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section className="rounded-xl border border-border bg-card p-4 shadow-soft sm:p-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-extrabold tracking-tight text-wb-ink">TASK BOARD</h2>
-          <p className="text-[10px] text-muted-foreground">
-            Kelola task langsung ke database Supabase
+          <h2 className="text-base font-extrabold tracking-tight text-wb-ink">Task Board</h2>
+          <p className="text-xs text-muted-foreground">
+            Timeline task per deadline · tersimpan otomatis ke Supabase
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-card px-3 py-1 text-[10px] font-semibold text-wb-ink shadow-soft">
+          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-wb-ink">
             {filtered.length} task
           </span>
           <button
             type="button"
-            onClick={openNew}
+            onClick={() => openNew()}
             disabled={!clients.length || loading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-wb-ink px-3 py-2 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-wb-ink px-4 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
-            <Plus className="size-3.5" />
-            Tambah Task
+            <Plus className="size-4" />
+            Task baru
           </button>
         </div>
       </div>
       {loading ? (
-        <div className="rounded-xl border bg-card p-8 text-center text-xs text-muted-foreground">
+        <div className="rounded-xl border border-border bg-muted/40 p-8 text-center text-sm text-muted-foreground">
           Memuat task…
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {columns.map((col) => {
             const rows = filtered.filter((t) => t.status === col.id);
             return (
               <div
                 key={col.id}
-                className="min-h-40 rounded-xl border border-border bg-card/70 p-2.5"
+                className="min-h-40 rounded-xl border border-border bg-muted/50 p-4"
               >
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-[11px] font-bold text-wb-ink">{col.title}</h3>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[9px]">
-                    {rows.length}
-                  </span>
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("size-2.5 rounded-full", col.dot)} />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-wb-ink">
+                      {col.title}
+                    </h3>
+                    <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                      {rows.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={"Tambah task di " + col.title}
+                    onClick={() => openNew(col.id)}
+                    disabled={!clients.length}
+                    className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  >
+                    <Plus className="size-4" />
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  {rows.map((task) => {
-                    const client = clientById.get(task.client_id);
-                    const late = isLate(task.due_date);
-                    return (
-                      <article
-                        key={task.id}
-                        className={cn(
-                          "rounded-lg border bg-card p-2.5 shadow-soft",
-                          late && "border-destructive/40",
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-[11px] font-bold leading-snug text-wb-ink">
-                            {task.title}
-                          </p>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              type="button"
-                              title="Edit task"
-                              onClick={() => openEdit(task)}
-                              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            >
-                              <Pencil className="size-3" />
-                            </button>
-                            <button
-                              type="button"
-                              title="Duplikat task"
-                              onClick={() => void duplicate(task)}
-                              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            >
-                              <Copy className="size-3" />
-                            </button>
-                            <button
-                              type="button"
-                              title="Hapus task"
-                              onClick={() => void remove(task)}
-                              className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="size-3" />
-                            </button>
-                          </div>
+                {rows.length ? (
+                  <div className="relative space-y-3 pl-5 before:absolute before:bottom-2 before:left-[5px] before:top-2 before:w-0.5 before:bg-border">
+                    {groupByDate(rows).map(([date, group]) => (
+                      <div key={date || "none"} className="space-y-3">
+                        <div className="relative text-xs font-bold leading-5 text-muted-foreground">
+                          <span className="absolute -left-5 top-1 size-3 rounded-full border-2 border-wb-ink bg-wb-canvas" />
+                          {date ? dateLabel(date) : "Tanpa deadline"}
                         </div>
-                        <p className="mt-1 truncate text-[9px] text-muted-foreground">
-                          {client?.name ?? "Client tidak ditemukan"}
-                        </p>
-                        {task.description && (
-                          <p className="mt-1 line-clamp-2 text-[9px] leading-relaxed text-muted-foreground">
-                            {task.description}
-                          </p>
-                        )}
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          <select
-                            aria-label="Ubah prioritas"
-                            value={task.priority}
-                            onChange={(e) => void changePriority(task.id, e.target.value)}
-                            className={cn(
-                              "max-w-[90px] rounded-full border-0 px-2 py-0.5 text-[8px] font-bold",
-                              task.priority === "high"
-                                ? "bg-red-100 text-red-700"
-                                : task.priority === "low"
-                                  ? "bg-slate-100 text-slate-600"
-                                  : "bg-amber-100 text-amber-700",
-                            )}
-                          >
-                            {priorities.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.label}
-                              </option>
-                            ))}
-                          </select>
-                          {task.due_date && (
-                            <span
-                              className={cn(
-                                "flex items-center gap-1 text-[8px]",
-                                late ? "font-semibold text-destructive" : "text-muted-foreground",
-                              )}
-                            >
-                              {late ? (
-                                <AlertTriangle className="size-3" />
-                              ) : (
-                                <CalendarDays className="size-3" />
-                              )}
-                              {dateLabel(task.due_date)}
-                            </span>
-                          )}
-                        </div>
-                        {task.assignee && (
-                          <p className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground">
-                            <UserRound className="size-3" />
-                            {task.assignee}
-                          </p>
-                        )}
-                        <p className="mt-2 flex items-center gap-1 text-[8px] text-muted-foreground">
-                          <Clock3 className="size-3" />
-                          Dibuat {new Date(task.created_at).toLocaleDateString("id-ID")}
-                        </p>
-                        <label className="mt-2 block">
-                          <span className="sr-only">Pindah status task</span>
-                          <select
-                            value={task.status}
-                            onChange={(e) => void move(task.id, e.target.value)}
-                            className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-[9px] text-wb-ink"
-                          >
-                            {columns.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.title}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </article>
-                    );
-                  })}
-                  {!rows.length && (
-                    <p className="py-5 text-center text-[9px] text-muted-foreground">
-                      Belum ada task
-                    </p>
-                  )}
-                </div>
+                        {group.map((task) => {
+                          const client = clientById.get(task.client_id);
+                          const urgency = urgencyOf(task);
+                          return (
+                            <div key={task.id} className="relative">
+                              <span className="absolute -left-[18px] top-5 size-2 rounded-full bg-wb-ink" />
+                              <span className="absolute -left-2.5 top-[23px] h-0.5 w-2.5 bg-border" />
+                              <article className="rounded-xl border border-border bg-card p-3 shadow-soft">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-bold leading-snug text-wb-ink">
+                                      {task.title}
+                                    </p>
+                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                      {client?.name ?? "Client tidak ditemukan"}
+                                    </p>
+                                  </div>
+                                  <TaskMenu
+                                    task={task}
+                                    onEdit={openEdit}
+                                    onDuplicate={(t) => void duplicate(t)}
+                                    onMove={(id, s) => void move(id, s)}
+                                    onPriority={(id, p) => void changePriority(id, p)}
+                                    onDelete={(t) => void remove(t)}
+                                  />
+                                </div>
+                                {task.description && (
+                                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                                  {urgency && (
+                                    <span
+                                      className={cn(
+                                        "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                                        urgency.className,
+                                      )}
+                                    >
+                                      {urgency.label}
+                                    </span>
+                                  )}
+                                  {task.priority === "high" && (
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-destructive">
+                                      <Flag className="size-3" />
+                                      Prioritas tinggi
+                                    </span>
+                                  )}
+                                  {task.assignee && (
+                                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                      <UserRound className="size-3" />
+                                      {task.assignee}
+                                    </span>
+                                  )}
+                                  {task.due_date && !isLate(task.due_date) && (
+                                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                      <CalendarDays className="size-3" />
+                                      {dateLabel(task.due_date)}
+                                    </span>
+                                  )}
+                                </div>
+                              </article>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="py-6 text-center text-xs text-muted-foreground">Belum ada task</p>
+                )}
               </div>
             );
           })}
@@ -370,34 +502,37 @@ export function TaskBoard({
         >
           <form
             onSubmit={submit}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editing === "new" ? "Tambah task" : "Edit task"}
             className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-wb-ink">
-                  {editing === "new" ? "Tambah Task" : "Edit Task"}
+                  {editing === "new" ? "Task baru" : "Edit task"}
                 </h3>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Perubahan akan langsung disimpan ke Supabase.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={close}
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
+                className="rounded-md p-2 text-muted-foreground hover:bg-muted"
                 aria-label="Tutup"
               >
                 <X className="size-4" />
               </button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink sm:col-span-2">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
                 Client
                 <select
                   required
                   value={draft.client_id}
                   onChange={(e) => setDraft((d) => ({ ...d, client_id: e.target.value }))}
-                  className="h-9 w-full rounded-md border border-border bg-card px-2 text-xs"
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 >
                   {clients.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -406,7 +541,7 @@ export function TaskBoard({
                   ))}
                 </select>
               </label>
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink sm:col-span-2">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
                 Nama task
                 <input
                   required
@@ -414,25 +549,25 @@ export function TaskBoard({
                   value={draft.title}
                   onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
                   placeholder="Contoh: Revisi desain landing page"
-                  className="h-9 w-full rounded-md border border-border bg-card px-2 text-xs"
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 />
               </label>
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink sm:col-span-2">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
                 Deskripsi
                 <textarea
                   rows={3}
                   value={draft.description}
                   onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
                   placeholder="Detail pekerjaan dan output yang diharapkan"
-                  className="w-full rounded-md border border-border bg-card p-2 text-xs"
+                  className="w-full rounded-md border border-border bg-card p-2 text-sm"
                 />
               </label>
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink">
                 Status
                 <select
                   value={draft.status}
                   onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
-                  className="h-9 w-full rounded-md border border-border bg-card px-2 text-xs"
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 >
                   {columns.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -441,12 +576,12 @@ export function TaskBoard({
                   ))}
                 </select>
               </label>
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink">
                 Prioritas
                 <select
                   value={draft.priority}
                   onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value }))}
-                  className="h-9 w-full rounded-md border border-border bg-card px-2 text-xs"
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 >
                   {priorities.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -455,23 +590,23 @@ export function TaskBoard({
                   ))}
                 </select>
               </label>
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink">
                 Deadline
                 <input
                   type="date"
                   value={draft.due_date}
                   onChange={(e) => setDraft((d) => ({ ...d, due_date: e.target.value }))}
-                  className="h-9 w-full rounded-md border border-border bg-card px-2 text-xs"
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 />
               </label>
-              <label className="space-y-1 text-[10px] font-semibold text-wb-ink">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink">
                 Penanggung jawab
                 <input
                   maxLength={120}
                   value={draft.assignee}
                   onChange={(e) => setDraft((d) => ({ ...d, assignee: e.target.value }))}
                   placeholder="Nama PIC / anggota tim"
-                  className="h-9 w-full rounded-md border border-border bg-card px-2 text-xs"
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 />
               </label>
             </div>
@@ -480,16 +615,16 @@ export function TaskBoard({
                 type="button"
                 onClick={close}
                 disabled={saving}
-                className="rounded-md border border-border px-4 py-2 text-xs font-semibold text-wb-ink"
+                className="h-10 rounded-md border border-border px-4 text-xs font-semibold text-wb-ink"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={saving || !clients.length}
-                className="rounded-md bg-wb-ink px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="h-10 rounded-md bg-wb-ink px-4 text-xs font-semibold text-white disabled:opacity-50"
               >
-                {saving ? "Menyimpan…" : editing === "new" ? "Simpan Task" : "Simpan Perubahan"}
+                {saving ? "Menyimpan…" : editing === "new" ? "Simpan task" : "Simpan perubahan"}
               </button>
             </div>
           </form>
