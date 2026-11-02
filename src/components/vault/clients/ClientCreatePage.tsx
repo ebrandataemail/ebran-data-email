@@ -92,73 +92,43 @@ export function ClientCreatePage() {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("Gresik");
+  const [city, setCity] = useState("");
 
   // Profile Client Details (Brand Identity, Overview, Guardrails, Notes)
   const [color1, setColor1] = useState("#C9A75D");
   const [color2, setColor2] = useState("#003837");
-  const [toneOfVoice, setToneOfVoice] = useState(
-    "Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan Sahabat Haramain.",
-  );
+  const [toneOfVoice, setToneOfVoice] = useState("");
   const [companyOverview, setCompanyOverview] = useState("");
-  const [painPoints, setPainPoints] = useState(
-    "• Desain promosi lama kaku.\n• Pesan komunikasi belum terstandardisasi.",
-  );
-  const [agencyGoals, setAgencyGoals] = useState(
-    "• Rebranding aset digital premium.\n• Standardisasi konten social media.",
-  );
-  const [dosRules, setDosRules] = useState(
-    "• Selalu sertakan logo Izin Kemenag.\n• Gunakan dokumentasi keberangkatan jamaah asli.",
-  );
-  const [dontsRules, setDontsRules] = useState(
-    "• Jangan pernah menggunakan font Comic Sans.\n• Dilarang mengubah rasio logo tanpa izin.",
-  );
-  const [catatanPenting, setCatatanPenting] = useState(
-    "• Kontrak kerja sama diperpanjang hingga Desember 2026.\n• Fokus Q4 adalah kampanye 'Umrah Nyaman Bersama Keluarga'.\n• Dilarang mengubah aset logo tanpa persetujuan Bpk. Dwi.",
-  );
+  const [painPoints, setPainPoints] = useState("");
+  const [agencyGoals, setAgencyGoals] = useState("");
+  const [dosRules, setDosRules] = useState("");
+  const [dontsRules, setDontsRules] = useState("");
+  const [catatanPenting, setCatatanPenting] = useState("");
 
   // Card 2: Timeline & Agenda Awal
-  const [startAt, setStartAt] = useState("2026-10-20T10:00");
-  const [targetAt, setTargetAt] = useState("2026-10-25T10:00");
-  const [briefJudul, setBriefJudul] = useState("Revisi Desain Spanduk Air Zam Zam — V3");
-  const [briefRingkasan, setBriefRingkasan] = useState(
-    "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
-  );
-  const [briefSpesifikasi, setBriefSpesifikasi] = useState(
-    "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
-  );
-  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([
-    { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
-    { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
-  ]);
-  const [briefDeadline, setBriefDeadline] = useState("2026-10-28T15:00");
-  const [briefPrioritas, setBriefPrioritas] = useState("Enterprise");
-  const [briefPic, setBriefPic] = useState("DS");
-  const [briefKonfirmasi, setBriefKonfirmasi] = useState(
-    "ukuran logo yang diinginkan client belum disebut.",
-  );
+  const [startAt, setStartAt] = useState("");
+  const [targetAt, setTargetAt] = useState("");
+  const [briefJudul, setBriefJudul] = useState("");
+  const [briefRingkasan, setBriefRingkasan] = useState("");
+  const [briefSpesifikasi, setBriefSpesifikasi] = useState("");
+  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([]);
+  const [briefDeadline, setBriefDeadline] = useState("");
+  const [briefPrioritas, setBriefPrioritas] = useState("Standard");
+  const [briefPic, setBriefPic] = useState("");
+  const [briefKonfirmasi, setBriefKonfirmasi] = useState("");
 
   // Card 3: Master Email & Custom Accounts
   const [masterEmail, setMasterEmail] = useState("");
-  const [accounts, setAccounts] = useState<CustomAccountRow[]>([
-    {
-      id: crypto.randomUUID(),
-      platform: "Instagram",
-      username: "@sultanharamain_gresik",
-      password: "••••••••",
-      showPassword: false,
-      note: "Hanya Admin",
-    },
-  ]);
+  const [accounts, setAccounts] = useState<CustomAccountRow[]>([]);
   const [vaultNote, setVaultNote] = useState("");
 
   // Card 4: Dokumen Pendukung
   const [documents, setDocuments] = useState<File[]>([]);
 
   // Card 5: Klasifikasi & Penugasan
-  const [status, setStatus] = useState("onhold");
-  const [priority, setPriority] = useState("enterprise");
-  const [tagsInput, setTagsInput] = useState("Umrah, Tour & Travel");
+  const [status, setStatus] = useState("active");
+  const [priority, setPriority] = useState("standard");
+  const [tagsInput, setTagsInput] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -357,7 +327,7 @@ export function ClientCreatePage() {
         data: {
           name: name.trim(),
           legalName: legalName.trim() || name.trim(),
-          industry: industry.trim() || tagsInput.trim() || undefined,
+          industry: industry.trim() || undefined,
           contactEmail: email.trim() || undefined,
           contactPhone: phone.trim() || undefined,
           website: website.trim() || undefined,
@@ -1233,8 +1203,8 @@ export function ClientCreatePage() {
                       className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-none"
                     >
                       <option value="active">🟢 Active Partner</option>
-                      <option value="onhold">🔴 On Hold</option>
-                      <option value="lead">🟡 New Lead / Prospek</option>
+                      <option value="on-hold">🔴 On Hold</option>
+                      <option value="prospect">🟡 New Lead / Prospek</option>
                       <option value="completed">🔵 Completed / Selesai</option>
                     </select>
                   </div>
@@ -1250,7 +1220,7 @@ export function ClientCreatePage() {
                     >
                       <option value="enterprise">Enterprise (High Priority)</option>
                       <option value="standard">Standard</option>
-                      <option value="basic">Basic / Freelance Task</option>
+                      <option value="priority">Priority</option>
                     </select>
                   </div>
 
