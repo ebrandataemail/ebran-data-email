@@ -4,13 +4,9 @@ import {
   Activity,
   AlertTriangle,
   ArrowDownToDot,
-  BarChart2,
   Bell,
-  Bold,
-  BrainCircuit,
   Briefcase,
   Calendar,
-  CheckCircle2,
   CheckSquare,
   ChevronDown,
   ChevronLeft,
@@ -21,7 +17,6 @@ import {
   Copy,
   Download,
   DownloadCloud,
-  Edit3,
   Eye,
   FileIcon,
   FileText,
@@ -31,7 +26,6 @@ import {
   Inbox,
   Info,
   Instagram,
-  Italic,
   Kanban,
   KanbanSquare,
   Key,
@@ -40,28 +34,20 @@ import {
   LayoutTemplate,
   Link as LinkIcon,
   List,
-  ListOrdered,
   MessageSquareDashed,
-  Mic,
-  Palette,
   Paperclip,
   Plus,
   Save,
   Search,
   Send,
-  ShieldAlert,
   ShieldCheck,
   Sparkles,
-  StickyNote,
   Tag,
-  Target,
   Trash2,
-  Underline,
   Upload,
   User,
   UserCheck,
   X,
-  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,16 +127,12 @@ export function ClientDetailWorkspace({
   const [brandSourceSocial, setBrandSourceSocial] = useState("");
   const [brandSourcePrompt, setBrandSourcePrompt] = useState("");
   const [brandSourceFile, setBrandSourceFile] = useState<File | null>(null);
-  const [catatanPentingText, setCatatanPentingText] = useState("");
 
   // Digital Assets & Kredensial Form State
   const [masterEmail, setMasterEmail] = useState("");
   const [newAssetPlatform, setNewAssetPlatform] = useState("");
   const [newAssetUser, setNewAssetUser] = useState("");
   const [newAssetNote, setNewAssetNote] = useState("");
-  const [vaultNote, setVaultNote] = useState(
-    "Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif hosting/domain, atau struktur parent-child account...",
-  );
 
   const queryKey = ["client-workspace-detail", client.id];
 
