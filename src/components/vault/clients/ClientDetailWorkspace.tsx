@@ -228,6 +228,7 @@ export function ClientDetailWorkspace({
     const tables = [
       "clients",
       "client_brand_profiles",
+      "client_brand_assets",
       "client_tasks",
       "client_documents",
       "client_digital_assets",
@@ -926,7 +927,7 @@ export function ClientDetailWorkspace({
                     </div>
                     <div>
                       <h2 className="mb-1 text-sm font-bold leading-none text-slate-900">
-                        AI Profile Builder
+                        Sumber Data Profil
                       </h2>
                       <p className="text-[10px] text-slate-500">
                         Simpan sumber brand dan brief ke database. Tidak ada pemanggilan AI eksternal atau token Lovable.
@@ -944,7 +945,7 @@ export function ClientDetailWorkspace({
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="size-3.5" /> Tampilkan AI Builder
+                        <ChevronDown className="size-3.5" /> Tampilkan Sumber Profil
                       </>
                     )}
                   </button>
@@ -1057,7 +1058,7 @@ export function ClientDetailWorkspace({
                     {aiTab === "prompt" && (
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-slate-700">
-                          Instruksi Khusus untuk AI Profile Builder:
+                          Instruksi Khusus Profil Brand:
                         </label>
                         <textarea
                           rows={2}
