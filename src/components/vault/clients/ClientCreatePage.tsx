@@ -367,31 +367,41 @@ export function ClientCreatePage() {
       const project = await saveProject({
         data: {
           name: `${name.trim()} - Proyek Utama`,
-          description: briefRingkasan || `Timeline project: Start ${startAt} -> Target ${targetAt}. Priority: ${priority}`,
+          description: briefRingkasan.trim() || null,
           clientId,
           status: status === "completed" ? "archived" : status === "active" ? "active" : "paused",
         },
       });
 
       // Save initial timeline events
+      const hasInitialBrief = Boolean(
+        briefJudul.trim() ||
+        briefRingkasan.trim() ||
+        briefSpesifikasi.trim() ||
+        checklist.length ||
+        briefDeadline ||
+        startAt,
+      );
       const timelineRows = [
-        {
-          user_id: userId,
-          client_id: clientId,
-          event_type: "project",
-          title: briefJudul || "Kickoff Project & Setup Initial Agenda",
-          description: briefRingkasan || "Kickoff meeting dan penyusunan struktur timeline.",
-          occurred_at: startAt ? new Date(startAt).toISOString() : new Date().toISOString(),
-          metadata: {
-            project_id: project.id,
-            spesifikasi: briefSpesifikasi,
-            checklist,
-            prioritas: briefPrioritas,
-            pic: briefPic,
-            konfirmasi: briefKonfirmasi,
-            deadline: briefDeadline || null,
-          },
-        },
+        hasInitialBrief
+          ? {
+              user_id: userId,
+              client_id: clientId,
+              event_type: "project",
+              title: briefJudul.trim() || "Kickoff Project",
+              description: briefRingkasan.trim() || null,
+              occurred_at: startAt ? new Date(startAt).toISOString() : new Date().toISOString(),
+              metadata: {
+                project_id: project.id,
+                spesifikasi: briefSpesifikasi,
+                checklist,
+                prioritas: briefPrioritas,
+                pic: briefPic,
+                konfirmasi: briefKonfirmasi,
+                deadline: briefDeadline || null,
+              },
+            }
+          : null,
         targetAt
           ? {
               user_id: userId,
