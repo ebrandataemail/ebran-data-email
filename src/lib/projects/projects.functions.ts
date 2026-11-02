@@ -52,7 +52,9 @@ export const workspaceList = createServerFn({ method: "POST" })
       projectsResult.error ||
       accountsResult.error ||
       developerAssetsResult.error ||
-      adsAssetsResult.error
+      adsAssetsResult.error ||
+      digitalAssetsResult.error ||
+      documentsResult.error
     )
       throw new Error("Gagal memuat data proyek dan client.");
     const clients = clientsResult.data ?? [];
