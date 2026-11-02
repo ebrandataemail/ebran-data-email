@@ -7,7 +7,7 @@ import { convertToModelMessages, createIdGenerator, streamText, type UIMessage }
 
 import type { Database } from "@/integrations/supabase/types";
 import { asset } from "@/data/asset";
-import { createAiModel, aiProviderOptions, toAiError } from "@/lib/ai/lovable.server";
+import { createAiModel, toAiError } from "@/lib/ai/provider.server";
 import { chatInstructions } from "./assistant.server";
 import { buildAssetBrief } from "./context";
 
@@ -368,7 +368,7 @@ export async function handleAiChat(request: Request) {
     return json(500, "Gagal menyimpan pesan.");
   }
 
-  // 5. Build the conversation and stream the Lovable AI response.
+  // 5. Build the conversation and stream the configured external AI response.
   const messages = [...history, message];
 
   try {
@@ -380,7 +380,6 @@ export async function handleAiChat(request: Request) {
       messages: await convertToModelMessages(messages),
       abortSignal: request.signal,
       maxRetries: 1,
-      providerOptions: aiProviderOptions("medium"),
     });
 
     return result.toUIMessageStreamResponse({
