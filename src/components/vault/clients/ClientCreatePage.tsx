@@ -59,8 +59,6 @@ type CustomAccountRow = {
   id: string;
   platform: string;
   username: string;
-  password: string;
-  showPassword?: boolean;
   note: string;
 };
 
@@ -68,8 +66,6 @@ const createEmptyAccountRow = (): CustomAccountRow => ({
   id: crypto.randomUUID(),
   platform: "",
   username: "",
-  password: "",
-  showPassword: false,
   note: "",
 });
 
@@ -144,10 +140,6 @@ export function ClientCreatePage() {
 
   // Card 3: Master Email & Custom Accounts
   const [masterEmail, setMasterEmail] = useState("");
-  const [masterPassword, setMasterPassword] = useState("");
-  const [showMasterPassword, setShowMasterPassword] = useState(false);
-  const [recoveryPhone, setRecoveryPhone] = useState("");
-  const [recovery2fa, setRecovery2fa] = useState("");
   const [accounts, setAccounts] = useState<CustomAccountRow[]>([
     {
       id: crypto.randomUUID(),
@@ -460,7 +452,7 @@ export function ClientCreatePage() {
       }
 
       accounts.forEach((acc) => {
-        if (acc.platform.trim() || acc.username.trim() || acc.password.trim()) {
+        if (acc.platform.trim() || acc.username.trim()) {
           digitalAssets.push({
             user_id: userId,
             client_id: clientId,
@@ -1066,6 +1058,9 @@ export function ClientCreatePage() {
                       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-bold text-slate-800">
                         <Key className="size-3.5 text-slate-500" /> Akun Utama Klien (Master Email)
                       </h3>
+                      <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
+                        Password, recovery code, dan secret 2FA belum dapat disimpan dengan aman. Simpan hanya username/metadata di sini; jangan masukkan rahasia sampai Secure Vault terenkripsi tersedia.
+                      </p>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
@@ -1080,30 +1075,9 @@ export function ClientCreatePage() {
                             className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900"
                           />
                         </div>
-                        <div>
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                            Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showMasterPassword ? "text" : "password"}
-                              value={masterPassword}
-                              onChange={(e) => setMasterPassword(e.target.value)}
-                              placeholder="••••••••"
-                              className="w-full rounded-md border border-slate-200 bg-white py-2 pl-3 pr-10 text-xs text-slate-900"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowMasterPassword(!showMasterPassword)}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                              {showMasterPassword ? (
-                                <EyeOff className="size-4" />
-                              ) : (
-                                <Eye className="size-4" />
-                              )}
-                            </button>
-                          </div>
+                        <div className="flex items-center rounded-md border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                          Kolom password dinonaktifkan sampai penyimpanan terenkripsi tersedia.
+                        </div>
                         </div>
                       </div>
                     </div>
@@ -1154,22 +1128,8 @@ export function ClientCreatePage() {
                                 className="w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs"
                               />
                             </div>
-                            <div className="w-full md:w-1/4">
-                              <label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
-                                Password
-                              </label>
-                              <input
-                                type="password"
-                                value={acc.password}
-                                onChange={(e) =>
-                                  setAccounts((rows) =>
-                                    rows.map((row, i) =>
-                                      i === index ? { ...row, password: e.target.value } : row,
-                                    ),
-                                  )
-                                }
-                                className="w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs"
-                              />
+                            <div className="w-full md:w-1/4 flex items-center text-[10px] text-amber-700">
+                              Password belum tersedia di Secure Vault dan tidak boleh dimasukkan di form ini.
                             </div>
                             <div className="w-full md:w-1/4">
                               <label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
