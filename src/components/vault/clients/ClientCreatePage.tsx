@@ -140,92 +140,27 @@ export function ClientCreatePage() {
   }, [startAt, targetAt]);
 
   // AI Auto-Generate Handler
+  // Local helper only: no external AI provider or Lovable token is called.
   const handleAIGenerate = () => {
+    const prompt = aiPromptInput.trim();
+    if (!prompt) {
+      toast.error("Masukkan nama client atau URL terlebih dahulu.");
+      return;
+    }
     setIsGeneratingAI(true);
-    setTimeout(() => {
-      const p = aiPromptInput.trim() || "Sultan Haramain Gresik";
-      const baseName = p.replace(/(https?:\/\/|www\.)/g, "").split(".")[0];
-      const formattedName = baseName
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-
-      setName(formattedName || "Sultan Haramain Gresik");
-      setLegalName(`PT. ${formattedName || "Sultan Barokah Haramain"} Cabang Gresik`);
-      setIndustry("Travel Umrah & Haji Khusus");
-      setEmail(`kontak@${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamain"}.com`);
-      setPhone("0811-3107-707");
-      setWebsite(`www.${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamaingresik"}.com`);
-      setAddress("Jl. Samanhudi No. 37, Kebungson, Kec. Gresik, Jawa Timur 61114");
-
-      setColor1("#C9A75D");
-      setColor2("#003837");
-      setToneOfVoice(
-        `Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan Sahabat ${formattedName || "Haramain"}.`,
-      );
-      setCompanyOverview(
-        `${formattedName || "Sultan Barokah Haramain"} adalah biro perjalanan resmi penyedia layanan Umrah, Haji Khusus, serta distributor resmi paket perjalanan ibadah terpercaya.`,
-      );
-      setPainPoints(
-        "• Desain promosi lama kaku dan kurang modern.\n• Pesan branding di media sosial belum terstandardisasi.",
-      );
-      setAgencyGoals(
-        "• Rebranding aset digital & visual feed premium.\n• Standardisasi katalog promo dan landing page online.",
-      );
-      setDosRules(
-        "• Selalu cantumkan nomor sertifikat izin resmi Kemenag.\n• Gunakan dokumentasi foto/video jemaah asli.",
-      );
-      setDontsRules(
-        "• Jangan pernah menggunakan font tidak resmi atau kaku.\n• Dilarang mengubah rasio logo tanpa persetujuan tim.",
-      );
-      setCatatanPenting(
-        `• Kontrak kerja sama aktif hingga Desember 2026.\n• Fokus Q4: Kampanye promo Umrah Ramadhan 1448H.\n• Dilarang merubah aset visual tanpa persetujuan manajemen.`,
-      );
-
-      setStartAt("2026-10-20T10:00");
-      setTargetAt("2026-11-20T10:00");
-      setBriefJudul(`Kampanye Branding & Launching Catalog ${formattedName}`);
-      setBriefRingkasan(
-        "Penyusunan aset visual, brosur cetak, dan landing page pemesanan paket Umrah.",
-      );
-      setBriefSpesifikasi("Digital Asset Pack + Landing Page Next.js + Brosur A5 3 Fold");
-      setChecklist([
-        { text: "Verifikasi Izin Kemenag & NPWP", note: "Legal", done: true },
-        { text: "Rilis katalog paket promo terbaru", note: "Desain", done: false },
-        { text: "Setup landing page pendaftaran online", note: "Dev", done: false },
-      ]);
-      setBriefDeadline("2026-11-15T15:00");
-      setBriefPrioritas("Enterprise");
-      setBriefPic("DS");
-      setBriefKonfirmasi("Nomor kontak CS cabang perlu dikonfirmasi kembali.");
-
-      setMasterEmail(`admin@${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamain"}.com`);
-      setMasterPassword("SultanHaramain2026!");
-      setRecoveryPhone("0812-3456-7890");
-      setRecovery2fa("JBSWY3DPEHPK3PXP");
-
-      setAccounts([
-        {
-          id: crypto.randomUUID(),
-          platform: "Instagram",
-          username: `@${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamain"}_official`,
-          password: "••••••••",
-          showPassword: false,
-          note: "Main Admin",
-        },
-        {
-          id: crypto.randomUUID(),
-          platform: "WordPress Admin",
-          username: "admin_web",
-          password: "••••••••",
-          showPassword: false,
-          note: "CMS Portal",
-        },
-      ]);
-
-      setIsGeneratingAI(false);
-      toast.success("✨ Seluruh profil & timeline klien berhasil dibuat otomatis oleh AI!");
-    }, 1000);
+    const urlMatch = prompt.match(/https?:\/\/[^\s]+/i);
+    const source = urlMatch ? prompt.replace(urlMatch[0], "").trim() : prompt;
+    const formattedName = source
+      .replace(/(https?:\/\/|www\.)/gi, "")
+      .split(".")[0]
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    if (formattedName) setName(formattedName);
+    if (urlMatch) setWebsite(urlMatch[0]);
+    setIsGeneratingAI(false);
+    toast.info("Nama dan URL diisi sebagai draft lokal. AI belum dijalankan dan tidak ada data contoh yang dibuat.");
   };
 
   const handleLogoChange = (file?: File) => {
@@ -552,10 +487,10 @@ export function ClientCreatePage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
-                    ✨ AI Smart Profile &amp; Timeline Generator
+                    ✨ Bantuan Isi Profil (Lokal)
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Ketik nama perusahaan, website, atau prompt singkat. AI akan mengisi profil, brand, timeline, dan kredensial secara otomatis!
+                    Isi nama atau URL untuk membantu mengisi field dasar. Tidak memanggil AI eksternal atau token Lovable.
                   </p>
                 </div>
               </div>
