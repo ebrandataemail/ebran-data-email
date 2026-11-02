@@ -14,7 +14,7 @@ function briefText(brief?: unknown) {
   return `Data aset (JSON, rahasia sudah disamarkan):\n${JSON.stringify(data, null, 2)}`;
 }
 
-async function runText(instructions: string, prompt: string, effort: "low" | "medium") {
+async function runText(instructions: string, prompt: string, _effort: "low" | "medium") {
   try {
     const { model } = createAiModel();
     const result = streamText({
@@ -35,7 +35,7 @@ async function runObject<T>(
   schema: z.ZodType<T>,
   instructions: string,
   messages: ModelMessage[],
-  effort: "low" | "medium",
+  _effort: "low" | "medium",
 ): Promise<T> {
   try {
     const { model } = createAiModel();
@@ -45,7 +45,6 @@ async function runObject<T>(
       messages,
       maxRetries: 1,
       output: Output.object({ schema }),
-      providerOptions: aiProviderOptions(effort),
     });
     return (await result.output) as T;
   } catch (error) {
