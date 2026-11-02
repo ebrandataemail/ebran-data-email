@@ -137,6 +137,10 @@ export function ClientDetailWorkspace({
   // Profile AI Builder & Interactive State
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [aiTab, setAITab] = useState<"upload" | "link" | "social" | "prompt">("upload");
+  const [brandSourceUrl, setBrandSourceUrl] = useState("");
+  const [brandSourceSocial, setBrandSourceSocial] = useState("");
+  const [brandSourcePrompt, setBrandSourcePrompt] = useState("");
+  const [brandSourceFile, setBrandSourceFile] = useState<File | null>(null);
   const [catatanPentingText, setCatatanPentingText] = useState("");
 
   // Digital Assets & Kredensial Form State
@@ -170,7 +174,7 @@ export function ClientDetailWorkspace({
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const [eventsRes, assetsRes, docsRes, tasksRes, brandProfileRes] = await Promise.all([
+      const [eventsRes, assetsRes, docsRes, tasksRes, brandProfileRes, brandAssetsRes] = await Promise.all([
         supabase
           .from("client_timeline_events")
           .select("*")
@@ -195,9 +199,10 @@ export function ClientDetailWorkspace({
           .select("*")
           .eq("client_id", client.id)
           .maybeSingle(),
+        supabase.from("client_brand_assets").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
       ]);
 
-      const queryError = eventsRes.error || assetsRes.error || docsRes.error || tasksRes.error || brandProfileRes.error;
+      const queryError = eventsRes.error || assetsRes.error || docsRes.error || tasksRes.error || brandProfileRes.error || brandAssetsRes.error;
       if (queryError) throw new Error(queryError.message || "Gagal memuat workspace client.");
 
       const events: DBRow[] = eventsRes.data ?? [];
@@ -213,6 +218,7 @@ export function ClientDetailWorkspace({
         docs,
         tasks,
         brandProfile: brandProfileRes.data ?? null,
+        brandAssets: brandAssetsRes.data ?? [],
         userId: authData.user?.id ?? "",
       };
     },
@@ -357,6 +363,41 @@ export function ClientDetailWorkspace({
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleSaveBrandSource = async () => {
+    setBusy(true);
+    let uploadedPath: string | null = null;
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Sesi login tidak ditemukan.");
+      const userId = authData.user.id;
+      let payload: DBRow;
+      if (aiTab === "upload") {
+        if (!brandSourceFile) throw new Error("Pilih file brand guideline terlebih dahulu.");
+        const safeName = brandSourceFile.name.replace(/[^\\w.-]/g, "-");
+        uploadedPath = userId + "/" + client.id + "/brand/" + crypto.randomUUID() + "-" + safeName;
+        const upload = await supabase.storage.from("client-files").upload(uploadedPath, brandSourceFile, { contentType: brandSourceFile.type, upsert: false });
+        if (upload.error) throw upload.error;
+        payload = { user_id: userId, client_id: client.id, asset_type: "guideline", name: brandSourceFile.name, file_path: uploadedPath, notes: "Uploaded brand source" };
+      } else if (aiTab === "link") {
+        if (!brandSourceUrl.trim()) throw new Error("Masukkan URL sumber brand.");
+        payload = { user_id: userId, client_id: client.id, asset_type: "other", name: "Website / Brand URL", value: brandSourceUrl.trim() };
+      } else if (aiTab === "social") {
+        if (!brandSourceSocial.trim()) throw new Error("Masukkan akun media sosial client.");
+        payload = { user_id: userId, client_id: client.id, asset_type: "other", name: "Social Media Profile", value: brandSourceSocial.trim() };
+      } else {
+        if (!brandSourcePrompt.trim()) throw new Error("Masukkan instruksi profil terlebih dahulu.");
+        payload = { user_id: userId, client_id: client.id, asset_type: "guideline", name: "Custom Profile Prompt", value: brandSourcePrompt.trim() };
+      }
+      const { error } = await supabase.from("client_brand_assets").insert(payload);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey });
+      setBrandSourceUrl(""); setBrandSourceSocial(""); setBrandSourcePrompt(""); setBrandSourceFile(null);
+      toast.success("Sumber profil berhasil disimpan ke database.");
+    } catch (error) {
+      if (uploadedPath) await supabase.storage.from("client-files").remove([uploadedPath]);
+      toast.error(error instanceof Error ? error.message : "Gagal menyimpan sumber profil.");
+    } finally { setBusy(false); }
+  };
   const handleTimelineSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!judul.trim()) {
