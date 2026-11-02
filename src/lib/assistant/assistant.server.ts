@@ -1,9 +1,9 @@
-// Server-only AI prompts and Lovable AI calls for every AI feature.
+// Server-only AI prompts and external AI provider calls for every AI feature.
 import { Output, streamText, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import { asset } from "@/data/asset";
-import { aiProviderOptions, createAiModel, toAiError } from "@/lib/ai/lovable.server";
+import { createAiModel, toAiError } from "@/lib/ai/provider.server";
 import { buildAssetBrief } from "./context";
 
 const PERSONA = `Kamu adalah asisten AI di aplikasi "Ebran Aset Digital - Arsip Data Pribadi Aman" untuk mengelola akun, aset developer, serta aset Ads & Marketing dan konteks proyek/client.
@@ -22,7 +22,6 @@ async function runText(instructions: string, prompt: string, effort: "low" | "me
       instructions,
       messages: [{ role: "user", content: prompt }],
       maxRetries: 1,
-      providerOptions: aiProviderOptions(effort),
     });
     const text = (await result.text).trim();
     if (!text) throw new Error("Empty AI response");
