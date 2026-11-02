@@ -131,7 +131,7 @@ export async function handleAiChat(request: Request) {
         .order("name")
         .limit(100),
       (auth.supabase.from("client_brand_profiles" as any) as any)
-        .select("client_id,primary_color,secondary_color,tone_of_voice,company_overview,pain_points,agency_goals,do_rules,dont_rules,important_notes,tags,service_priority"),
+        .select("client_id,primary_color,secondary_color,tone_of_voice,company_overview,pain_points,agency_goals,do_rules,dont_rules,important_notes,vault_notes,tags,service_priority"),
       auth.supabase
         .from("projects")
         .select("id,client_id,name,description,status,created_at,updated_at")
