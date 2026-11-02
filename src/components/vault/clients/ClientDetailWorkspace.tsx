@@ -1764,44 +1764,6 @@ export function ClientDetailWorkspace({
                     )}
                   </div>
                 </div>
-                {false && (
-                      <>
-                        <div className="group relative flex gap-3">
-                          <div className="absolute left-[11px] top-6 -z-0 h-full w-px bg-slate-200"></div>
-                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-blue-100 shadow-sm">
-                            <Calendar className="size-3 text-blue-600" />
-                          </div>
-                          <div className="flex-1 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
-                            <h4 className="text-xs font-bold leading-tight text-slate-800">
-                              Meeting Presentasi Konsep
-                            </h4>
-                            <p className="mb-2 mt-0.5 text-[10px] text-slate-500">Oleh: Ammar (AM)</p>
-                            <div className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                              <Clock className="size-3 text-slate-400" /> Besok, 14:00 WIB
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="group relative flex gap-3">
-                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-rose-100 shadow-sm">
-                            <Flag className="size-3 text-rose-600" />
-                          </div>
-                          <div className="flex-1 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
-                            <h4 className="text-xs font-bold leading-tight text-slate-800">
-                              Batas Akhir Revisi Label Kemasan
-                            </h4>
-                            <p className="mb-2 mt-0.5 text-[10px] text-slate-500">Oleh: Dimas (Desain)</p>
-                            <div className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
-                              <AlertCircle className="size-3" /> 25 Okt 2026
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                )}
-
                 <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
                   <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-blue-900">
                     <Info className="size-4 text-blue-600" /> Integrasi /workboard &amp; Timeline
