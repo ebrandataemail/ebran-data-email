@@ -1,59 +1,20 @@
 import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  AtSign,
-  Bot,
-  Dribbble,
-  Headset,
-  Image as ImageIcon,
-  Music,
-  PenLine,
-  PenTool,
-  Search,
-  Shield,
-  TrendingUp,
-} from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { images } from "./data";
+import {
+  DAY_MS,
+  dateLabel,
+  dueEnd,
+  isClosed,
+  shortDateLabel,
+  statusMeta,
+  urgencyOf,
+} from "./status";
 import type { WorkboardActivity, WorkboardClient, WorkboardTask } from "./useWorkboardData";
 
 /* ---------------------------------------------------------------- Calendar */
-
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-/** Highlights from the reference design (October). */
-const highlights: Record<number, "orange" | "teal" | "lavender"> = {
-  2: "orange",
-  3: "orange",
-  6: "teal",
-  9: "teal",
-  12: "teal",
-  15: "teal",
-  19: "teal",
-  24: "teal",
-  26: "teal",
-  27: "teal",
-  18: "lavender",
-  21: "lavender",
-  29: "lavender",
-};
 
 function localDateKey(value: string | Date) {
   const date = value instanceof Date ? value : new Date(value);
@@ -64,12 +25,26 @@ function localDateKey(value: string | Date) {
   return `${year}-${month}-${day}`;
 }
 
-function formatDate(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+/** Day tint = same semantics as the rest of the board (urgency / review / has task). */
+const tones = {
+  soon: "bg-warning-soft text-warning-foreground",
+  review: "bg-wb-purple-soft text-wb-purple",
+  task: "bg-wb-blue-strong/10 text-wb-blue-strong",
+} as const;
+
+function toneOf(dayTasks: WorkboardTask[] | undefined): keyof typeof tones | null {
+  if (!dayTasks?.length) return null;
+  const open = dayTasks.filter((t) => !isClosed(t.status));
+  if (
+    open.some((t) => {
+      const level = urgencyOf(t)?.level;
+      return level === "late" || level === "soon";
+    })
+  ) {
+    return "soon";
+  }
+  if (open.some((t) => t.status === "revision")) return "review";
+  return "task";
 }
 
 export function CalendarPanel({
@@ -83,7 +58,8 @@ export function CalendarPanel({
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
-  const [selectedDate, setSelectedDate] = useState(() => localDateKey(new Date()));
+  const todayKey = localDateKey(new Date());
+  const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const cells = useMemo(() => {
     const first = new Date(cursor.year, cursor.month, 1);
@@ -129,12 +105,10 @@ export function CalendarPanel({
   }
 
   return (
-    <div className="rounded-3xl bg-wb-beige p-3 shadow-card">
-      <div className="flex items-center gap-2">
-        <span className="rounded-full border border-wb-beige-deep px-4 py-2 text-[13px] font-semibold text-wb-ink">
-          Kalender kerja
-        </span>
-        <span className="ml-auto text-[9px] text-muted-foreground">
+    <div className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-soft">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-base font-extrabold tracking-tight text-wb-ink">Kalender</h3>
+        <span className="text-xs text-muted-foreground">
           {tasks.length} task · {activities.length} aktivitas
         </span>
       </div>
@@ -143,11 +117,11 @@ export function CalendarPanel({
           type="button"
           aria-label="Bulan sebelumnya"
           onClick={() => shift(-1)}
-          className="flex size-8 items-center justify-center rounded-full border border-wb-beige-deep text-wb-ink hover:bg-wb-beige-deep"
+          className="flex size-10 items-center justify-center rounded-lg border border-border text-wb-ink hover:bg-muted"
         >
           <ArrowLeft className="size-4" />
         </button>
-        <span className="text-[13px] font-semibold text-wb-ink">
+        <span className="text-sm font-semibold text-wb-ink">
           {new Date(cursor.year, cursor.month, 1).toLocaleDateString("id-ID", {
             month: "long",
             year: "numeric",
@@ -157,14 +131,14 @@ export function CalendarPanel({
           type="button"
           aria-label="Bulan berikutnya"
           onClick={() => shift(1)}
-          className="flex size-8 items-center justify-center rounded-full border border-wb-beige-deep text-wb-ink hover:bg-wb-beige-deep"
+          className="flex size-10 items-center justify-center rounded-lg border border-border text-wb-ink hover:bg-muted"
         >
           <ArrowRight className="size-4" />
         </button>
       </div>
-      <div className="mt-4 grid grid-cols-7 gap-1 text-center">
-        {["S", "S", "R", "K", "J", "S", "M"].map((day, index) => (
-          <span key={index} className="pb-1 text-[11px] font-medium text-wb-ink">
+      <div className="mt-4 grid grid-cols-7 gap-1.5 text-center">
+        {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day) => (
+          <span key={day} className="pb-1 text-xs font-semibold text-muted-foreground">
             {day}
           </span>
         ))}
@@ -172,52 +146,62 @@ export function CalendarPanel({
           const dateKey = cell.current
             ? localDateKey(new Date(cursor.year, cursor.month, cell.day))
             : "";
-          const hasTask = !!tasksByDate.get(dateKey)?.length;
+          const tone = cell.current ? toneOf(tasksByDate.get(dateKey)) : null;
           const hasActivity = !!activitiesByDate.get(dateKey)?.length;
           const isSelected = !!dateKey && selectedDate === dateKey;
+          const isToday = !!dateKey && dateKey === todayKey;
           return (
             <button
               key={index}
               type="button"
               disabled={!cell.current}
               onClick={() => setSelectedDate(dateKey)}
+              aria-label={cell.current ? dateLabel(dateKey) : undefined}
+              aria-pressed={isSelected}
               className={cn(
-                "relative flex h-9 flex-col items-center justify-center rounded-md text-[11px] transition",
+                "relative flex h-11 flex-col items-center justify-center rounded-lg text-sm font-semibold transition",
                 !cell.current && "text-muted-foreground/40",
-                cell.current && "bg-card/70 text-wb-ink hover:bg-card",
-                isSelected && "ring-2 ring-wb-ink ring-offset-1 ring-offset-wb-beige",
+                cell.current && (tone ? tones[tone] : "bg-muted text-wb-ink"),
+                cell.current && "hover:brightness-95",
+                isToday && "border border-wb-ink",
+                isSelected && "ring-2 ring-wb-ink ring-offset-1 ring-offset-card",
               )}
             >
               {cell.day}
-              {cell.current && (hasTask || hasActivity) && (
-                <span className="absolute bottom-1 flex gap-0.5">
-                  {hasTask && <i className="size-1 rounded-full bg-wb-blue-strong" />}
-                  {hasActivity && <i className="size-1 rounded-full bg-wb-orange" />}
-                </span>
-              )}
+              {hasActivity && <i className="absolute bottom-1 size-1 rounded-full bg-wb-orange" />}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap gap-3 text-[9px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <i className="size-1.5 rounded-full bg-wb-blue-strong" /> Deadline task
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <i className="size-3 rounded-sm bg-wb-blue-strong/10 ring-1 ring-wb-blue-strong/40" /> Ada task
         </span>
-        <span className="inline-flex items-center gap-1">
-          <i className="size-1.5 rounded-full bg-wb-orange" /> Aktivitas aktual
+        <span className="inline-flex items-center gap-1.5">
+          <i className="size-3 rounded-sm bg-warning-soft ring-1 ring-warning-foreground/40" /> Nyaris
+          deadline / telat
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <i className="size-3 rounded-sm bg-wb-purple-soft ring-1 ring-wb-purple/40" /> Review Client
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <i className="size-1.5 rounded-full bg-wb-orange" /> Aktivitas
         </span>
       </div>
       {selectedDate && (
-        <div className="mt-3 border-t border-wb-beige-deep pt-3">
-          <p className="text-[10px] font-bold text-wb-ink">{formatDate(selectedDate)}</p>
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="text-sm font-bold text-wb-ink">{dateLabel(selectedDate)}</p>
           {selectedTasks.map((task) => (
-            <div key={task.id} className="mt-2 flex items-start justify-between gap-2 text-[9px]">
+            <div key={task.id} className="mt-2 flex items-start justify-between gap-2 text-xs">
               <span className="min-w-0 flex-1 text-wb-ink">{task.title}</span>
-              <span className="shrink-0 text-muted-foreground">{task.status}</span>
+              <span className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground">
+                <i className={cn("size-2 rounded-full", statusMeta(task.status)?.dot)} />
+                {statusMeta(task.status)?.title ?? task.status}
+              </span>
             </div>
           ))}
           {selectedActivities.map((activity) => (
-            <div key={activity.id} className="mt-2 border-l-2 border-wb-orange pl-2 text-[9px]">
+            <div key={activity.id} className="mt-2 border-l-2 border-wb-orange pl-2 text-xs">
               <p className="font-semibold text-wb-ink">{activity.title}</p>
               <p className="text-muted-foreground">
                 {activity.event_type} ·{" "}
@@ -229,7 +213,7 @@ export function CalendarPanel({
             </div>
           ))}
           {!selectedTasks.length && !selectedActivities.length && (
-            <p className="mt-2 text-[9px] text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               Tidak ada deadline atau aktivitas tercatat pada tanggal ini.
             </p>
           )}
@@ -239,7 +223,15 @@ export function CalendarPanel({
   );
 }
 
-/* ---------------------------------------------------------- Work list */
+/* ---------------------------------------------------------- Daftar Task */
+
+type WorkFilter = "all" | "late" | "week";
+const workFilters: { id: WorkFilter; label: string }[] = [
+  { id: "all", label: "Semua" },
+  { id: "late", label: "Telat" },
+  { id: "week", label: "Minggu ini" },
+];
+const PAGE = 6;
 
 export function WorkListPanel({
   tasks,
@@ -248,103 +240,104 @@ export function WorkListPanel({
   tasks: WorkboardTask[];
   clients: WorkboardClient[];
 }) {
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<WorkFilter>("all");
+  const [showAll, setShowAll] = useState(false);
   const [active, setActive] = useState<string | null>(null);
-  const clientById = new Map(clients.map((client) => [client.id, client]));
-  const today = localDateKey(new Date());
+  const clientById = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
+
   const items = useMemo(() => {
-    const filtered = tasks.filter(
-      (task) =>
-        !query ||
-        [
-          task.title,
-          task.description ?? "",
-          task.assignee ?? "",
-          clientById.get(task.client_id)?.name ?? "",
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(query.toLowerCase()),
-    );
+    const now = Date.now();
+    const filtered = tasks.filter((task) => {
+      if (filter === "all") return true;
+      if (isClosed(task.status) || !task.due_date) return false;
+      if (filter === "late") return urgencyOf(task)?.level === "late";
+      return dueEnd(task.due_date) - now <= 7 * DAY_MS;
+    });
     return filtered.sort((a, b) => {
-      const aDone = ["finished", "cancel"].includes(a.status);
-      const bDone = ["finished", "cancel"].includes(b.status);
+      const aDone = isClosed(a.status);
+      const bDone = isClosed(b.status);
       if (aDone !== bDone) return aDone ? 1 : -1;
       const aDue = a.due_date ?? "9999-12-31";
       const bDue = b.due_date ?? "9999-12-31";
       if (aDue !== bDue) return aDue.localeCompare(bDue);
       return b.updated_at.localeCompare(a.updated_at);
     });
-  }, [tasks, query, clients]);
+  }, [tasks, filter]);
+
+  const visible = showAll ? items : items.slice(0, PAGE);
   const selected = items.find((task) => task.id === active) ?? items[0];
 
-  function deadlineLabel(task: WorkboardTask) {
-    if (!task.due_date) return "Tanpa deadline";
-    if (task.due_date < today && !["finished", "cancel"].includes(task.status)) return "Terlambat";
-    if (task.due_date === today) return "Hari ini";
-    return formatDate(task.due_date);
-  }
-
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-soft">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[15px] font-extrabold tracking-tight text-wb-ink">DAFTAR PEKERJAAN</h3>
-        <span className="rounded-full bg-card px-3 py-1 text-[10px] text-wb-ink shadow-soft">
-          {items.length} task
-        </span>
+        <h3 className="text-base font-extrabold tracking-tight text-wb-ink">Daftar Task</h3>
+        <span className="text-xs text-muted-foreground">Urut deadline</span>
       </div>
-      <label className="mt-2 flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 shadow-soft">
-        <Search className="size-3 text-wb-ink" />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Cari task / proyek / client"
-          className="min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-wb-ink outline-none placeholder:text-muted-foreground"
-        />
-      </label>
-      <ul className="mt-2 border-r border-border bg-card">
-        {items.slice(0, 12).map((task) => {
-          const overdue =
-            task.due_date && task.due_date < today && !["finished", "cancel"].includes(task.status);
+      <div className="mt-4 inline-flex gap-1 rounded-lg bg-muted p-1" role="tablist">
+        {workFilters.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            role="tab"
+            aria-selected={filter === f.id}
+            onClick={() => {
+              setFilter(f.id);
+              setShowAll(false);
+            }}
+            className={cn(
+              "rounded-md px-3.5 py-1.5 text-xs font-bold transition",
+              filter === f.id ? "bg-card text-wb-ink shadow-soft" : "text-muted-foreground",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <ul className="mt-4 space-y-3">
+        {visible.map((task) => {
+          const client = clientById.get(task.client_id);
+          const meta = statusMeta(task.status);
+          const urgency = urgencyOf(task);
           return (
             <li key={task.id}>
               <button
                 type="button"
                 onClick={() => setActive(task.id)}
                 className={cn(
-                  "flex w-full items-start gap-3 border-b border-border px-2 py-3 text-left hover:bg-muted/60",
-                  selected?.id === task.id && "bg-muted/70",
+                  "flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 text-left transition hover:bg-muted/50",
+                  selected?.id === task.id && "border-wb-ink/40 bg-muted/50",
                 )}
               >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-wb-blue text-[9px] font-bold text-wb-ink">
-                  {(clientById.get(task.client_id)?.name ?? "C").slice(0, 2).toUpperCase()}
+                <span className="flex items-center gap-2">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-wb-ink text-xs font-bold text-white">
+                    {(client?.name ?? "C").slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-wb-ink">{task.title}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {client?.name ?? "Client tidak ditemukan"}
+                    </span>
+                  </span>
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-[11px] font-semibold text-wb-ink">
-                      {task.title}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 text-[8px]",
-                        overdue ? "font-bold text-destructive" : "text-muted-foreground",
-                      )}
-                    >
-                      {deadlineLabel(task)}
-                    </span>
+                <span className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-foreground/80">
+                    <i className={cn("size-2.5 rounded-full", meta?.dot ?? "bg-muted-foreground")} />
+                    {meta?.title ?? task.status}
                   </span>
-                  <span className="mt-0.5 block truncate text-[9px] text-muted-foreground">
-                    {clientById.get(task.client_id)?.name ?? "Client tidak ditemukan"} ·{" "}
-                    {task.status}
-                  </span>
-                  <span className="mt-1 block text-[8px] text-muted-foreground">
-                    Aktual diperbarui:{" "}
-                    {new Date(task.updated_at).toLocaleString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  <span className="inline-flex items-center gap-2">
+                    {urgency && (
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                          urgency.className,
+                        )}
+                      >
+                        {urgency.label}
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {task.due_date ? shortDateLabel(task.due_date) : "Tanpa deadline"}
+                    </span>
                   </span>
                 </span>
               </button>
@@ -352,23 +345,37 @@ export function WorkListPanel({
           );
         })}
         {!items.length && (
-          <li className="px-2 py-6 text-center text-[10px] text-muted-foreground">
-            Belum ada task sesuai pencarian.
+          <li className="py-6 text-center text-xs text-muted-foreground">
+            Tidak ada task untuk filter ini.
           </li>
         )}
       </ul>
+      {items.length > PAGE && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {visible.length} dari {items.length} task
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            className="text-xs font-bold text-wb-blue-strong hover:underline"
+          >
+            {showAll ? "Ringkas" : "Lihat semua"}
+          </button>
+        </div>
+      )}
       {selected && (
-        <div className="mt-2 rounded-lg border bg-card p-3">
-          <p className="text-[10px] font-bold text-wb-ink">{selected.title}</p>
-          <p className="mt-1 text-[9px] text-muted-foreground">
+        <div className="mt-4 rounded-xl border border-border bg-muted/40 p-3">
+          <p className="text-sm font-bold text-wb-ink">{selected.title}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             {selected.description || "Tidak ada deskripsi."}
           </p>
-          <p className="mt-2 text-[9px] text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             PIC: {selected.assignee || "Belum ditentukan"} · Prioritas: {selected.priority}
           </p>
-          <p className="mt-1 text-[9px] text-muted-foreground">
-            Deadline: {selected.due_date ? formatDate(selected.due_date) : "Belum ditentukan"} ·
-            Aktivitas terakhir: {new Date(selected.updated_at).toLocaleString("id-ID")}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Deadline: {selected.due_date ? dateLabel(selected.due_date) : "Belum ditentukan"} ·
+            Diperbarui: {new Date(selected.updated_at).toLocaleString("id-ID")}
           </p>
         </div>
       )}
@@ -378,97 +385,65 @@ export function WorkListPanel({
 
 /* -------------------------------------------------------- AI secretary */
 
-const prompts = [
-  { label: "Design", icon: PenLine },
-  { label: "Sales", icon: TrendingUp },
-  { label: "Sports", icon: Dribbble },
-  { label: "Email", icon: AtSign },
-  { label: "Music", icon: Music },
-  { label: "Image", icon: ImageIcon },
-];
-
-const topics = [
+const quickPrompts = [
+  { label: "Task hari ini", text: "Ringkas semua task yang deadline-nya hari ini." },
   {
-    title: "AI in Healthcare",
-    body: "Smarter care powered by intelligent technology, transforming the way healthcare is delivered.",
-    icon: Shield,
+    label: "Task telat",
+    text: "Tampilkan task yang sudah telat dan beri saran urutan pengerjaannya.",
   },
+  { label: "Follow-up client", text: "Buatkan draf pesan follow-up yang sopan ke client." },
   {
-    title: "AI in Design",
-    body: "Empowering designers to create faster, smarter, and more visually compelling with AI.",
-    icon: PenTool,
+    label: "Brief standar",
+    text: "Susun brief standar (judul, ringkasan, spesifikasi, checklist revisi, deadline) dari catatan revisi client berikut:",
   },
 ];
 
 export function AiSecretaryPanel() {
+  const navigate = useNavigate();
+  const usePrompt = async (text: string) => {
+    let copied = true;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      copied = false;
+    }
+    toast(copied ? "Prompt disalin" : "Prompt siap dipakai", {
+      description: text,
+      action: { label: "Buka Tanya AI", onClick: () => void navigate({ to: "/ai" }) },
+    });
+  };
   return (
-    <div className="min-w-0 rounded-sm bg-gradient-to-b from-wb-cyan-soft via-card to-wb-cyan-soft p-2">
+    <div className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-soft">
       <div className="flex items-center gap-2">
-        <Headset className="size-6 text-wb-cyan" />
-        <h3 className="flex-1 text-[11.5px] font-semibold text-wb-ink">Tanya Sekertaris AI Anda</h3>
-        <img
-          src={images.avatarMan}
-          alt=""
-          width={24}
-          height={24}
-          loading="lazy"
-          className="size-6 rounded-full object-cover"
-        />
+        <span className="flex size-8 items-center justify-center rounded-lg bg-ai-soft text-ai-foreground">
+          <Bot className="size-4" />
+        </span>
+        <h3 className="flex-1 text-base font-extrabold tracking-tight text-wb-ink">
+          Tanya Sekretaris AI
+        </h3>
       </div>
-
       <Link
         to="/ai"
-        className="mt-10 flex items-center justify-center gap-1.5 rounded-md bg-wb-cyan py-2 text-[11px] font-semibold text-wb-ink shadow-soft transition hover:brightness-95"
+        className="mt-4 flex h-11 items-center justify-center gap-2 rounded-lg bg-gradient-ai text-sm font-bold text-wb-ink shadow-ai transition hover:brightness-95"
       >
-        <Bot className="size-3.5" /> Start Chat
+        <Bot className="size-4" /> Mulai Chat
       </Link>
-
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-wb-ink">Popular Prompt</span>
-        <Link to="/ai" className="text-[8.5px] font-semibold text-wb-ink hover:underline">
-          View All
-        </Link>
-      </div>
-      <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-        {prompts.map(({ label, icon: Icon }) => (
+      <p className="mt-5 text-xs font-bold uppercase tracking-wider text-wb-ink">Prompt cepat</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {quickPrompts.map((p) => (
           <button
-            key={label}
+            key={p.label}
             type="button"
-            onClick={() =>
-              toast(`Prompt "${label}" dipilih`, { description: "Buka Tanya AI untuk memulai." })
-            }
-            className="flex items-center justify-center gap-0.5 rounded-md bg-muted py-1.5 text-[9.5px] font-semibold text-wb-ink transition-colors hover:bg-border"
+            onClick={() => void usePrompt(p.text)}
+            className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-wb-ink transition hover:bg-muted"
           >
-            {label}
-            <Icon className="size-2.5 text-muted-foreground" />
+            {p.label}
           </button>
         ))}
       </div>
-
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-wb-ink">Popular Topics</span>
-        <Link to="/ai" className="text-[8.5px] font-semibold text-wb-ink hover:underline">
-          View All
-        </Link>
-      </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-2">
-        {topics.map(({ title, body, icon: Icon }) => (
-          <Link
-            key={title}
-            to="/ai"
-            className="relative rounded-lg bg-wb-cyan-soft p-2 shadow-soft transition hover:shadow-card"
-          >
-            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-card text-wb-cyan">
-              <ArrowUpRight className="size-2.5" />
-            </span>
-            <span className="flex size-5 items-center justify-center rounded-full bg-wb-cyan text-brand-contrast">
-              <Icon className="size-2.5" />
-            </span>
-            <p className="mt-2 text-[8px] font-semibold text-wb-ink">{title}</p>
-            <p className="text-[7.5px] font-medium leading-snug text-wb-ink">{body}</p>
-          </Link>
-        ))}
-      </div>
+      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+        AI hanya menerima konteks yang sudah disaring dari password dan secret.
+      </p>
     </div>
   );
 }
