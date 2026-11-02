@@ -23,54 +23,14 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  taskStatuses as columns,
+  taskPriorities as priorities,
+  dateLabel,
+  isLate,
+  urgencyOf,
+} from "./status";
 import type { WorkboardClient, WorkboardTask } from "./useWorkboardData";
-
-/** Status lanes. `dot` uses design tokens only (see styles.css). */
-const columns = [
-  { id: "things-to-do", title: "TERTUNDA", dot: "bg-warning" },
-  { id: "queue-on-process", title: "ANTRIAN", dot: "bg-wb-cyan" },
-  { id: "on-process", title: "ON PROSES", dot: "bg-wb-blue-strong" },
-  { id: "pending", title: "PENDING", dot: "bg-muted-foreground" },
-  { id: "revision", title: "REVIEW CLIENT", dot: "bg-wb-purple" },
-  { id: "finished", title: "SELESAI", dot: "bg-success" },
-  { id: "cancel", title: "CANCEL / STOP", dot: "bg-destructive" },
-] as const;
-const priorities = [
-  { id: "low", label: "Rendah" },
-  { id: "medium", label: "Sedang" },
-  { id: "high", label: "Tinggi" },
-] as const;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const dueEnd = (value: string) => new Date(value + "T23:59:59").getTime();
-const dateLabel = (value: string) =>
-  new Date(value + "T00:00:00").toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-const isLate = (value: string | null) => !!value && dueEnd(value) < Date.now();
-
-/** Only color in the board: urgency. Everything else stays neutral. */
-function urgencyOf(task: WorkboardTask): { label: string; className: string } | null {
-  if (task.status === "finished") {
-    return { label: "Selesai", className: "bg-success-soft text-success-foreground" };
-  }
-  if (task.status === "cancel") {
-    return { label: "Dihentikan", className: "bg-muted text-muted-foreground" };
-  }
-  if (!task.due_date) return null;
-  const end = dueEnd(task.due_date);
-  const now = Date.now();
-  if (end < now) {
-    const days = Math.floor((now - end) / DAY_MS) + 1;
-    return { label: "Telat " + days + " hari", className: "bg-destructive-soft text-destructive" };
-  }
-  if (end - now <= 2 * DAY_MS) {
-    return { label: "Nyaris deadline", className: "bg-warning-soft text-warning-foreground" };
-  }
-  return { label: "Masih aman", className: "bg-success-soft text-success-foreground" };
-}
 
 /** Group tasks by deadline (ascending); tasks without deadline go last. */
 function groupByDate(rows: WorkboardTask[]): [string, WorkboardTask[]][] {

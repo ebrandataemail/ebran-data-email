@@ -400,7 +400,7 @@ const quickPrompts = [
 
 export function AiSecretaryPanel() {
   const navigate = useNavigate();
-  const usePrompt = async (text: string) => {
+  const copyPrompt = async (text: string) => {
     let copied = true;
     try {
       await navigator.clipboard.writeText(text);
@@ -434,7 +434,7 @@ export function AiSecretaryPanel() {
           <button
             key={p.label}
             type="button"
-            onClick={() => void usePrompt(p.text)}
+            onClick={() => void copyPrompt(p.text)}
             className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-wb-ink transition hover:bg-muted"
           >
             {p.label}
