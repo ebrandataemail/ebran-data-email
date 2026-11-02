@@ -116,6 +116,7 @@ export async function handleAiChat(request: Request) {
     const [
       clientsResult,
       brandProfilesResult,
+      brandAssetsResult,
       projectsResult,
       tasksResult,
       assetsResult,
@@ -132,6 +133,12 @@ export async function handleAiChat(request: Request) {
         .limit(100),
       (auth.supabase.from("client_brand_profiles" as any) as any)
         .select("client_id,primary_color,secondary_color,tone_of_voice,company_overview,pain_points,agency_goals,do_rules,dont_rules,important_notes,vault_notes,tags,service_priority"),
+      auth.supabase
+        .from("client_brand_assets")
+        .select("id,client_id,asset_type,name,value,notes,created_at")
+        .eq("user_id", auth.userId)
+        .order("created_at", { ascending: false })
+        .limit(300),
       auth.supabase
         .from("projects")
         .select("id,client_id,name,description,status,created_at,updated_at")
@@ -171,6 +178,7 @@ export async function handleAiChat(request: Request) {
     const errors = [
       clientsResult.error,
       brandProfilesResult.error,
+      brandAssetsResult.error,
       projectsResult.error,
       tasksResult.error,
       assetsResult.error,
@@ -184,6 +192,7 @@ export async function handleAiChat(request: Request) {
 
     const clients = clientsResult.data ?? [];
     const brandProfiles = brandProfilesResult.data ?? [];
+    const brandAssets = brandAssetsResult.data ?? [];
     const projects = projectsResult.data ?? [];
     const byClient = (rows: Array<{ client_id: string }>, clientId: string) =>
       rows.filter((row) => row.client_id === clientId);
@@ -195,12 +204,14 @@ export async function handleAiChat(request: Request) {
         projects: projects.length,
         tasks: tasksResult.data?.length ?? 0,
         digitalAssets: assetsResult.data?.length ?? 0,
+        brandSources: brandAssets.length,
         documents: documentsResult.data?.length ?? 0,
         timelineEvents: timelineResult.data?.length ?? 0,
       },
       clients: clients.map((client) => ({
         ...client,
         brandProfile: brandProfiles.find((profile: any) => profile.client_id === client.id) ?? null,
+        brandSources: byClient(brandAssets, client.id),
         projects: byClient(projects, client.id),
         tasks: byClient(tasksResult.data ?? [], client.id),
         digitalAssets: byClient(assetsResult.data ?? [], client.id),
