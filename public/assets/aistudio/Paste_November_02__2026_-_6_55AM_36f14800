@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B2B CRM - Form Timeline & Agenda</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #dce3e8;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 p-2 sm:p-5 lg:p-8 flex flex-col items-center justify-start relative">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Modal Impor dari Workboard -->
+  <div id="workboard-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="workboard-modal-box">
+      <!-- Modal Header -->
+      <div class="bg-[#003837] text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30">
+            <i data-lucide="kanban-square" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold tracking-tight">Impor Task dari /workboard</h3>
+            <p class="text-[11px] text-emerald-200/80">Pilih task aktif untuk di-sinkronisasikan ke form agenda &amp; timeline klien</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeWorkboardModal()" class="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row gap-3 items-center justify-between text-xs">
+        <div class="relative w-full sm:w-72">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+          <input type="text" id="workboard-search" placeholder="Cari task atau penanggung jawab..." onkeyup="filterWorkboardTasks()" class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500">
+        </div>
+        <span class="text-[11px] text-slate-500 self-end sm:self-center">Tersambung ke repositori: <strong class="text-emerald-700 font-semibold">/workboard/sultan-haramain</strong></span>
+      </div>
+
+      <!-- List of Workboard Tasks -->
+      <div class="p-4 sm:p-5 max-h-[380px] overflow-y-auto custom-scrollbar space-y-3" id="workboard-tasks-list">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+        <p class="text-[11px] text-slate-500">Tip: Mengimpor task otomatis mengisi judul, assignee, deadline, dan deskripsi.</p>
+        <button type="button" onclick="closeWorkboardModal()" class="px-4 py-1.5 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-white transition">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Unified Container -->
+  <div class="w-full max-w-[1400px] bg-[#f8fafc] rounded-2xl shadow-2xl overflow-hidden border border-slate-300">
+    
+    <!-- Top Navigation Bar -->
+    <header class="bg-[#003837] text-white px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs tracking-wide select-none">
+      <div class="flex items-center space-x-3 overflow-x-auto custom-scrollbar">
+        <!-- Logo Brand Icon -->
+        <div class="w-7 h-7 rounded-md bg-[#ea580c] flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <nav class="flex items-center space-x-1">
+          <button type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded text-slate-200 hover:text-white hover:bg-[#012a29] transition">
+            <i data-lucide="briefcase" class="w-3.5 h-3.5 opacity-80"></i><span>Companies</span>
+          </button>
+          <button type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#012625] text-white font-medium transition hover:bg-[#022e2d]">
+            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 opacity-90"></i><span>Workspace</span>
+          </button>
+        </nav>
+      </div>
+      <div class="flex items-center space-x-3 text-slate-300">
+        <button type="button" aria-label="Cari" class="p-1 hover:text-white transition"><i data-lucide="search" class="w-4 h-4"></i></button>
+        <button type="button" aria-label="Notifikasi" class="p-1 hover:text-white transition relative">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span class="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+        </button>
+        <div class="w-7 h-7 rounded-full bg-[#f59e0b] text-[#78350f] font-bold flex items-center justify-center text-xs shadow ring-2 ring-[#003837]">BF</div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <main class="p-4 sm:p-6 space-y-4">
+
+      <!-- 1. Client Profile Header Card -->
+      <section class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <div class="flex items-start space-x-3.5">
+            <button type="button" class="mt-1.5 p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition" title="Kembali ke Daftar Perusahaan">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            
+            <!-- Logo & Info Klien -->
+            <div class="flex items-center space-x-4">
+              <div class="w-14 h-14 rounded-full border border-slate-200 shadow-sm overflow-hidden bg-white flex items-center justify-center p-1 shrink-0">
+                <div class="w-full h-full bg-gradient-to-br from-[#c9a75d] via-[#b8913d] to-[#8d6920] rounded-full flex items-center justify-center text-white font-serif font-bold text-[10px] sm:text-xs text-center leading-tight shadow-inner">
+                  SULTAN<br>HARAMAIN
+                </div>
+              </div>
+
+              <div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Sultan Haramain Gresik</h1>
+                  <span class="inline-flex items-center space-x-1.5 bg-amber-50 text-amber-700 font-semibold text-[11px] px-2.5 py-0.5 rounded-full border border-amber-200">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>Active Partner</span>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                  PT Sultan Barokah Haramain (Kantor Cabang Gresik) · Jl. Samanhudi No. 37, Kebungson, Kec. Gresik
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sub-Navigation Tabs (Timeline Active) -->
+        <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between overflow-x-auto custom-scrollbar text-xs">
+          <div class="flex items-center space-x-6">
+            <!-- Active Tab -->
+            <button type="button" class="flex items-center space-x-1.5 pb-2 font-bold text-[#003837] border-b-2 border-[#003837] whitespace-nowrap">
+              <i data-lucide="activity" class="w-4 h-4 text-emerald-600"></i><span>Timeline</span>
+            </button>
+            <button type="button" class="flex items-center space-x-1.5 pb-2 text-slate-500 hover:text-slate-800 transition whitespace-nowrap">
+              <i data-lucide="layout-template" class="w-3.5 h-3.5"></i><span>Profile Client</span>
+            </button>
+            <button type="button" class="flex items-center space-x-1.5 pb-2 text-slate-500 hover:text-slate-800 transition whitespace-nowrap">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i><span>Daftar Aset Digital &amp; Kredensial</span>
+            </button>
+            <button type="button" class="flex items-center space-x-1.5 pb-2 text-slate-500 hover:text-slate-800 transition whitespace-nowrap">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i><span>Dokumen</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Form Timeline Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start mt-2">
+
+        <!-- Kolom Kiri: Form Input Timeline/Agenda (Format Brief /workboard) -->
+        <div class="lg:col-span-8 space-y-5">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            
+            <!-- Form Header -->
+            <div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200 shrink-0">
+                  <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none mb-1">Tambah Aktivitas / Agenda Baru</h2>
+                  <p class="text-[11px] text-slate-500">Format sinkron dengan struktur Brief &amp; Task dari halaman /workboard.</p>
+                </div>
+              </div>
+
+              <!-- Tombol Aksi Impor dari Workboard -->
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="openWorkboardModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300/80 hover:border-emerald-400 transition shadow-xs">
+                  <i data-lucide="download-cloud" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  <span>Impor dari /workboard</span>
+                  <span class="ml-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold">4 Tersedia</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Form Body: Sesuai Struktur Brief / Workboard -->
+            <form id="form-timeline" class="p-5 sm:p-6 space-y-5">
+              
+              <!-- 1. Judul Task / Aktivitas -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Judul <span class="text-red-500">*</span>
+                </label>
+                <input id="brief-judul" type="text" placeholder="Cth: Revisi Desain Spanduk Air Zam Zam — V3" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs transition" required>
+              </div>
+
+              <!-- 2. Client / Proyek -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Client / Proyek</span>
+                  <span class="text-[10px] text-slate-400 font-normal">Nama Perusahaan · Sub-proyek / Kampanye</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="briefcase" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                  <input id="brief-client-proyek" type="text" placeholder="Cth: PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs transition">
+                </div>
+              </div>
+
+              <!-- 3. Ringkasan -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Ringkasan</label>
+                <textarea id="brief-ringkasan" rows="2" placeholder="Client meminta perbaikan pada preview: ukuran logo dan kontras font..." class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs resize-y transition"></textarea>
+              </div>
+
+              <!-- 4. Spesifikasi -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400"></i> Spesifikasi Teknis
+                </label>
+                <input id="brief-spesifikasi" type="text" placeholder="Cth: Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs transition">
+              </div>
+
+              <!-- 5. Checklist Revisi (Interaktif) -->
+              <div class="p-4 bg-slate-50/70 border border-slate-200 rounded-xl space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i> Checklist Revisi
+                  </label>
+                  <button type="button" onclick="addChecklistItem()" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Tambah Item Checklist
+                  </button>
+                </div>
+
+                <div id="checklist-container" class="space-y-2">
+                  <!-- Default items loaded via JS or template -->
+                </div>
+              </div>
+
+              <!-- 6 & 7. Deadline · Prioritas & PIC -->
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                
+                <!-- Deadline (5 cols) -->
+                <div class="md:col-span-5">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i> Deadline <span class="text-red-500">*</span>
+                  </label>
+                  <input id="brief-deadline" type="datetime-local" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs transition" required>
+                </div>
+
+                <!-- Prioritas (4 cols) -->
+                <div class="md:col-span-4">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <i data-lucide="tag" class="w-3.5 h-3.5 text-slate-400"></i> Prioritas
+                  </label>
+                  <select id="brief-prioritas" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-xs transition">
+                    <option value="Client Marah" selected>Client Marah</option>
+                    <option value="Client Nanyain">Client Nanyain!</option>
+                    <option value="Nyaris Deadline">Nyaris Deadline</option>
+                    <option value="Masih Aman">Masih Aman</option>
+                    <option value="Low">Low/option>
+                  </select>
+                </div>
+
+                <!-- PIC (3 cols) -->
+                <div class="md:col-span-3">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-400"></i> PIC
+                  </label>
+                  <select id="brief-pic" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-xs transition">
+                    <option value="DS" selected>DS (Dimas)</option>
+                    <option value="AM">AM (Ammar)</option>
+                    <option value="FM">FM (Fatimah)</option>
+                    <option value="BF">BF (Budi F.)</option>
+                  </select>
+                </div>
+
+              </div>
+
+              <!-- 8. Catatan Khusus: Perlu Konfirmasi (Alert Callout Box) -->
+              <div class="bg-amber-50/90 border border-amber-200/90 rounded-xl p-3.5 transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i> Perlu konfirmasi
+                  </label>
+                  <span class="text-[10px] text-amber-700 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full">Catatan Kritis</span>
+                </div>
+                <input id="brief-konfirmasi" type="text" placeholder="Cth: ukuran logo yang diinginkan client belum disebut." value="ukuran logo yang diinginkan client belum disebut." class="w-full px-3 py-1.5 bg-white/90 border border-amber-300 rounded-lg text-xs text-amber-950 placeholder-amber-400 font-medium focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs">
+              </div>
+
+              <!-- 9. Upload Lampiran -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="paperclip" class="w-3.5 h-3.5 text-slate-500"></i> Lampiran File (MOM, Preview Desain, Refrensi)
+                </label>
+                <div id="timeline-dropzone" class="w-full border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-emerald-50/50 hover:border-emerald-500 transition cursor-pointer group">
+                  <div class="w-9 h-9 rounded-full bg-white shadow-xs text-slate-500 flex items-center justify-center mb-2 group-hover:text-emerald-600 group-hover:scale-105 transition-all border border-slate-200">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                  </div>
+                  <h3 class="text-xs font-semibold text-slate-700 mb-0.5">Pilih atau seret berkas ke sini</h3>
+                  <p class="text-[10px] text-slate-400">PDF, JPG, PNG, AI, PSD, ZIP (Maksimal 5MB per file)</p>
+                  <input type="file" id="timeline-upload-input" multiple class="hidden">
+                </div>
+
+                <!-- Preview List -->
+                <div id="timeline-file-list" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 hidden"></div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button type="button" id="btn-reset" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition shadow-2xs">
+                  Batalkan
+                </button>
+                <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 border border-emerald-700 rounded-lg hover:bg-emerald-700 active:scale-95 transition shadow-sm flex items-center gap-1.5">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i> Simpan ke Timeline
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+        <!-- Kolom Kanan: Preview Konteks Timeline -->
+        <div class="lg:col-span-4 space-y-4">
+          
+          <!-- Kartu Quick Import Workboard -->
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
+              <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="kanban" class="w-4 h-4 text-emerald-600"></i> Task Workboard Siap Impor
+              </h3>
+              <button type="button" onclick="openWorkboardModal()" class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 transition">
+                Lihat Semua
+              </button>
+            </div>
+
+            <div id="quick-workboard-list" class="space-y-2.5">
+              <!-- Rendered dynamically via JavaScript -->
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 class="text-xs font-bold text-slate-900 flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <span class="flex items-center gap-1.5"><i data-lucide="history" class="w-4 h-4 text-blue-600"></i> Agenda Mendatang</span>
+              <span class="bg-blue-50 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Bulan Ini</span>
+            </h2>
+
+            <div id="upcoming-list" class="space-y-4">
+              <!-- Item 1 -->
+              <div class="flex gap-3 relative group">
+                <div class="w-px h-full bg-slate-200 absolute left-[11px] top-6 -z-0"></div>
+                <div class="w-6 h-6 rounded-full bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center shrink-0 z-10">
+                  <i data-lucide="calendar" class="w-3 h-3 text-blue-600"></i>
+                </div>
+                <div class="flex-1 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                  <h4 class="text-xs font-bold text-slate-800 leading-tight">Meeting Presentasi Konsep</h4>
+                  <p class="text-[10px] text-slate-500 mt-0.5 mb-2">Oleh: Ammar (AM)</p>
+                  <div class="inline-flex items-center gap-1 bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px] font-semibold text-slate-600">
+                    <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> Besok, 14:00 WIB
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="flex gap-3 relative group">
+                <div class="w-6 h-6 rounded-full bg-rose-100 border-2 border-white shadow-sm flex items-center justify-center shrink-0 z-10">
+                  <i data-lucide="flag" class="w-3 h-3 text-rose-600"></i>
+                </div>
+                <div class="flex-1 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                  <h4 class="text-xs font-bold text-slate-800 leading-tight">Batas Akhir Revisi Label Kemasan</h4>
+                  <p class="text-[10px] text-slate-500 mt-0.5 mb-2">Oleh: Dimas (Desain)</p>
+                  <div class="inline-flex items-center gap-1 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded text-[10px] font-semibold text-rose-700">
+                    <i data-lucide="alert-circle" class="w-3 h-3"></i> 25 Okt 2026
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Helper Note -->
+          <div class="bg-blue-50/80 border border-blue-200 rounded-xl p-4 shadow-sm">
+            <h4 class="text-[11px] font-bold text-blue-900 mb-1.5 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-4 h-4 text-blue-600"></i> Integrasi /workboard &amp; Timeline
+            </h4>
+            <p class="text-[11px] text-blue-800 leading-relaxed">
+              Task yang diimpor dari <span class="font-semibold text-blue-950">/workboard</span> otomatis tersinkronisasi. Estimasi tenggat, penanggung jawab (assignee), dan deskripsi task langsung dihubungkan tanpa perlu mengetik ulang.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // DATA DUMMY DARI /workboard (Disesuaikan dengan Format Brief)
+    // ----------------------------------------------------
+    const WORKBOARD_TASKS = [
+      {
+        id: 'WB-V3',
+        judul: 'Revisi Desain Spanduk Air Zam Zam — V3',
+        clientProyek: 'PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah',
+        ringkasan: 'Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.',
+        spesifikasi: 'Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut',
+        checklist: [
+          { text: 'Perbesar logo klien di bagian atas', note: 'WA 10:42', done: false },
+          { text: 'Naikkan kontras font terhadap background', note: 'Pin 2', done: false }
+        ],
+        deadline: '2026-10-28T15:00',
+        deadlineDisplay: 'Oct 28, 2026 · 15:00 WIB',
+        prioritas: 'Enterprise',
+        prioritasBadge: 'bg-purple-100 text-purple-700 border-purple-200',
+        pic: 'DS',
+        perluKonfirmasi: 'ukuran logo yang diinginkan client belum disebut.'
+      },
+      {
+        id: 'WB-102',
+        judul: 'Revisi Copywriting Brosur Umroh Promo Ramadhan 1448H',
+        clientProyek: 'Sultan Haramain Gresik · Brosur Cetak A5',
+        ringkasan: 'Penyesuaian legalitas Kemenag dan revisi paket bintang lima Makkah/Madinah.',
+        spesifikasi: 'Brosur Lipat 3 · Art Paper 150gsm · Laminasi Doff',
+        checklist: [
+          { text: 'Update nomor registrasi PPIU Kemenag No. 102/2024', note: 'Legal', done: true },
+          { text: 'Perjelas fasilitas hotel bintang lima & kereta cepat', note: 'Direksi', done: false }
+        ],
+        deadline: '2026-11-04T12:00',
+        deadlineDisplay: 'Nov 04, 2026 · 12:00 WIB',
+        prioritas: 'Urgent',
+        prioritasBadge: 'bg-rose-100 text-rose-700 border-rose-200',
+        pic: 'AM',
+        perluKonfirmasi: 'Nomor kontak CS Gresik belum diverifikasi oleh admin cabang.'
+      },
+      {
+        id: 'WB-103',
+        judul: 'Setup Landing Page Katalog Produk & Pemesanan Grosir',
+        clientProyek: 'Sultan Haramain Gresik · Portal Online',
+        ringkasan: 'Integrasi formulir pemesanan distributor dan webhook notifikasi WhatsApp tim CS.',
+        spesifikasi: 'Next.js Frontend · TailwindCSS · PostgreSQL database',
+        checklist: [
+          { text: 'Integrasikan form checkout grosir dengan API ekspedisi', note: 'Dev', done: false },
+          { text: 'Pasang badge sertifikasi Halal & BPOM di footer', note: 'Legal', done: false }
+        ],
+        deadline: '2026-11-10T23:59',
+        deadlineDisplay: 'Nov 10, 2026 · 23:59 WIB',
+        prioritas: 'High',
+        prioritasBadge: 'bg-amber-100 text-amber-700 border-amber-200',
+        pic: 'DS',
+        perluKonfirmasi: 'Kredensial API WhatsApp Gateway belum diterima dari tim IT.'
+      },
+      {
+        id: 'WB-104',
+        judul: 'Quality Check & Verifikasi Aset Kredensial Hosting cPanel',
+        clientProyek: 'Sultan Haramain Gresik · Infrastruktur Digital',
+        ringkasan: 'Audit sertifikat keamanan SSL, backup harian database, dan pembersihan file cache.',
+        spesifikasi: 'Cloud Server Linux · cPanel & WHM · Multi-region backup',
+        checklist: [
+          { text: 'Perbarui sertifikat SSL Let\'s Encrypt domain utama', note: 'Sec', done: true },
+          { text: 'Uji restore snapshot database cabang Gresik', note: 'QC', done: true }
+        ],
+        deadline: '2026-11-02T15:00',
+        deadlineDisplay: 'Nov 02, 2026 · 15:00 WIB',
+        prioritas: 'Normal',
+        prioritasBadge: 'bg-blue-100 text-blue-700 border-blue-200',
+        pic: 'FM',
+        perluKonfirmasi: ''
+      }
+    ];
+
+    // Initial Checklist State
+    let currentChecklist = [
+      { text: 'Perbesar logo klien di bagian atas', note: 'WA 10:42', done: false },
+      { text: 'Naikkan kontras font terhadap background', note: 'Pin 2', done: false }
+    ];
+
+    // Render Checklist function
+    function renderChecklist() {
+      const container = document.getElementById('checklist-container');
+      if (!container) return;
+
+      if (currentChecklist.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic py-1">Belum ada item checklist revisi.</p>`;
+        return;
+      }
+
+      container.innerHTML = currentChecklist.map((item, idx) => `
+        <div class="flex items-center justify-between gap-3 p-2 bg-white rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition group">
+          <label class="flex items-center gap-2.5 flex-1 cursor-pointer select-none">
+            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChecklistItem(${idx})" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+            <span class="text-xs ${item.done ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-medium'}">${item.text}</span>
+          </label>
+          <div class="flex items-center gap-2 shrink-0">
+            ${item.note ? `<span class="text-[10px] text-slate-400 font-mono bg-slate-100 px-2 py-0.5 rounded">(${item.note})</span>` : ''}
+            <button type="button" onclick="removeChecklistItem(${idx})" class="text-slate-300 hover:text-rose-500 p-1 rounded transition" title="Hapus item">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    window.toggleChecklistItem = function(idx) {
+      if (currentChecklist[idx]) {
+        currentChecklist[idx].done = !currentChecklist[idx].done;
+        renderChecklist();
+      }
+    };
+
+    window.removeChecklistItem = function(idx) {
+      currentChecklist.splice(idx, 1);
+      renderChecklist();
+    };
+
+    window.addChecklistItem = function() {
+      const text = prompt('Masukkan poin instruksi revisi:');
+      if (text && text.trim()) {
+        const note = prompt('Sumber/referensi (opsional, contoh: WA 10:42 / Pin 3):') || '';
+        currentChecklist.push({ text: text.trim(), note: note.trim(), done: false });
+        renderChecklist();
+        showToast('Poin checklist revisi ditambahkan.');
+      }
+    };
+
+    // Set default values to match the exact image initially
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('brief-judul').value = 'Revisi Desain Spanduk Air Zam Zam — V3';
+      document.getElementById('brief-client-proyek').value = 'PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah';
+      document.getElementById('brief-ringkasan').value = 'Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.';
+      document.getElementById('brief-spesifikasi').value = 'Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut';
+      document.getElementById('brief-deadline').value = '2026-10-28T15:00';
+      document.getElementById('brief-prioritas').value = 'Enterprise';
+      document.getElementById('brief-pic').value = 'DS';
+      document.getElementById('brief-konfirmasi').value = 'ukuran logo yang diinginkan client belum disebut.';
+      renderChecklist();
+      renderQuickWorkboard();
+    });
+
+    // Toast message function
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const isSuccess = type === 'success';
+      const bgColor = isSuccess ? 'bg-emerald-700 text-white' : 'bg-rose-700 text-white';
+      const iconName = isSuccess ? 'check-circle' : 'alert-circle';
+
+      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl ${bgColor} text-xs font-medium transform transition-all duration-300 opacity-0 translate-y-2 pointer-events-auto max-w-sm`;
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Modal Workboard Open & Close
+    window.openWorkboardModal = function() {
+      const modal = document.getElementById('workboard-modal');
+      const box = document.getElementById('workboard-modal-box');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        box.classList.remove('scale-95');
+      }, 10);
+      renderModalTasks(WORKBOARD_TASKS);
+    };
+
+    window.closeWorkboardModal = function() {
+      const modal = document.getElementById('workboard-modal');
+      const box = document.getElementById('workboard-modal-box');
+      modal.classList.add('opacity-0');
+      box.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    };
+
+    // Render Modal Tasks
+    function renderModalTasks(tasks) {
+      const listEl = document.getElementById('workboard-tasks-list');
+      if (!listEl) return;
+      if (tasks.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+            <p class="text-xs">Tidak ditemukan task workboard yang cocok.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      listEl.innerHTML = tasks.map(task => `
+        <div class="p-4 rounded-xl border border-slate-200 bg-white hover:border-emerald-400 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1.5 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-mono font-bold text-slate-400">#${task.id}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${task.prioritasBadge}">${task.prioritas}</span>
+              <span class="text-[11px] text-slate-500 flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> ${task.deadlineDisplay}
+              </span>
+            </div>
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900">${task.judul}</h4>
+            <p class="text-[11px] text-emerald-800 font-semibold">${task.clientProyek}</p>
+            <p class="text-[11px] text-slate-500 line-clamp-2">${task.ringkasan}</p>
+            <div class="flex items-center gap-2 pt-1">
+              <span class="w-5 h-5 rounded-full bg-slate-800 text-white text-[8px] font-bold flex items-center justify-center">${task.pic}</span>
+              <span class="text-[10px] text-slate-600 font-medium">PIC: ${task.pic}</span>
+              ${task.perluKonfirmasi ? `<span class="text-[9px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium truncate max-w-xs">⚠️ ${task.perluKonfirmasi}</span>` : ''}
+            </div>
+          </div>
+          <button type="button" onclick="applyWorkboardTask('${task.id}')" class="shrink-0 px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-300 rounded-lg transition flex items-center justify-center gap-1.5 shadow-2xs">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Terapkan ke Form</span>
+          </button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Filter Tasks inside modal
+    window.filterWorkboardTasks = function() {
+      const query = document.getElementById('workboard-search').value.toLowerCase().trim();
+      const filtered = WORKBOARD_TASKS.filter(t => 
+        t.judul.toLowerCase().includes(query) || 
+        t.clientProyek.toLowerCase().includes(query) ||
+        t.pic.toLowerCase().includes(query) ||
+        t.id.toLowerCase().includes(query)
+      );
+      renderModalTasks(filtered);
+    };
+
+    // Render Quick Workboard List in right sidebar
+    function renderQuickWorkboard() {
+      const container = document.getElementById('quick-workboard-list');
+      if (!container) return;
+
+      container.innerHTML = WORKBOARD_TASKS.slice(0, 3).map(task => `
+        <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50 hover:bg-white hover:border-emerald-200 transition">
+          <div class="flex items-center justify-between text-[10px] mb-1">
+            <span class="font-mono text-slate-400 font-semibold">${task.id}</span>
+            <span class="px-1.5 py-0.2 rounded font-bold text-[9px] border ${task.prioritasBadge}">${task.prioritas}</span>
+          </div>
+          <p class="text-[11px] font-bold text-slate-800 leading-tight line-clamp-1 mb-1">${task.judul}</p>
+          <div class="flex items-center justify-between">
+            <span class="text-[9px] text-slate-500 flex items-center gap-1">
+              <i data-lucide="user" class="w-3 h-3 text-slate-400"></i> PIC: <strong>${task.pic}</strong>
+            </span>
+            <button type="button" onclick="applyWorkboardTask('${task.id}')" class="text-[10px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 hover:underline">
+              <i data-lucide="arrow-down-to-dot" class="w-3 h-3"></i> Terapkan
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // AUTO-FILL FUNCTION: Menerapkan Format Brief /workboard ke form agenda
+    window.applyWorkboardTask = function(taskId) {
+      const task = WORKBOARD_TASKS.find(t => t.id === taskId);
+      if (!task) return;
+
+      // 1. Judul
+      const judulEl = document.getElementById('brief-judul');
+      if (judulEl) judulEl.value = task.judul;
+
+      // 2. Client / Proyek
+      const clientProyekEl = document.getElementById('brief-client-proyek');
+      if (clientProyekEl) clientProyekEl.value = task.clientProyek;
+
+      // 3. Ringkasan
+      const ringkasanEl = document.getElementById('brief-ringkasan');
+      if (ringkasanEl) ringkasanEl.value = task.ringkasan;
+
+      // 4. Spesifikasi
+      const spesifikasiEl = document.getElementById('brief-spesifikasi');
+      if (spesifikasiEl) spesifikasiEl.value = task.spesifikasi;
+
+      // 5. Checklist revisi
+      currentChecklist = JSON.parse(JSON.stringify(task.checklist || []));
+      renderChecklist();
+
+      // 6. Deadline & Prioritas
+      const deadlineEl = document.getElementById('brief-deadline');
+      if (deadlineEl && task.deadline) deadlineEl.value = task.deadline;
+
+      const prioritasEl = document.getElementById('brief-prioritas');
+      if (prioritasEl && task.prioritas) prioritasEl.value = task.prioritas;
+
+      // 7. PIC
+      const picEl = document.getElementById('brief-pic');
+      if (picEl && task.pic) picEl.value = task.pic;
+
+      // 8. Perlu Konfirmasi
+      const konfirmasiEl = document.getElementById('brief-konfirmasi');
+      if (konfirmasiEl) konfirmasiEl.value = task.perluKonfirmasi || '';
+
+      // Close modal if open
+      closeWorkboardModal();
+
+      // Scroll to form smoothly
+      document.getElementById('form-timeline').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Highlight visual feedback
+      judulEl.classList.add('ring-2', 'ring-emerald-400');
+      setTimeout(() => judulEl.classList.remove('ring-2', 'ring-emerald-400'), 1200);
+
+      showToast(`Format task "${task.judul}" berhasil diimpor ke form!`);
+    };
+
+    // ----------------------------------------------------
+    // LOGIKA UPLOAD FILE LAMPIRAN TIMELINE
+    // ----------------------------------------------------
+    const timelineDropzone = document.getElementById('timeline-dropzone');
+    const timelineUploadInput = document.getElementById('timeline-upload-input');
+    const timelineFileList = document.getElementById('timeline-file-list');
+    let attachedFiles = [];
+
+    timelineDropzone.addEventListener('click', () => {
+      timelineUploadInput.click();
+    });
+
+    timelineDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      timelineDropzone.classList.add('bg-emerald-50', 'border-emerald-500');
+    });
+
+    timelineDropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      timelineDropzone.classList.remove('bg-emerald-50', 'border-emerald-500');
+    });
+
+    timelineDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      timelineDropzone.classList.remove('bg-emerald-50', 'border-emerald-500');
+      if (e.dataTransfer && e.dataTransfer.files.length) {
+        handleTimelineFiles(e.dataTransfer.files);
+      }
+    });
+
+    timelineUploadInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length) {
+        handleTimelineFiles(e.target.files);
+      }
+    });
+
+    function handleTimelineFiles(files) {
+      const newFiles = Array.from(files);
+      const validFiles = newFiles.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          showToast(`File "${file.name}" melebihi batas maksimal 5MB!`, 'error');
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length > 0) {
+        attachedFiles = [...attachedFiles, ...validFiles];
+        renderTimelineFileList();
+        showToast(`${validFiles.length} berkas berhasil dilampirkan.`);
+      }
+    }
+
+    function renderTimelineFileList() {
+      if (attachedFiles.length > 0) {
+        timelineFileList.classList.remove('hidden');
+      } else {
+        timelineFileList.classList.add('hidden');
+      }
+      
+      timelineFileList.innerHTML = '';
+      attachedFiles.forEach((file, index) => {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2.5 border border-slate-200 rounded-lg bg-white shadow-xs hover:border-slate-300 transition';
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <div class="p-1.5 rounded bg-emerald-50 text-emerald-600 shrink-0">
+              <i data-lucide="file" class="w-4 h-4"></i>
+            </div>
+            <div class="truncate">
+              <p class="text-xs font-semibold text-slate-800 truncate max-w-[150px] sm:max-w-[170px]" title="${file.name}">${file.name}</p>
+              <p class="text-[10px] text-slate-400 font-medium">${sizeMB} MB</p>
+            </div>
+          </div>
+          <button type="button" class="text-slate-400 hover:text-red-500 p-1.5 rounded hover:bg-red-50 transition" onclick="removeTimelineFile(${index})" title="Hapus File">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        timelineFileList.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    window.removeTimelineFile = function(index) {
+      attachedFiles.splice(index, 1);
+      timelineUploadInput.value = ''; 
+      renderTimelineFileList();
+    };
+
+    // Form Submission & Reset
+    const formTimeline = document.getElementById('form-timeline');
+    const resetBtn = document.getElementById('btn-reset');
+
+    formTimeline.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const judul = document.getElementById('brief-judul').value.trim();
+      const deadline = document.getElementById('brief-deadline').value;
+      const pic = document.getElementById('brief-pic').value;
+      const prioritas = document.getElementById('brief-prioritas').value;
+      
+      if (!judul) {
+        showToast('Harap isi judul brief / task.', 'error');
+        return;
+      }
+
+      // Add to Upcoming List as dynamic preview
+      const upcomingList = document.getElementById('upcoming-list');
+      const newItem = document.createElement('div');
+      newItem.className = 'flex gap-3 relative group';
+
+      newItem.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 border-2 border-white shadow-xs flex items-center justify-center shrink-0 z-10 font-bold text-[9px]">
+          ${pic}
+        </div>
+        <div class="flex-1 bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-200">
+          <div class="flex items-center justify-between mb-0.5">
+            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-700">${prioritas}</span>
+            <span class="text-[10px] text-slate-400 font-mono">PIC: ${pic}</span>
+          </div>
+          <h4 class="text-xs font-bold text-slate-800 leading-tight">${judul}</h4>
+          <div class="inline-flex items-center gap-1 bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px] font-semibold text-slate-600 mt-2">
+            <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> ${deadline ? deadline.replace('T', ' ') : 'Hari Ini'}
+          </div>
+        </div>
+      `;
+
+      upcomingList.prepend(newItem);
+      lucide.createIcons();
+
+      showToast(`Brief "${judul}" berhasil ditambahkan ke Timeline!`);
+
+      // Reset form
+      formTimeline.reset();
+      currentChecklist = [];
+      renderChecklist();
+      attachedFiles = [];
+      renderTimelineFileList();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      formTimeline.reset();
+      currentChecklist = [];
+      renderChecklist();
+      attachedFiles = [];
+      renderTimelineFileList();
+      showToast('Form telah dikosongkan.', 'error');
+    });
+  </script>
+</body>
+</html>

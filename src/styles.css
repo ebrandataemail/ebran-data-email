@@ -262,10 +262,38 @@
 @utility wb-hex-pattern {
   background-color: var(--card);
   background-image:
-    linear-gradient(30deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%),
-    linear-gradient(150deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%),
-    linear-gradient(30deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%),
-    linear-gradient(150deg, var(--wb-canvas) 12%, transparent 12.5%, transparent 87%, var(--wb-canvas) 87.5%);
+    linear-gradient(
+      30deg,
+      var(--wb-canvas) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--wb-canvas) 87.5%
+    ),
+    linear-gradient(
+      150deg,
+      var(--wb-canvas) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--wb-canvas) 87.5%
+    ),
+    linear-gradient(
+      30deg,
+      var(--wb-canvas) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--wb-canvas) 87.5%
+    ),
+    linear-gradient(
+      150deg,
+      var(--wb-canvas) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--wb-canvas) 87.5%
+    );
   background-size: 40px 70px;
-  background-position: 0 0, 0 0, 20px 35px, 20px 35px;
+  background-position:
+    0 0,
+    0 0,
+    20px 35px,
+    20px 35px;
 }

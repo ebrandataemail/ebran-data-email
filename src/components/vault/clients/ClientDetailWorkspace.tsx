@@ -1,89 +1,2133 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Building2, Check, ExternalLink, ImagePlus, Plus, Search as SearchIcon, Send, Upload, X } from "lucide-react";
+import {
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  ArrowDownToDot,
+  ArrowLeft,
+  BarChart2,
+  Bell,
+  Bold,
+  BrainCircuit,
+  Briefcase,
+  Building,
+  Building2,
+  Calendar,
+  CalendarClock,
+  CheckCircle2,
+  CheckSquare,
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  ClipboardList,
+  Clock,
+  CloudUpload,
+  Copy,
+  Download,
+  DownloadCloud,
+  Edit3,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileIcon,
+  FileText,
+  FileUp,
+  Flag,
+  FolderOpen,
+  History,
+  Inbox,
+  Info,
+  Instagram,
+  Italic,
+  Kanban,
+  KanbanSquare,
+  Key,
+  Layers,
+  LayoutDashboard,
+  LayoutTemplate,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Mail,
+  MapPin,
+  MessageSquareDashed,
+  Mic,
+  Palette,
+  Paperclip,
+  Phone,
+  Plus,
+  PlusCircle,
+  Save,
+  Search,
+  Send,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  StickyNote,
+  Tag,
+  Target,
+  Trash2,
+  Underline,
+  Upload,
+  UploadCloud,
+  User,
+  UserCheck,
+  X,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ClientData } from "./ClientDialog";
-import { ClientGraphicWorkspace } from "./ClientGraphicWorkspace";
 
-type Row = Record<string, any>;
-const tabs = ["Timeline", "Tasks", "Profile Client", "Daftar Aset Digital", "Brand Kit", "Dokumen", "Scope of Work", "Invoice"] as const;
-type Tab = typeof tabs[number];
-const fmt = (v?: string | null) => v ? new Date(v).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—";
+type DBRow = Record<string, any>;
 
-export function ClientDetailWorkspace({ client, onBack, onEdit }: { client: ClientData & { id: string }; onBack: () => void; onEdit: () => void }) {
- const qc = useQueryClient(); const [tab,setTab] = useState<Tab>("Timeline"); const [timelineSearch,setTimelineSearch]=useState("");
- const [eventTitle,setEventTitle]=useState(""); const [eventDesc,setEventDesc]=useState(""); const [eventType,setEventType]=useState("note");
- const [assetName,setAssetName]=useState(""); const [assetType,setAssetType]=useState("website"); const [assetUrl,setAssetUrl]=useState("");
- const [brandName,setBrandName]=useState(""); const [brandType,setBrandType]=useState("logo"); const [brandValue,setBrandValue]=useState("");
- const [docTitle,setDocTitle]=useState(""); const [docType,setDocType]=useState("contract");
- const [taskTitle,setTaskTitle]=useState(""); const [taskDue,setTaskDue]=useState(""); const [taskPriority,setTaskPriority]=useState("medium");
- const [designTitle,setDesignTitle]=useState(""); const [comment,setComment]=useState(""); const [pin,setPin]=useState<{x:number;y:number}|null>(null);
- const [busy,setBusy]=useState(false); const key=["client-detail",client.id];
- const refresh=()=>qc.invalidateQueries({queryKey:key});
- const query=useQuery({queryKey:key,queryFn:async()=>{
-  const names=["projects","client_tasks","client_digital_assets","client_documents","client_task_notes","client_brand_assets","client_design_versions","client_timeline_events"];
-  const results=await Promise.all(names.map(async n=>{const {data,error}=await (supabase.from(n as any) as any).select("*").eq(n==="projects"?"client_id":"client_id",client.id).order("created_at",{ascending:false});if(error)throw error;return [n,data??[]] as const;}));
-  const grouped=Object.fromEntries(results) as Record<string,Row[]>;
-  const versionIds=(grouped.client_design_versions??[]).map(x=>x.id);
-  let comments:Row[]=[];
-  if(versionIds.length){const {data,error}=await (supabase.from("client_design_comments" as any) as any).select("*").in("version_id",versionIds).order("created_at");if(error)throw error;comments=data??[];}
-  const {data:user}=await supabase.auth.getUser();
-  return {...grouped,comments,userId:user.user?.id??""};
- }});
- const d=query.data as (Record<string,Row[]> & {comments:Row[];userId:string})|undefined;
- const run=async(fn:()=>Promise<void>)=>{setBusy(true);try{await fn();await refresh();}catch(e){toast.error(e instanceof Error?e.message:"Operasi gagal");}finally{setBusy(false)}};
- const insert=async(table:string,payload:Row)=>{const {error}=await (supabase.from(table as any) as any).insert({...payload,user_id:d?.userId});if(error)throw error;};
- const signed=async(path:string)=>{const {data,error}=await supabase.storage.from("client-files").createSignedUrl(path,300);if(error||!data?.signedUrl)throw error??new Error("File tidak dapat dibuka");window.open(data.signedUrl,"_blank","noopener,noreferrer");};
- const upload=async(file:File,folder:string)=>{if(!d?.userId)throw new Error("Sesi login tidak ditemukan");if(file.size>20*1024*1024)throw new Error("Ukuran file maksimal 20 MB");const path=`${d.userId}/${client.id}/${folder}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g,"-")}`;const {error}=await supabase.storage.from("client-files").upload(path,file,{contentType:file.type});if(error)throw error;return path;};
- const versions=d?.client_design_versions??[]; const activeVersion=versions[0]; const activeComments=(d?.comments??[]).filter(x=>x.version_id===activeVersion?.id);
- const projects=d?.projects??[]; const tasks=d?.client_tasks??[]; const docs=d?.client_documents??[];
- const timeline=useMemo(()=>[...(d?.client_timeline_events??[]).map((x:any)=>({...x,kind:"event"})),...tasks.map(x=>({id:x.id,title:x.title,description:x.description,occurred_at:x.created_at,event_type:"task",kind:"task"})),...docs.map(x=>({id:x.id,title:x.title,description:x.document_type,occurred_at:x.created_at,event_type:"document",kind:"document"}))].sort((a,b)=>new Date(b.occurred_at).getTime()-new Date(a.occurred_at).getTime()),[d]);
- const status=client.clientStatus??"active";
- return <div className="space-y-4">
-  <Card className="overflow-hidden border-slate-200 shadow-sm">
-   <div className="flex flex-wrap items-start justify-between gap-4 p-4">
-    <div className="flex min-w-0 items-start gap-3"><Button variant="outline" size="icon" onClick={onBack}><ArrowLeft className="size-4"/></Button><div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-teal-900 text-white">{client.logoPath?<Building2 className="size-5"/>:<Building2 className="size-5"/>}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold">{client.name}</h2>{client.contactEmail&&<Badge variant="outline">{client.contactEmail}</Badge>}{client.contactPhone&&<Badge variant="outline">{client.contactPhone}</Badge>}{client.website&&<Badge variant="outline">{client.website}</Badge>}</div><p className="mt-1 text-xs text-muted-foreground">{client.legalName||client.industry||"Profil perusahaan"} · {[client.address,client.city].filter(Boolean).join(", ")}</p></div></div>
-    <Button variant="outline" size="sm" onClick={onEdit}>Edit Profil</Button>
-   </div>
-   <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-slate-50 px-4 py-3 text-xs"><div className="flex flex-wrap gap-4"><span><b>{projects.length}</b> proyek terhubung</span><span><b>{tasks.length}</b> task</span><span><b>{docs.length}</b> dokumen</span><span><b>{(d?.client_digital_assets??[]).length}</b> aset digital</span></div><Badge className={status==="active"?"bg-emerald-100 text-emerald-800":"bg-amber-100 text-amber-800"}>{status.replace("-"," ")}</Badge></div>
-   <div className="flex gap-5 overflow-x-auto border-t px-4 pt-3">{tabs.map(t=><button key={t} onClick={()=>setTab(t)} className={`whitespace-nowrap border-b-2 pb-3 text-xs font-medium ${tab===t?"border-teal-800 text-teal-900":"border-transparent text-muted-foreground"}`}>{t}{t==="Invoice"?<span className="ml-1 rounded bg-muted px-1.5">{docs.filter(x=>x.document_type==="invoice").length}</span>:null}</button>)}</div>
-  </Card>
-  {query.isPending?<p className="py-12 text-center text-sm text-muted-foreground">Memuat workspace client…</p>:query.isError?<Card><CardContent className="p-6 text-sm text-destructive">Gagal memuat data client. Periksa koneksi dan izin Supabase, lalu muat ulang halaman.</CardContent></Card>:!d?null:
-  tab==="Timeline"?<div className="space-y-4">
-   <div className="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
-    <div className="relative flex max-w-xl flex-1 items-center"><SearchIcon className="absolute left-2.5 size-3.5 text-slate-400"/><Input value={timelineSearch} onChange={e=>setTimelineSearch(e.target.value)} placeholder="Search in timeline..." className="h-8 bg-white pl-8 text-xs"/></div>
-    <Button size="sm" variant="outline" className="h-8" onClick={()=>setTab("Tasks")}><Plus className="mr-1 size-3.5"/>Tambah Task</Button>
-   </div>
-   <ClientGraphicWorkspace client={client}/>
-   <section className="space-y-4">
-    <div className="flex items-center justify-between"><h3 className="text-sm font-bold text-slate-900">Timeline Aktivitas</h3><Badge variant="secondary">{timeline.length} aktivitas</Badge></div>
-    <div className="relative space-y-4 pl-6 before:absolute before:bottom-0 before:left-2.5 before:top-2 before:w-0.5 before:bg-slate-200">
-     {timeline.filter(x=>(String(x.title)+" "+String(x.description??"")).toLowerCase().includes(timelineSearch.toLowerCase())).map(x=><div key={x.kind+x.id} className="relative"><span className="absolute -left-6 top-1 flex size-5 items-center justify-center rounded-full bg-teal-700 text-white ring-4 ring-slate-50"><Check className="size-3"/></span><Card className="rounded-lg border-slate-200 shadow-sm"><CardContent className="space-y-2 p-3 sm:p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold text-slate-900">{x.title}</p><p className="mt-1 whitespace-pre-wrap text-[11px] text-slate-600">{x.description||x.event_type}</p></div><span className="text-[10px] text-slate-400">{fmt(x.occurred_at)}</span></div><div className="flex flex-wrap items-center gap-2 border-t pt-2 text-[10px] text-slate-500"><Badge variant="outline">{x.kind==="task"?"Task":x.kind==="document"?"Dokumen":x.event_type}</Badge>{x.kind==="task"&&<Badge variant="secondary">{x.status}</Badge>}</div></CardContent></Card></div>)}
-     {!timeline.length&&<Card><CardContent className="p-8 text-center text-xs text-slate-400">Belum ada aktivitas. Tambahkan task atau catatan pertama.</CardContent></Card>}
+export type WorkboardTask = {
+  id: string;
+  judul: string;
+  clientProyek: string;
+  ringkasan: string;
+  spesifikasi: string;
+  checklist: Array<{ text: string; note?: string; done: boolean }>;
+  deadline: string;
+  deadlineDisplay: string;
+  prioritas: string;
+  prioritasBadge: string;
+  pic: string;
+  perluKonfirmasi: string;
+};
+
+const DUMMY_WORKBOARD_TASKS: WorkboardTask[] = [
+  {
+    id: "WB-V3",
+    judul: "Revisi Desain Spanduk Air Zam Zam — V3",
+    clientProyek: "PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah",
+    ringkasan: "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
+    spesifikasi: "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
+    checklist: [
+      { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
+      { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
+    ],
+    deadline: "2026-10-28T15:00",
+    deadlineDisplay: "Oct 28, 2026 · 15:00 WIB",
+    prioritas: "Enterprise",
+    prioritasBadge: "bg-purple-100 text-purple-700 border-purple-200",
+    pic: "DS",
+    perluKonfirmasi: "ukuran logo yang diinginkan client belum disebut.",
+  },
+  {
+    id: "WB-102",
+    judul: "Revisi Copywriting Brosur Umroh Promo Ramadhan 1448H",
+    clientProyek: "Sultan Haramain Gresik · Brosur Cetak A5",
+    ringkasan: "Penyesuaian legalitas Kemenag dan revisi paket bintang lima Makkah/Madinah.",
+    spesifikasi: "Brosur Lipat 3 · Art Paper 150gsm · Laminasi Doff",
+    checklist: [
+      { text: "Update nomor registrasi PPIU Kemenag No. 102/2024", note: "Legal", done: true },
+      { text: "Perjelas fasilitas hotel bintang lima & kereta cepat", note: "Direksi", done: false },
+    ],
+    deadline: "2026-11-04T12:00",
+    deadlineDisplay: "Nov 04, 2026 · 12:00 WIB",
+    prioritas: "Urgent",
+    prioritasBadge: "bg-rose-100 text-rose-700 border-rose-200",
+    pic: "AM",
+    perluKonfirmasi: "Nomor kontak CS Gresik belum diverifikasi oleh admin cabang.",
+  },
+  {
+    id: "WB-103",
+    judul: "Setup Landing Page Katalog Produk & Pemesanan Grosir",
+    clientProyek: "Sultan Haramain Gresik · Portal Online",
+    ringkasan: "Integrasi formulir pemesanan distributor dan webhook notifikasi WhatsApp tim CS.",
+    spesifikasi: "Next.js Frontend · TailwindCSS · PostgreSQL database",
+    checklist: [
+      { text: "Integrasikan form checkout grosir dengan API ekspedisi", note: "Dev", done: false },
+      { text: "Pasang badge sertifikasi Halal & BPOM di footer", note: "Legal", done: false },
+    ],
+    deadline: "2026-11-10T23:59",
+    deadlineDisplay: "Nov 10, 2026 · 23:59 WIB",
+    prioritas: "High",
+    prioritasBadge: "bg-amber-100 text-amber-700 border-amber-200",
+    pic: "DS",
+    perluKonfirmasi: "Kredensial API WhatsApp Gateway belum diterima dari tim IT.",
+  },
+  {
+    id: "WB-104",
+    judul: "Quality Check & Verifikasi Aset Kredensial Hosting cPanel",
+    clientProyek: "Sultan Haramain Gresik · Infrastruktur Digital",
+    ringkasan: "Audit sertifikat keamanan SSL, backup harian database, dan pembersihan file cache.",
+    spesifikasi: "Cloud Server Linux · cPanel & WHM · Multi-region backup",
+    checklist: [
+      { text: "Perbarui sertifikat SSL Let's Encrypt domain utama", note: "Sec", done: true },
+      { text: "Uji restore snapshot database cabang Gresik", note: "QC", done: true },
+    ],
+    deadline: "2026-11-02T15:00",
+    deadlineDisplay: "Nov 02, 2026 · 15:00 WIB",
+    prioritas: "Normal",
+    prioritasBadge: "bg-blue-100 text-blue-700 border-blue-200",
+    pic: "FM",
+    perluKonfirmasi: "",
+  },
+];
+
+type CustomAccountRow = {
+  id?: string;
+  platform: string;
+  username: string;
+  password: string;
+  showPassword?: boolean;
+  note: string;
+};
+
+export function ClientDetailWorkspace({
+  client,
+  onBack,
+  onEdit,
+}: {
+  client: ClientData & { id: string };
+  onBack: () => void;
+  onEdit: () => void;
+}) {
+  const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"profile" | "timeline" | "assets" | "documents">(
+    "profile",
+  );
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Timeline Form State
+  const [judul, setJudul] = useState("Revisi Desain Spanduk Air Zam Zam — V3");
+  const [clientProyek, setClientProyek] = useState(
+    `${client.name} · Spanduk Keberangkatan Umrah`,
+  );
+  const [ringkasan, setRingkasan] = useState(
+    "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
+  );
+  const [spesifikasi, setSpesifikasi] = useState(
+    "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
+  );
+  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([
+    { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
+    { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
+  ]);
+  const [deadline, setDeadline] = useState("2026-10-28T15:00");
+  const [prioritas, setPrioritas] = useState("Enterprise");
+  const [pic, setPic] = useState("DS");
+  const [konfirmasi, setKonfirmasi] = useState("ukuran logo yang diinginkan client belum disebut.");
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  // Profile AI Builder & Interactive State
+  const [showAIPanel, setShowAIPanel] = useState(true);
+  const [aiTab, setAITab] = useState<"upload" | "link" | "social" | "prompt">("upload");
+  const [catatanPentingText, setCatatanPentingText] = useState(
+    `Note untuk Tim Internal:\n• Kontrak kerja sama diperpanjang hingga Desember 2026.\n• Fokus Q4 adalah kampanye "Umrah Nyaman Bersama Keluarga".\n• Dilarang mengubah aset logo tanpa persetujuan Bpk. Dwi.`,
+  );
+
+  // Digital Assets & Kredensial Form State
+  const [masterEmail, setMasterEmail] = useState("");
+  const [masterPassword, setMasterPassword] = useState("");
+  const [showMasterPassword, setShowMasterPassword] = useState(false);
+  const [recoveryPhone, setRecoveryPhone] = useState("");
+  const [recovery2fa, setRecovery2fa] = useState("");
+  const [newAssetPlatform, setNewAssetPlatform] = useState("");
+  const [newAssetUser, setNewAssetUser] = useState("");
+  const [newAssetPass, setNewAssetPass] = useState("");
+  const [newAssetNote, setNewAssetNote] = useState("");
+  const [vaultNote, setVaultNote] = useState(
+    "Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif hosting/domain, atau struktur parent-child account...",
+  );
+
+  const queryKey = ["client-workspace-detail", client.id];
+
+  const query = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const [eventsRes, assetsRes, docsRes, tasksRes] = await Promise.all([
+        supabase
+          .from("client_timeline_events")
+          .select("*")
+          .eq("client_id", client.id)
+          .order("occurred_at", { ascending: false }),
+        supabase
+          .from("client_digital_assets")
+          .select("*")
+          .eq("client_id", client.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("client_documents")
+          .select("*")
+          .eq("client_id", client.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("client_tasks")
+          .select("*")
+          .eq("client_id", client.id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      const events: DBRow[] = eventsRes.data ?? [];
+      const assets: DBRow[] = assetsRes.data ?? [];
+      const docs: DBRow[] = docsRes.data ?? [];
+      const tasks: DBRow[] = tasksRes.data ?? [];
+
+      const { data: authData } = await supabase.auth.getUser();
+
+      return {
+        events,
+        assets,
+        docs,
+        tasks,
+        userId: authData.user?.id ?? "",
+      };
+    },
+  });
+
+  const dbData = query.data;
+
+  // Initialize master email asset fields if present
+  useEffect(() => {
+    if (dbData?.assets) {
+      const masterAsset = dbData.assets.find(
+        (a) => a.asset_type === "email" || a.asset_name?.includes("Master Email"),
+      );
+      if (masterAsset) {
+        setMasterEmail(masterAsset.username || "");
+        if (masterAsset.notes) {
+          const passMatch = masterAsset.notes.match(/Password:\s*([^|]+)/);
+          const recMatch = masterAsset.notes.match(/Recovery HP:\s*([^|]+)/);
+          const secretMatch = masterAsset.notes.match(/2FA Secret:\s*([^|]+)/);
+          if (passMatch) setMasterPassword(passMatch[1].trim());
+          if (recMatch) setRecoveryPhone(recMatch[1].trim());
+          if (secretMatch) setRecovery2fa(secretMatch[1].trim());
+        }
+      }
+    }
+  }, [dbData]);
+
+  // Filtered workboard tasks inside modal
+  const filteredWorkboardTasks = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return DUMMY_WORKBOARD_TASKS;
+    return DUMMY_WORKBOARD_TASKS.filter(
+      (t) =>
+        t.judul.toLowerCase().includes(q) ||
+        t.clientProyek.toLowerCase().includes(q) ||
+        t.pic.toLowerCase().includes(q) ||
+        t.id.toLowerCase().includes(q),
+    );
+  }, [searchQuery]);
+
+  // Apply a Workboard Task to form
+  const applyWorkboardTask = (task: WorkboardTask) => {
+    setJudul(task.judul);
+    setClientProyek(task.clientProyek);
+    setRingkasan(task.ringkasan);
+    setSpesifikasi(task.spesifikasi);
+    setChecklist(JSON.parse(JSON.stringify(task.checklist || [])));
+    if (task.deadline) setDeadline(task.deadline);
+    if (task.prioritas) setPrioritas(task.prioritas);
+    if (task.pic) setPic(task.pic);
+    setKonfirmasi(task.perluKonfirmasi || "");
+
+    setIsModalOpen(false);
+    toast.success(`Format task "${task.judul}" berhasil diimpor ke form!`);
+  };
+
+  // Copy to clipboard helper
+  const copyToClipboard = (text: string, labelName: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`Berhasil menyalin ${labelName} ke clipboard!`);
+    });
+  };
+
+  // Toggle checklist item
+  const toggleChecklistDone = (index: number) => {
+    setChecklist((current) =>
+      current.map((item, i) => (i === index ? { ...item, done: !item.done } : item)),
+    );
+  };
+
+  const removeChecklistItem = (index: number) => {
+    setChecklist((current) => current.filter((_, i) => i !== index));
+  };
+
+  const addChecklistItem = () => {
+    const text = prompt("Masukkan poin instruksi revisi:");
+    if (text && text.trim()) {
+      const note = prompt("Sumber/referensi (opsional, contoh: WA 10:42 / Pin 3):") || "";
+      setChecklist((current) => [...current, { text: text.trim(), note: note.trim(), done: false }]);
+      toast.success("Poin checklist revisi ditambahkan.");
+    }
+  };
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    const valid = newFiles.filter((f) => {
+      if (f.size > 5 * 1024 * 1024) {
+        toast.error(`File "${f.name}" melebihi batas maksimal 5MB!`);
+        return false;
+      }
+      return true;
+    });
+    setAttachedFiles((prev) => [...prev, ...valid]);
+  };
+
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTimelineSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!judul.trim()) {
+      toast.error("Harap isi judul brief / task.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+
+      const uploadedPaths: string[] = [];
+      for (const file of attachedFiles) {
+        if (userId) {
+          const safeName = file.name.replace(/[^\w.-]/g, "-");
+          const path = `${userId}/${client.id}/timeline/${crypto.randomUUID()}-${safeName}`;
+          const { error } = await supabase.storage.from("client-files").upload(path, file);
+          if (!error) uploadedPaths.push(path);
+        }
+      }
+
+      const { error } = await supabase.from("client_timeline_events").insert({
+        client_id: client.id,
+        user_id: userId,
+        event_type: "task",
+        title: judul.trim(),
+        description: ringkasan.trim(),
+        occurred_at: deadline ? new Date(deadline).toISOString() : new Date().toISOString(),
+        metadata: {
+          clientProyek,
+          spesifikasi,
+          checklist,
+          prioritas,
+          pic,
+          konfirmasi,
+          filePaths: uploadedPaths,
+        },
+      });
+
+      if (error) throw error;
+
+      await qc.invalidateQueries({ queryKey });
+      toast.success(`Brief "${judul}" berhasil ditambahkan ke Timeline!`);
+
+      setJudul("");
+      setRingkasan("");
+      setSpesifikasi("");
+      setChecklist([]);
+      setKonfirmasi("");
+      setAttachedFiles([]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan ke timeline.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetForm = () => {
+    setJudul("");
+    setClientProyek(`${client.name} · Sub-proyek Utama`);
+    setRingkasan("");
+    setSpesifikasi("");
+    setChecklist([]);
+    setKonfirmasi("");
+    setAttachedFiles([]);
+    toast.error("Form telah dikosongkan.");
+  };
+
+  // Add new Custom Digital Asset directly into Supabase
+  const handleAddDigitalAsset = async () => {
+    if (!newAssetPlatform.trim() && !newAssetUser.trim()) {
+      toast.error("Isi Platform atau Username aset digital.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+
+      const { error } = await supabase.from("client_digital_assets").insert({
+        client_id: client.id,
+        user_id: userId,
+        asset_name: newAssetPlatform.trim() || "Aset Digital Klien",
+        asset_type: "other",
+        platform: newAssetPlatform.trim() || null,
+        username: newAssetUser.trim() || null,
+        notes: [newAssetPass ? `Password: ${newAssetPass}` : null, newAssetNote ? `Note: ${newAssetNote}` : null]
+          .filter(Boolean)
+          .join(" | "),
+      });
+
+      if (error) throw error;
+
+      await qc.invalidateQueries({ queryKey });
+      setNewAssetPlatform("");
+      setNewAssetUser("");
+      setNewAssetPass("");
+      setNewAssetNote("");
+      toast.success("Aset digital baru berhasil ditambahkan!");
+    } catch (err) {
+      toast.error("Gagal menambahkan aset digital.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Delete Digital Asset from Supabase
+  const handleDeleteDigitalAsset = async (assetId: string) => {
+    if (!window.confirm("Hapus aset digital ini?")) return;
+    try {
+      const { error } = await supabase.from("client_digital_assets").delete().eq("id", assetId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey });
+      toast.info("Aset digital berhasil dihapus.");
+    } catch (err) {
+      toast.error("Gagal menghapus aset digital.");
+    }
+  };
+
+  // Upload document directly into Supabase
+  const handleDocumentUpload = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    const file = files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ukuran file terlalu besar (Maks. 10MB).");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+      if (!userId) throw new Error("Sesi login tidak ditemukan.");
+
+      const safeName = file.name.replace(/[^\w.-]/g, "-");
+      const path = `${userId}/${client.id}/documents/${crypto.randomUUID()}-${safeName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("client-files")
+        .upload(path, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase.from("client_documents").insert({
+        client_id: client.id,
+        user_id: userId,
+        title: file.name,
+        document_type: "other",
+        file_path: path,
+        file_name: file.name,
+        mime_type: file.type || null,
+        file_size: file.size,
+      });
+      if (dbError) throw dbError;
+
+      await qc.invalidateQueries({ queryKey });
+      toast.success("Dokumen berhasil diunggah dan disimpan!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengunggah dokumen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Delete document from Supabase
+  const handleDeleteDocument = async (docId: string, filePath: string) => {
+    if (!window.confirm("Hapus dokumen ini?")) return;
+    try {
+      await supabase.storage.from("client-files").remove([filePath]);
+      const { error } = await supabase.from("client_documents").delete().eq("id", docId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey });
+      toast.info("Dokumen berhasil dihapus.");
+    } catch (err) {
+      toast.error("Gagal menghapus dokumen.");
+    }
+  };
+
+  const openSignedFile = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("client-files")
+        .createSignedUrl(filePath, 3600);
+      if (error || !data?.signedUrl) throw error || new Error("File tidak ditemukan.");
+      window.open(data.signedUrl, "_blank");
+    } catch (err) {
+      toast.error("Gagal membuka file.");
+    }
+  };
+
+  return (
+    <div className="relative flex min-h-screen flex-col items-center justify-start bg-[#dce3e8] p-2 text-slate-800 sm:p-5 lg:p-8">
+      {/* Modal Impor dari Workboard */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between bg-[#003837] px-6 py-4 text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/20 text-emerald-300">
+                  <KanbanSquare className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">
+                    Impor Task dari /workboard
+                  </h3>
+                  <p className="text-[11px] text-emerald-200/80">
+                    Pilih task aktif untuk di-sinkronisasikan ke form agenda &amp; timeline klien
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg p-1 text-slate-300 transition hover:bg-white/10 hover:text-white"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Search & Filter Bar */}
+            <div className="flex flex-col items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 p-4 text-xs sm:flex-row">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-2.5 size-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari task atau penanggung jawab..."
+                  className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+              <span className="self-end text-[11px] text-slate-500 sm:self-center">
+                Tersambung ke repositori:{" "}
+                <strong className="font-semibold text-emerald-700">
+                  /workboard/{client.name.toLowerCase().replace(/\s+/g, "-")}
+                </strong>
+              </span>
+            </div>
+
+            {/* List of Workboard Tasks */}
+            <div className="max-h-[380px] space-y-3 overflow-y-auto p-4 sm:p-5">
+              {filteredWorkboardTasks.length === 0 ? (
+                <div className="py-8 text-center text-slate-400">
+                  <Inbox className="mx-auto mb-2 size-8 text-slate-300" />
+                  <p className="text-xs">Tidak ditemukan task workboard yang cocok.</p>
+                </div>
+              ) : (
+                filteredWorkboardTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex flex-col items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-emerald-400 hover:shadow-md sm:flex-row sm:items-center"
+                  >
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-[10px] font-bold text-slate-400">
+                          #{task.id}
+                        </span>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${task.prioritasBadge}`}
+                        >
+                          {task.prioritas}
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                          <Clock className="size-3 text-slate-400" /> {task.deadlineDisplay}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-900 sm:text-sm">{task.judul}</h4>
+                      <p className="text-[11px] font-semibold text-emerald-800">
+                        {task.clientProyek}
+                      </p>
+                      <p className="line-clamp-2 text-[11px] text-slate-500">{task.ringkasan}</p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="flex size-5 items-center justify-center rounded-full bg-slate-800 text-[8px] font-bold text-white">
+                          {task.pic}
+                        </span>
+                        <span className="text-[10px] font-medium text-slate-600">
+                          PIC: {task.pic}
+                        </span>
+                        {task.perluKonfirmasi && (
+                          <span className="max-w-xs truncate rounded bg-amber-100 px-2 py-0.5 text-[9px] font-medium text-amber-800">
+                            ⚠️ {task.perluKonfirmasi}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => applyWorkboardTask(task)}
+                      className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
+                    >
+                      <Download className="size-3.5" />
+                      <span>Terapkan ke Form</span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs">
+              <p className="text-[11px] text-slate-500">
+                Tip: Mengimpor task otomatis mengisi judul, assignee, deadline, dan deskripsi.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold text-slate-600 hover:bg-white transition"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Unified Container */}
+      <div className="w-full max-w-[1400px] overflow-hidden rounded-2xl border border-slate-300 bg-[#f8fafc] shadow-2xl">
+        {/* Top Navigation Bar */}
+        <header className="flex select-none items-center justify-between bg-[#003837] px-4 py-2.5 text-xs tracking-wide text-white sm:px-6">
+          <div className="flex items-center space-x-3 overflow-x-auto">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#ea580c] font-bold text-white shadow-sm">
+              <svg
+                className="size-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <nav className="flex items-center space-x-1">
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center space-x-1.5 rounded px-3 py-1.5 text-slate-200 transition hover:bg-[#012a29] hover:text-white"
+              >
+                <Briefcase className="size-3.5 opacity-80" />
+                <span>Companies</span>
+              </button>
+              <button
+                type="button"
+                className="flex items-center space-x-1.5 rounded bg-[#012625] px-3 py-1.5 font-medium text-white transition hover:bg-[#022e2d]"
+              >
+                <LayoutDashboard className="size-3.5 opacity-90" />
+                <span>Workspace</span>
+              </button>
+            </nav>
+          </div>
+          <div className="flex items-center space-x-3 text-slate-300">
+            <button type="button" aria-label="Cari" className="p-1 transition hover:text-white">
+              <Search className="size-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Notifikasi"
+              className="relative p-1 transition hover:text-white"
+            >
+              <Bell className="size-4" />
+              <span className="absolute right-1 top-1 size-1.5 rounded-full bg-amber-400"></span>
+            </button>
+            <div className="flex size-7 items-center justify-center rounded-full bg-[#f59e0b] text-xs font-bold text-[#78350f] shadow ring-2 ring-[#003837]">
+              BF
+            </div>
+          </div>
+        </header>
+
+        {/* Main Workspace Area */}
+        <main className="space-y-4 p-4 sm:p-6">
+          {/* 1. Client Profile Header Card */}
+          <section className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-64 bg-gradient-to-l from-slate-50 to-transparent opacity-50"></div>
+
+            <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <div className="flex items-start space-x-3">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="mt-1.5 rounded border border-slate-200 p-1 text-slate-500 transition hover:bg-slate-50"
+                  title="Back to Companies"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+
+                <div className="flex items-center space-x-4">
+                  <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+                    {client.logoPath ? (
+                      <img
+                        src={`https://s7dviyflfx6iihwzteii2r.supabase.co/storage/v1/object/public/client-files/${client.logoPath}`}
+                        alt={client.name}
+                        className="size-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center rounded-full bg-gradient-to-br from-[#c9a75d] to-[#a67c27] text-center font-serif text-xs font-bold leading-none text-white">
+                        {client.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                        {client.name}
+                      </h1>
+                      <span className="inline-flex items-center space-x-1 rounded border border-[#fde68a] bg-[#fff8eb] px-2 py-0.5 text-[10px] font-medium text-[#d97706]">
+                        <span className="size-1.5 rounded-full bg-[#f59e0b]"></span>
+                        <span className="capitalize">{client.clientStatus || "Active Partner"}</span>
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      {client.legalName || client.name} · {client.industry || "Travel Umrah & Haji"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Navigation Tabs */}
+            <div className="relative z-10 mt-5 flex items-center justify-between overflow-x-auto border-t border-slate-100 pt-3 text-xs">
+              <div className="flex items-center space-x-5" id="tab-nav-container">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("profile")}
+                  className={`flex items-center space-x-1.5 pb-1 whitespace-nowrap transition-all ${
+                    activeTab === "profile"
+                      ? "border-b-2 border-[#003837] font-bold text-[#003837]"
+                      : "border-b-2 border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <LayoutTemplate className="size-4 text-emerald-600" />
+                  <span>Profile Client</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("timeline")}
+                  className={`flex items-center space-x-1.5 pb-1 whitespace-nowrap transition-all ${
+                    activeTab === "timeline"
+                      ? "border-b-2 border-[#003837] font-bold text-[#003837]"
+                      : "border-b-2 border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <Activity className="size-3.5" />
+                  <span>Timeline / Agenda</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("assets")}
+                  className={`flex items-center space-x-1.5 pb-1 whitespace-nowrap transition-all ${
+                    activeTab === "assets"
+                      ? "border-b-2 border-[#003837] font-bold text-[#003837]"
+                      : "border-b-2 border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <ShieldCheck className="size-3.5" />
+                  <span>Daftar Aset Digital &amp; Kredensial</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("documents")}
+                  className={`flex items-center space-x-1.5 pb-1 whitespace-nowrap transition-all ${
+                    activeTab === "documents"
+                      ? "border-b-2 border-[#003837] font-bold text-[#003837]"
+                      : "border-b-2 border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <FileText className="size-3.5" />
+                  <span>Dokumen Pendukung</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* TAB CONTENT: PROFILE CLIENT */}
+          {activeTab === "profile" && (
+            <div className="space-y-5 animate-fade-in">
+              {/* ✨ AI PROFILE BUILDER WIDGET ✨ */}
+              <div className="relative mb-6 overflow-hidden rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-sm">
+                <div className="pointer-events-none absolute right-0 top-0 p-8 opacity-20">
+                  <div className="size-32 rounded-full bg-emerald-400 blur-3xl"></div>
+                </div>
+
+                <div className="relative z-10 flex items-center justify-between border-b border-emerald-100 px-5 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-md">
+                      <Sparkles className="size-4" />
+                    </div>
+                    <div>
+                      <h2 className="mb-1 text-sm font-bold leading-none text-slate-900">
+                        AI Profile Builder
+                      </h2>
+                      <p className="text-[10px] text-slate-500">
+                        Auto-generate seluruh card profil klien dari berbagai sumber data.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAIPanel(!showAIPanel)}
+                    className="flex items-center gap-1.5 rounded-md bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-200"
+                  >
+                    {showAIPanel ? (
+                      <>
+                        <ChevronUp className="size-3.5" /> Sembunyikan
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="size-3.5" /> Tampilkan AI Builder
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {showAIPanel && (
+                  <div className="relative z-10 block p-5">
+                    <div className="mb-5 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAITab("upload")}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition ${
+                          aiTab === "upload"
+                            ? "bg-emerald-600 font-semibold text-white"
+                            : "border border-slate-200 bg-white font-medium text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <FileUp className="size-3.5" /> Upload File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAITab("link")}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition ${
+                          aiTab === "link"
+                            ? "bg-emerald-600 font-semibold text-white"
+                            : "border border-slate-200 bg-white font-medium text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <LinkIcon className="size-3.5" /> Link / URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAITab("social")}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition ${
+                          aiTab === "social"
+                            ? "bg-emerald-600 font-semibold text-white"
+                            : "border border-slate-200 bg-white font-medium text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <Instagram className="size-3.5" /> Social Media
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAITab("prompt")}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition ${
+                          aiTab === "prompt"
+                            ? "bg-emerald-600 font-semibold text-white"
+                            : "border border-slate-200 bg-white font-medium text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <MessageSquareDashed className="size-3.5" /> Custom Prompt
+                      </button>
+                    </div>
+
+                    {/* Content Section */}
+                    {aiTab === "upload" && (
+                      <div
+                        onClick={() => document.getElementById("ai-file-input")?.click()}
+                        className="group flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-emerald-200 bg-white p-6 text-center cursor-pointer transition-colors hover:bg-emerald-50"
+                      >
+                        <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 transition-transform group-hover:scale-110">
+                          <CloudUpload className="size-5" />
+                        </div>
+                        <h3 className="mb-1 text-xs font-bold text-slate-700">
+                          Upload Brand Guideline / Company Profile / Brief
+                        </h3>
+                        <p className="text-[10px] text-slate-500">
+                          PDF, DOCX, PPTX, atau TXT. AI akan mengekstrak warna, font, dan profil secara otomatis.
+                        </p>
+                        <input
+                          type="file"
+                          id="ai-file-input"
+                          accept=".pdf,.docx,.pptx,.txt"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.length) {
+                              toast.success(`File "${e.target.files[0].name}" siap dianalisis AI!`);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {aiTab === "link" && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-slate-700">
+                          Masukkan URL Website atau Landing Page Klien:
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://sultanharamaingresik.com"
+                          className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {aiTab === "social" && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-slate-700">
+                          Username Instagram / Facebook / TikTok Klien:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="@sultanharamain_gresik"
+                          className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {aiTab === "prompt" && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-slate-700">
+                          Instruksi Khusus untuk AI Profile Builder:
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="Ringkaskan profil bisnis travel umrah, keunggulan hotel bintang 5 Makkah/Madinah, dan poin komunikasi utama..."
+                          className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    <div className="mt-5 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toast.success(
+                            "AI Agent sedang mengumpulkan dan menyusun data profil klien...",
+                          )
+                        }
+                        className="flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg"
+                      >
+                        <BrainCircuit className="size-4" /> Generate Profile Klien
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2-COLUMN GRID LAYOUT */}
+              <div className="mt-4 grid grid-cols-1 gap-5 items-start lg:grid-cols-2">
+                {/* GRID KIRI */}
+                <div className="space-y-5">
+                  {/* Card 1: Brand Identity */}
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 items-center justify-center rounded-md border border-purple-200 bg-purple-100 text-purple-600">
+                          <Palette className="size-3.5" />
+                        </div>
+                        <h2 className="text-sm font-bold leading-none text-slate-900">
+                          Brand Identity
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => toast.success("Memproses AI Generation untuk Card ini...")}
+                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
+                        >
+                          <Sparkles className="size-3" /> AI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast.info("Mode Edit Brand Identity diaktifkan")}
+                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50"
+                        >
+                          <Edit3 className="size-3" /> Edit
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-5 p-4">
+                      <div>
+                        <h3 className="mb-2 text-xs font-semibold text-slate-700">
+                          Primary Color Palette
+                        </h3>
+                        <div className="flex gap-2">
+                          <div
+                            className="group flex cursor-pointer flex-col items-center gap-1"
+                            onClick={() => copyToClipboard("#C9A75D", "Warna Emas")}
+                          >
+                            <div className="size-10 rounded border border-slate-200 bg-[#C9A75D] shadow-sm transition-transform group-hover:scale-105"></div>
+                            <span className="font-mono text-[9px] uppercase text-slate-500">
+                              #C9A75D
+                            </span>
+                          </div>
+                          <div
+                            className="group flex cursor-pointer flex-col items-center gap-1"
+                            onClick={() => copyToClipboard("#003837", "Warna Hijau Gelap")}
+                          >
+                            <div className="size-10 rounded border border-slate-200 bg-[#003837] shadow-sm transition-transform group-hover:scale-105"></div>
+                            <span className="font-mono text-[9px] uppercase text-slate-500">
+                              #003837
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                          <Mic className="size-3.5 text-slate-400" /> Tone of Voice
+                        </h3>
+                        <div className="group relative rounded-lg border border-blue-200 bg-blue-50 p-3">
+                          <button
+                            className="absolute right-2 top-2 text-blue-400 opacity-0 transition group-hover:opacity-100 hover:text-blue-600"
+                            onClick={() =>
+                              copyToClipboard(
+                                "Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan Sahabat Haramain.",
+                                "Tone of Voice",
+                              )
+                            }
+                          >
+                            <Copy className="size-3.5" />
+                          </button>
+                          <p className="text-[11px] font-medium leading-relaxed text-blue-800">
+                            &quot;Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui.
+                            Sering gunakan sapaan{" "}
+                            <strong className="font-bold">Sahabat Haramain</strong>.&quot;
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Company Overview */}
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 items-center justify-center rounded-md border border-blue-200 bg-blue-100 text-blue-600">
+                          <Info className="size-3.5" />
+                        </div>
+                        <h2 className="text-sm font-bold leading-none text-slate-900">
+                          About Us &amp; Agency Objectives
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => toast.success("AI menganalisa dan menyusun Company Overview...")}
+                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
+                        >
+                          <Sparkles className="size-3" /> AI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast.info("Mode Edit diaktifkan")}
+                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50"
+                        >
+                          <Edit3 className="size-3" /> Edit
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-4 p-4">
+                      <div>
+                        <h3 className="mb-1 text-xs font-bold text-slate-800">Company Overview</h3>
+                        <p className="text-[11px] leading-relaxed text-slate-600">
+                          {client.companyProfile ||
+                            client.description ||
+                            "Sultan Barokah Haramain Cabang Gresik adalah biro perjalanan resmi penyedia layanan Umrah, Haji Khusus, serta distributor tunggal Air Zam Zam..."}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+                          <h4 className="mb-1 flex items-center gap-1 text-[10px] font-bold text-orange-800">
+                            <Target className="size-3" /> Pain Points Klien
+                          </h4>
+                          <ul className="list-inside list-disc space-y-1 text-[10px] text-orange-700">
+                            <li>Desain promosi lama kaku.</li>
+                            <li>Pesan komunikasi belum terstandardisasi.</li>
+                          </ul>
+                        </div>
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                          <h4 className="mb-1 flex items-center gap-1 text-[10px] font-bold text-emerald-800">
+                            <Briefcase className="size-3" /> Tugas Kita
+                          </h4>
+                          <ul className="list-inside list-disc space-y-1 text-[10px] text-emerald-700">
+                            <li>Rebranding aset digital premium.</li>
+                            <li>Standardisasi konten social media.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Catatan Penting */}
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 items-center justify-center rounded-md border border-amber-200 bg-amber-100 text-amber-600">
+                          <StickyNote className="size-3.5" />
+                        </div>
+                        <h2 className="text-sm font-bold leading-none text-slate-900">
+                          Catatan Penting
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => toast.success("AI merangkum percakapan menjadi catatan...")}
+                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
+                        >
+                          <Sparkles className="size-3" /> AI Rangkum
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast.success("Catatan berhasil disimpan!")}
+                          className="flex items-center gap-1 rounded bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700 transition hover:bg-blue-200"
+                        >
+                          <Edit3 className="size-3" /> Save
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition-colors focus-within:border-amber-400">
+                        <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50 p-1.5">
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
+                            title="Bold"
+                          >
+                            <Bold className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
+                            title="Italic"
+                          >
+                            <Italic className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
+                            title="Underline"
+                          >
+                            <Underline className="size-3.5" />
+                          </button>
+                          <div className="mx-1 h-4 w-px bg-slate-300"></div>
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
+                            title="Bullet List"
+                          >
+                            <List className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
+                            title="Numbered List"
+                          >
+                            <ListOrdered className="size-3.5" />
+                          </button>
+                        </div>
+                        <textarea
+                          rows={5}
+                          value={catatanPentingText}
+                          onChange={(e) => setCatatanPentingText(e.target.value)}
+                          className="w-full resize-none p-3 text-xs leading-relaxed text-slate-800 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* GRID KANAN */}
+                <div className="space-y-5">
+                  {/* Card 4: System Guardrails */}
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 items-center justify-center rounded-md border border-rose-200 bg-rose-100 text-rose-600">
+                          <ShieldAlert className="size-3.5" />
+                        </div>
+                        <h2 className="text-sm font-bold leading-none text-slate-900">
+                          System Guardrails
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => toast.success("AI menganalisa Rules baru...")}
+                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
+                        >
+                          <Sparkles className="size-3" /> AI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast.info("Mode Edit diaktifkan")}
+                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50"
+                        >
+                          <Edit3 className="size-3" /> Edit
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50/50 p-2.5">
+                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                          <div>
+                            <h4 className="text-[11px] font-bold text-emerald-800">
+                              DO&apos;s (Wajib Dilakukan)
+                            </h4>
+                            <ul className="mt-1 list-inside list-disc space-y-1 text-[10px] text-emerald-700">
+                              <li>Selalu sertakan logo &quot;Izin Kemenag&quot;.</li>
+                              <li>Gunakan dokumentasi keberangkatan jamaah asli.</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50/50 p-2.5">
+                          <XCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
+                          <div>
+                            <h4 className="text-[11px] font-bold text-rose-800">
+                              DON&apos;Ts (Pantangan)
+                            </h4>
+                            <ul className="mt-1 list-inside list-disc space-y-1 text-[10px] text-rose-700">
+                              <li>Jangan pernah menggunakan font Comic Sans.</li>
+                              <li>Dilarang mengubah rasio logo tanpa izin.</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Directory & Performance */}
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 items-center justify-center rounded-md border border-teal-200 bg-teal-100 text-teal-600">
+                          <BarChart2 className="size-3.5" />
+                        </div>
+                        <h2 className="text-sm font-bold leading-none text-slate-900">
+                          Directory &amp; Performance
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => toast.success("AI mengupdate data performa digital...")}
+                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
+                        >
+                          <Sparkles className="size-3" /> AI Auto-Sync
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-lg border border-slate-200 p-3 text-center">
+                          <Instagram className="mx-auto mb-1 size-4 text-pink-600" />
+                          <div className="text-sm font-bold text-slate-900">12.4K</div>
+                          <div className="text-[9px] uppercase text-slate-500">Followers IG</div>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 p-3 text-center">
+                          <BarChart2 className="mx-auto mb-1 size-4 text-emerald-600" />
+                          <div className="text-sm font-bold text-slate-900">5.2K</div>
+                          <div className="text-[9px] uppercase text-slate-500">Traffic Web</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: TIMELINE / AGENDA */}
+          {activeTab === "timeline" && (
+            <div className="mt-2 grid grid-cols-1 gap-5 items-start lg:grid-cols-12">
+              <div className="space-y-5 lg:col-span-8">
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-100 text-emerald-600">
+                        <ClipboardList className="size-4" />
+                      </div>
+                      <div>
+                        <h2 className="mb-1 text-sm font-bold leading-none text-slate-900">
+                          Tambah Aktivitas / Agenda Baru
+                        </h2>
+                        <p className="text-[11px] text-slate-500">
+                          Format sinkron dengan struktur Brief &amp; Task dari halaman /workboard.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300/80 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100"
+                      >
+                        <DownloadCloud className="size-3.5 text-emerald-600" />
+                        <span>Impor dari /workboard</span>
+                        <span className="ml-1 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                          4 Tersedia
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <form id="form-timeline" onSubmit={handleTimelineSubmit} className="space-y-5 p-5 sm:p-6">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        Judul <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="brief-judul"
+                        type="text"
+                        value={judul}
+                        onChange={(e) => setJudul(e.target.value)}
+                        placeholder="Cth: Revisi Desain Spanduk Air Zam Zam — V3"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 transition focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 flex items-center justify-between text-xs font-semibold text-slate-700">
+                        <span>Client / Proyek</span>
+                        <span className="text-[10px] font-normal text-slate-400">
+                          Nama Perusahaan · Sub-proyek / Kampanye
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-2.5 size-4 text-slate-400" />
+                        <input
+                          id="brief-client-proyek"
+                          type="text"
+                          value={clientProyek}
+                          onChange={(e) => setClientProyek(e.target.value)}
+                          placeholder="Cth: PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah"
+                          className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs font-medium text-slate-800 placeholder-slate-400 transition focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        Ringkasan
+                      </label>
+                      <textarea
+                        id="brief-ringkasan"
+                        rows={2}
+                        value={ringkasan}
+                        onChange={(e) => setRingkasan(e.target.value)}
+                        placeholder="Client meminta perbaikan pada preview: ukuran logo dan kontras font..."
+                        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs leading-relaxed text-slate-800 placeholder-slate-400 transition focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                        <Layers className="size-3.5 text-slate-400" /> Spesifikasi Teknis
+                      </label>
+                      <input
+                        id="brief-spesifikasi"
+                        type="text"
+                        value={spesifikasi}
+                        onChange={(e) => setSpesifikasi(e.target.value)}
+                        placeholder="Cth: Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 transition focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                          <CheckSquare className="size-4 text-emerald-600" /> Checklist Revisi
+                        </label>
+                        <button
+                          type="button"
+                          onClick={addChecklistItem}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
+                        >
+                          <Plus className="size-3" /> Tambah Item Checklist
+                        </button>
+                      </div>
+
+                      <div id="checklist-container" className="space-y-2">
+                        {checklist.length === 0 ? (
+                          <p className="py-1 text-xs italic text-slate-400">
+                            Belum ada item checklist revisi.
+                          </p>
+                        ) : (
+                          checklist.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="group flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-2 transition hover:border-slate-300"
+                            >
+                              <label className="flex flex-1 select-none cursor-pointer items-center gap-2.5">
+                                <input
+                                  type="checkbox"
+                                  checked={item.done}
+                                  onChange={() => toggleChecklistDone(idx)}
+                                  className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span
+                                  className={`text-xs ${
+                                    item.done
+                                      ? "font-normal text-slate-400 line-through"
+                                      : "font-medium text-slate-800"
+                                  }`}
+                                >
+                                  {item.text}
+                                </span>
+                              </label>
+                              <div className="flex shrink-0 items-center gap-2">
+                                {item.note && (
+                                  <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-400">
+                                    ({item.note})
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => removeChecklistItem(idx)}
+                                  className="rounded p-1 text-slate-300 transition hover:text-rose-500"
+                                  title="Hapus item"
+                                >
+                                  <X className="size-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+                      <div className="md:col-span-5">
+                        <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                          <Calendar className="size-3.5 text-slate-400" /> Deadline{" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="brief-deadline"
+                          type="datetime-local"
+                          value={deadline}
+                          onChange={(e) => setDeadline(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 transition focus:border-emerald-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-4">
+                        <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                          <Tag className="size-3.5 text-slate-400" /> Prioritas
+                        </label>
+                        <select
+                          id="brief-prioritas"
+                          value={prioritas}
+                          onChange={(e) => setPrioritas(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition focus:border-emerald-500 focus:outline-none"
+                        >
+                          <option value="Enterprise">Enterprise</option>
+                          <option value="Client Marah">Client Marah</option>
+                          <option value="Client Nanyain!">Client Nanyain!</option>
+                          <option value="Nyaris Deadline">Nyaris Deadline</option>
+                          <option value="Masih Aman">Masih Aman</option>
+                          <option value="Low">Low</option>
+                        </select>
+                      </div>
+
+                      <div className="md:col-span-3">
+                        <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                          <UserCheck className="size-3.5 text-slate-400" /> PIC
+                        </label>
+                        <select
+                          id="brief-pic"
+                          value={pic}
+                          onChange={(e) => setPic(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 transition focus:border-emerald-500 focus:outline-none"
+                        >
+                          <option value="DS">DS (Dimas)</option>
+                          <option value="AM">AM (Ammar)</option>
+                          <option value="FM">FM (Fatimah)</option>
+                          <option value="BF">BF (Budi F.)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-amber-200/90 bg-amber-50/90 p-3.5 transition">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                          <AlertTriangle className="size-4 text-amber-600" /> Perlu konfirmasi
+                        </label>
+                        <span className="rounded-full bg-amber-100/80 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          Catatan Kritis
+                        </span>
+                      </div>
+                      <input
+                        id="brief-konfirmasi"
+                        type="text"
+                        value={konfirmasi}
+                        onChange={(e) => setKonfirmasi(e.target.value)}
+                        placeholder="Cth: ukuran logo yang diinginkan client belum disebut."
+                        className="w-full rounded-lg border border-amber-300 bg-white/90 px-3 py-1.5 text-xs font-medium text-amber-950 placeholder-amber-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                        <Paperclip className="size-3.5 text-slate-500" /> Lampiran File (MOM, Preview Desain, Referensi)
+                      </label>
+                      <div
+                        onClick={() => document.getElementById("timeline-upload-input")?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          handleFileUpload(e.dataTransfer.files);
+                        }}
+                        className="group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center transition cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/50"
+                      >
+                        <div className="mb-2 flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-all group-hover:scale-105 group-hover:text-emerald-600">
+                          <Upload className="size-4" />
+                        </div>
+                        <h3 className="mb-0.5 text-xs font-semibold text-slate-700">
+                          Pilih atau seret berkas ke sini
+                        </h3>
+                        <p className="text-[10px] text-slate-400">
+                          PDF, JPG, PNG, AI, PSD, ZIP (Maksimal 5MB per file)
+                        </p>
+                        <input
+                          type="file"
+                          id="timeline-upload-input"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e.target.files)}
+                        />
+                      </div>
+
+                      {attachedFiles.length > 0 && (
+                        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                          {attachedFiles.map((file, index) => {
+                            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2.5 transition hover:border-slate-300"
+                              >
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                  <div className="shrink-0 rounded bg-emerald-50 p-1.5 text-emerald-600">
+                                    <FileIcon className="size-4" />
+                                  </div>
+                                  <div className="truncate">
+                                    <p
+                                      className="max-w-[150px] truncate text-xs font-semibold text-slate-800 sm:max-w-[170px]"
+                                      title={file.name}
+                                    >
+                                      {file.name}
+                                    </p>
+                                    <p className="text-[10px] font-medium text-slate-400">
+                                      {sizeMB} MB
+                                    </p>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeAttachedFile(index)}
+                                  className="rounded p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                                  title="Hapus File"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+                      <button
+                        type="button"
+                        onClick={resetForm}
+                        disabled={busy}
+                        className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800"
+                      >
+                        Batalkan
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={busy}
+                        className="flex items-center gap-1.5 rounded-lg border border-emerald-700 bg-emerald-600 px-5 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                      >
+                        <Send className="size-3.5" />
+                        <span>{busy ? "Menyimpan..." : "Simpan ke Timeline"}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div className="space-y-4 lg:col-span-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                  <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h3 className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                      <Kanban className="size-4 text-emerald-600" /> Task Workboard Siap Impor
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(true)}
+                      className="text-[11px] font-semibold text-emerald-700 transition hover:text-emerald-800"
+                    >
+                      Lihat Semua
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {DUMMY_WORKBOARD_TASKS.slice(0, 3).map((task) => (
+                      <div
+                        key={task.id}
+                        className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 transition hover:border-emerald-200 hover:bg-white"
+                      >
+                        <div className="mb-1 flex items-center justify-between text-[10px]">
+                          <span className="font-mono font-semibold text-slate-400">{task.id}</span>
+                          <span
+                            className={`rounded border px-1.5 py-0.5 text-[9px] font-bold ${task.prioritasBadge}`}
+                          >
+                            {task.prioritas}
+                          </span>
+                        </div>
+                        <p className="mb-1 line-clamp-1 text-[11px] font-bold leading-tight text-slate-800">
+                          {task.judul}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 text-[9px] text-slate-500">
+                            <User className="size-3 text-slate-400" /> PIC: <strong>{task.pic}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => applyWorkboardTask(task)}
+                            className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
+                          >
+                            <ArrowDownToDot className="size-3" /> Terapkan
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h2 className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 text-xs font-bold text-slate-900">
+                    <span className="flex items-center gap-1.5">
+                      <History className="size-4 text-blue-600" /> Agenda Mendatang
+                    </span>
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                      Bulan Ini
+                    </span>
+                  </h2>
+
+                  <div className="space-y-4">
+                    {dbData?.events && dbData.events.length > 0 ? (
+                      dbData.events.map((ev: DBRow) => (
+                        <div key={ev.id} className="group relative flex gap-3">
+                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-emerald-100 text-[9px] font-bold text-emerald-700 shadow-xs">
+                            {ev.metadata?.pic || "DS"}
+                          </div>
+                          <div className="flex-1 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5">
+                            <div className="mb-0.5 flex items-center justify-between">
+                              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">
+                                {ev.metadata?.prioritas || "Normal"}
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400">
+                                PIC: {ev.metadata?.pic || "DS"}
+                              </span>
+                            </div>
+                            <h4 className="text-xs font-bold leading-tight text-slate-800">
+                              {ev.title}
+                            </h4>
+                            <p className="mt-1 line-clamp-2 text-[10px] text-slate-500">
+                              {ev.description}
+                            </p>
+                            <div className="mt-2 inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                              <Clock className="size-3 text-slate-400" />{" "}
+                              {new Date(ev.occurred_at).toLocaleString("id-ID", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="group relative flex gap-3">
+                          <div className="absolute left-[11px] top-6 -z-0 h-full w-px bg-slate-200"></div>
+                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-blue-100 shadow-sm">
+                            <Calendar className="size-3 text-blue-600" />
+                          </div>
+                          <div className="flex-1 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
+                            <h4 className="text-xs font-bold leading-tight text-slate-800">
+                              Meeting Presentasi Konsep
+                            </h4>
+                            <p className="mb-2 mt-0.5 text-[10px] text-slate-500">Oleh: Ammar (AM)</p>
+                            <div className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                              <Clock className="size-3 text-slate-400" /> Besok, 14:00 WIB
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="group relative flex gap-3">
+                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-rose-100 shadow-sm">
+                            <Flag className="size-3 text-rose-600" />
+                          </div>
+                          <div className="flex-1 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
+                            <h4 className="text-xs font-bold leading-tight text-slate-800">
+                              Batas Akhir Revisi Label Kemasan
+                            </h4>
+                            <p className="mb-2 mt-0.5 text-[10px] text-slate-500">Oleh: Dimas (Desain)</p>
+                            <div className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+                              <AlertCircle className="size-3" /> 25 Okt 2026
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
+                  <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-blue-900">
+                    <Info className="size-4 text-blue-600" /> Integrasi /workboard &amp; Timeline
+                  </h4>
+                  <p className="text-[11px] leading-relaxed text-blue-800">
+                    Task yang diimpor dari <span className="font-semibold text-blue-950">/workboard</span>{" "}
+                    otomatis tersinkronisasi. Estimasi tenggat, penanggung jawab (assignee), dan deskripsi task
+                    langsung dihubungkan tanpa perlu mengetik ulang.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: DAFTAR ASET DIGITAL & KREDENSIAL */}
+          {activeTab === "assets" && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="mb-2 flex items-center gap-2 border-b border-slate-100 pb-3 text-sm font-bold text-slate-900">
+                  <ShieldCheck className="size-4 text-rose-500" />
+                  Daftar Aset Digital &amp; Kredensial Klien
+                </h2>
+                <p className="mb-5 text-xs leading-relaxed text-slate-500">
+                  Simpan informasi kredensial yang diserahkan klien (Email utama, Social Media, Website/CMS, Kunci 2FA, dll). Data ini terenkripsi dan dapat diatur hak aksesnya (Parent-Child account).
+                </p>
+
+                <div className="space-y-5">
+                  {/* A. Akun Pusat (Master Email) */}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <h3 className="mb-3 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <Key className="size-3.5 text-slate-500" /> Akun Utama Klien (Master Email)
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
+                          Email Utama / Username
+                        </label>
+                        <input
+                          type="text"
+                          value={masterEmail}
+                          onChange={(e) => setMasterEmail(e.target.value)}
+                          placeholder="admin@domainklien.com"
+                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
+                          Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showMasterPassword ? "text" : "password"}
+                            value={masterPassword}
+                            onChange={(e) => setMasterPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-3 pr-10 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowMasterPassword(!showMasterPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            {showMasterPassword ? (
+                              <EyeOff className="size-4" />
+                            ) : (
+                              <Eye className="size-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
+                          No. HP Pemulihan (Recovery)
+                        </label>
+                        <input
+                          type="text"
+                          value={recoveryPhone}
+                          onChange={(e) => setRecoveryPhone(e.target.value)}
+                          placeholder="0812-xxxx-xxxx"
+                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
+                          Kode Pemulihan / 2FA Secret Key
+                        </label>
+                        <input
+                          type="text"
+                          value={recovery2fa}
+                          onChange={(e) => setRecovery2fa(e.target.value)}
+                          placeholder="Teks base32 rahasia / 8-digit backup codes"
+                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* B. Custom Accounts Repeater / Existing Assets */}
+                  <div>
+                    <h3 className="mb-2.5 text-xs font-bold text-slate-800">
+                      Daftar Akun Lainnya (Medsos, Web, API, dll)
+                    </h3>
+
+                    {/* Existing Digital Assets from Supabase */}
+                    <div className="space-y-3 mb-4">
+                      {dbData?.assets && dbData.assets.length > 0 ? (
+                        dbData.assets.map((asset: DBRow) => (
+                          <div
+                            key={asset.id}
+                            className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-xs hover:border-slate-300 transition"
+                          >
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                              <p className="text-xs font-bold text-slate-900">{asset.asset_name}</p>
+                              <p className="text-[11px] text-slate-500">
+                                {asset.platform || asset.asset_type} · Username:{" "}
+                                <strong className="text-slate-800">{asset.username || "—"}</strong>
+                              </p>
+                              {asset.notes && (
+                                <p className="text-[10px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100">
+                                  {asset.notes}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDigitalAsset(asset.id)}
+                              className="text-slate-400 hover:text-red-500 p-1.5 rounded border border-slate-200 bg-white transition shrink-0"
+                              title="Hapus Aset"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 italic py-2">
+                          Belum ada aset digital tersimpan di database.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Input Form for New Asset */}
+                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                      <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Plus className="size-3.5 text-rose-600" /> Tambah Kredensial Baru
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Platform / URL
+                          </label>
+                          <input
+                            type="text"
+                            value={newAssetPlatform}
+                            onChange={(e) => setNewAssetPlatform(e.target.value)}
+                            placeholder="Instagram / WP Admin"
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Username / ID
+                          </label>
+                          <input
+                            type="text"
+                            value={newAssetUser}
+                            onChange={(e) => setNewAssetUser(e.target.value)}
+                            placeholder="@username"
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Password
+                          </label>
+                          <input
+                            type="password"
+                            value={newAssetPass}
+                            onChange={(e) => setNewAssetPass(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Catatan / Akses
+                          </label>
+                          <input
+                            type="text"
+                            value={newAssetNote}
+                            onChange={(e) => setNewAssetNote(e.target.value)}
+                            placeholder="Role Admin"
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddDigitalAsset}
+                        disabled={busy}
+                        className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-md transition shadow-sm flex items-center gap-1.5"
+                      >
+                        <Plus className="size-3.5" /> Simpan Aset Digital Ke Database
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* C. Catatan Keamanan / Vault Note */}
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-slate-700">
+                      Catatan Penting Keamanan &amp; Integrasi
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={vaultNote}
+                      onChange={(e) => setVaultNote(e.target.value)}
+                      placeholder="Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif (expired date) hosting/domain, atau struktur parent-child account..."
+                      className="w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: DOKUMEN PENDUKUNG */}
+          {activeTab === "documents" && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3 text-sm font-bold text-slate-900">
+                  <FolderOpen className="size-4 text-amber-500" />
+                  Dokumen Pendukung Klien
+                </h2>
+
+                {/* Dropzone Area */}
+                <div
+                  onClick={() => document.getElementById("tab-doc-file-input")?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDocumentUpload(e.dataTransfer.files);
+                  }}
+                  className="group flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition-colors hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
+                >
+                  <div className="mb-3 flex size-10 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-500 shadow-sm transition-transform group-hover:scale-110">
+                    <CloudUpload className="size-5" />
+                  </div>
+                  <h3 className="mb-1 text-xs font-bold text-slate-900">
+                    Klik untuk unggah atau seret &amp; lepas
+                  </h3>
+                  <p className="text-[10px] text-slate-500">
+                    NPWP, Kontrak, Guideline (PDF, DOCX, JPG - Maks 10MB)
+                  </p>
+                  <input
+                    type="file"
+                    id="tab-doc-file-input"
+                    className="hidden"
+                    onChange={(e) => handleDocumentUpload(e.target.files)}
+                  />
+                </div>
+
+                {/* List Preview File yang Diunggah dari Database */}
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {dbData?.docs && dbData.docs.length > 0 ? (
+                    dbData.docs.map((d: DBRow) => {
+                      const sizeMB = (d.file_size / (1024 * 1024)).toFixed(2);
+                      return (
+                        <div
+                          key={d.id}
+                          className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 p-2.5 transition hover:bg-slate-100"
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="rounded border border-slate-100 bg-white p-2 text-slate-500 shadow-sm">
+                              <FileText className="size-4 text-blue-600" />
+                            </div>
+                            <div className="truncate">
+                              <p className="w-40 truncate text-xs font-bold text-slate-700 sm:w-48">
+                                {d.title || d.file_name}
+                              </p>
+                              <p className="text-[10px] font-medium text-slate-400">
+                                {sizeMB} MB · {new Date(d.created_at).toLocaleDateString("id-ID")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => openSignedFile(d.file_path)}
+                              className="rounded border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-blue-200 hover:text-blue-600"
+                              title="Buka Dokumen"
+                            >
+                              <Eye className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDocument(d.id, d.file_path)}
+                              className="rounded border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-red-200 hover:text-red-600"
+                              title="Hapus Dokumen"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-full py-6 text-center text-xs text-slate-400 italic">
+                      Belum ada dokumen tersimpan untuk klien ini.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
-    <Card className="rounded-lg shadow-none"><CardContent className="grid gap-2 p-3 md:grid-cols-[150px_1fr_auto]"><Select value={eventType} onValueChange={setEventType}><SelectTrigger className="h-9 text-xs"><SelectValue/></SelectTrigger><SelectContent>{[["note","Catatan"],["meeting","Meeting"],["email","Email"],["call","Telepon"],["project","Proyek"],["system","Aktivitas"]].map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select><Input className="h-9 text-xs" value={eventTitle} onChange={e=>setEventTitle(e.target.value)} placeholder="Judul aktivitas"/><Button size="sm" disabled={busy||!eventTitle.trim()} onClick={()=>void run(async()=>{await insert("client_timeline_events",{client_id:client.id,event_type:eventType,title:eventTitle.trim(),description:eventDesc||null});setEventTitle("");setEventDesc("");toast.success("Aktivitas timeline disimpan")})}><Plus className="mr-1 size-3.5"/>Tambah</Button><Textarea className="md:col-span-3 text-xs" rows={2} value={eventDesc} onChange={e=>setEventDesc(e.target.value)} placeholder="Detail aktivitas, hasil meeting, follow-up…"/></CardContent></Card>
-   </section>
-  </div>:
-  tab==="Tasks"?<Card><CardHeader><CardTitle>Task & Status Pekerjaan</CardTitle></CardHeader><CardContent className="space-y-3"><div className="grid gap-2 md:grid-cols-[1fr_170px_140px_auto]"><Input value={taskTitle} onChange={e=>setTaskTitle(e.target.value)} placeholder="Nama task / pekerjaan"/><Input type="date" value={taskDue} onChange={e=>setTaskDue(e.target.value)}/><Select value={taskPriority} onValueChange={setTaskPriority}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem></SelectContent></Select><Button disabled={busy||!taskTitle.trim()} onClick={()=>void run(async()=>{await insert("client_tasks",{client_id:client.id,title:taskTitle.trim(),status:"things-to-do",priority:taskPriority,due_date:taskDue||null});setTaskTitle("");setTaskDue("");setTaskPriority("medium");toast.success("Task ditambahkan")})}><Plus className="mr-1 size-4"/>Tambah Task</Button></div><div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{tasks.map(t=><div key={t.id} className="space-y-2 rounded-lg border p-3"><div className="flex items-start justify-between gap-2"><p className="text-sm font-semibold">{t.title}</p><Badge variant="outline">{t.priority}</Badge></div>{t.description&&<p className="text-xs text-muted-foreground">{t.description}</p>}<div className="flex items-center justify-between gap-2"><span className="text-[11px] text-muted-foreground">{t.due_date?new Date(t.due_date+"T00:00:00").toLocaleDateString("id-ID"):"Tanpa deadline"}</span><Select value={t.status} onValueChange={v=>void run(async()=>{const {error}=await (supabase.from("client_tasks" as any) as any).update({status:v,updated_at:new Date().toISOString()}).eq("id",t.id);if(error)throw error})}><SelectTrigger className="h-8 w-40 text-xs"><SelectValue/></SelectTrigger><SelectContent>{[["things-to-do","Things To Do"],["queue-on-process","Antrian"],["on-process","On Process"],["pending","Pending"],["revision","Review"],["finished","Selesai"],["cancel","Cancel"]].map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></div></div>)}{!tasks.length&&<p className="text-sm text-muted-foreground">Belum ada task untuk client ini.</p>}</div></CardContent></Card>:
-  tab==="Profile Client"?<Card><CardHeader><CardTitle>Profil Perusahaan</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2 text-sm"><div><Label>Nama legal</Label><p>{client.legalName||"—"}</p></div><div><Label>Industri</Label><p>{client.industry||"—"}</p></div><div><Label>Kontak PIC</Label><p>{client.contactName||"—"}</p></div><div><Label>Email / Telepon</Label><p>{client.contactEmail||"—"} · {client.contactPhone||"—"}</p></div><div className="md:col-span-2"><Label>Alamat</Label><p>{client.address||"—"} {client.city}</p></div><div className="md:col-span-2"><Label>Company Profile</Label><p className="whitespace-pre-wrap">{client.companyProfile||client.description||"Belum diisi."}</p></div></CardContent></Card>:
-  tab==="Daftar Aset Digital"?<Card><CardHeader><CardTitle>Aset Digital Client</CardTitle></CardHeader><CardContent className="space-y-3"><div className="grid gap-2 md:grid-cols-4"><Input value={assetName} onChange={e=>setAssetName(e.target.value)} placeholder="Nama aset"/><Select value={assetType} onValueChange={setAssetType}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{["domain","website","email","social","ads","hosting","analytics","design","other"].map(x=><SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent></Select><Input value={assetUrl} onChange={e=>setAssetUrl(e.target.value)} placeholder="URL aset"/><Button disabled={busy||!assetName.trim()} onClick={()=>void run(async()=>{await insert("client_digital_assets",{client_id:client.id,asset_name:assetName.trim(),asset_type:assetType,asset_url:assetUrl||null});setAssetName("");setAssetUrl("")})}><Plus className="mr-1 size-4"/>Tambah Aset</Button></div>{(d.client_digital_assets??[]).map(a=><div key={a.id} className="flex items-center justify-between rounded-lg border p-3"><div><p className="text-sm font-medium">{a.asset_name}</p><p className="text-xs text-muted-foreground">{a.asset_type} · {a.owner_email||"Owner belum diisi"}</p>{a.asset_url&&<a href={a.asset_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">{a.asset_url}</a>}</div></div>)}{!d.client_digital_assets?.length&&<p className="text-sm text-muted-foreground">Belum ada aset digital.</p>}</CardContent></Card>:
-  tab==="Brand Kit"?<Card><CardHeader><CardTitle>Brand Kit</CardTitle></CardHeader><CardContent className="space-y-3"><div className="grid gap-2 md:grid-cols-4"><Input value={brandName} onChange={e=>setBrandName(e.target.value)} placeholder="Nama item brand"/><Select value={brandType} onValueChange={setBrandType}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{[["logo","Logo"],["color","Warna"],["font","Font"],["guideline","Brand guideline"],["template","Template"],["other","Lainnya"]].map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select><Input value={brandValue} onChange={e=>setBrandValue(e.target.value)} placeholder="Kode warna / URL / keterangan"/><Button disabled={busy||!brandName.trim()} onClick={()=>void run(async()=>{await insert("client_brand_assets",{client_id:client.id,name:brandName.trim(),asset_type:brandType,value:brandValue||null});setBrandName("");setBrandValue("")})}><Plus className="mr-1 size-4"/>Tambah</Button></div><div className="grid gap-2 md:grid-cols-2">{(d.client_brand_assets??[]).map(b=><div key={b.id} className="rounded-lg border p-3"><Badge variant="outline">{b.asset_type}</Badge><p className="mt-2 text-sm font-semibold">{b.name}</p><p className="text-xs text-muted-foreground">{b.value||b.notes||"—"}</p></div>)}</div>{!d.client_brand_assets?.length&&<p className="text-sm text-muted-foreground">Brand Kit belum diisi.</p>}</CardContent></Card>:
-  tab==="Dokumen"||tab==="Invoice"?<Card><CardHeader><CardTitle>{tab==="Invoice"?"Invoice Client":"Dokumen Client"}</CardTitle></CardHeader><CardContent className="space-y-3"><div className="grid gap-2 md:grid-cols-4"><Input value={docTitle} onChange={e=>setDocTitle(e.target.value)} placeholder="Nama dokumen"/><Select value={docType} onValueChange={setDocType}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{[["contract","Kontrak"],["proposal","Proposal"],["invoice","Invoice"],["brief","Brief"],["report","Laporan"],["nda","NDA"],["other","Lainnya"]].map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select><Label className="flex cursor-pointer items-center justify-center rounded-md border px-3 text-xs"><Upload className="mr-2 size-4"/>Pilih File<input type="file" className="sr-only" onChange={e=>{const file=e.target.files?.[0];if(file)void run(async()=>{if(!docTitle.trim())throw new Error("Isi nama dokumen dahulu");const path=await upload(file,"documents");await insert("client_documents",{client_id:client.id,title:docTitle.trim(),document_type:docType,file_path:path,file_name:file.name,mime_type:file.type,file_size:file.size});setDocTitle("");toast.success("Dokumen tersimpan")})}}/></Label><span className="flex items-center text-xs text-muted-foreground">File privat · maks 20 MB</span></div>{docs.filter(x=>tab==="Invoice"?x.document_type==="invoice":true).map(x=><div key={x.id} className="flex items-center justify-between rounded border p-3"><div><p className="text-sm font-medium">{x.title}</p><p className="text-xs text-muted-foreground">{x.document_type} · {x.file_name}</p></div><Button size="sm" variant="outline" onClick={()=>void signed(x.file_path)}><ExternalLink className="mr-1 size-3"/>Buka</Button></div>)}</CardContent></Card>:
-  tab==="Scope of Work"?<Card><CardHeader><CardTitle>Scope of Work</CardTitle></CardHeader><CardContent><p className="whitespace-pre-wrap text-sm">{client.scopeOfWork||"Scope of Work belum diisi. Gunakan Edit Profil untuk menambahkan lingkup pekerjaan."}</p><Button className="mt-4" variant="outline" onClick={onEdit}>Edit Scope of Work</Button></CardContent></Card>:
-  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]"><Card><CardHeader><CardTitle className="flex items-center gap-2"><ImagePlus className="size-4"/>Graphic Workspace · Design Preview</CardTitle></CardHeader><CardContent className="space-y-3"><div className="flex flex-wrap gap-2"><Input className="max-w-xs" value={designTitle} onChange={e=>setDesignTitle(e.target.value)} placeholder="Judul desain"/><Label className="flex cursor-pointer items-center rounded-md border px-3 text-xs"><Upload className="mr-2 size-4"/>Upload desain<input type="file" accept="image/*,.pdf" className="sr-only" onChange={e=>{const file=e.target.files?.[0];if(file)void run(async()=>{if(!designTitle.trim())throw new Error("Isi judul desain dahulu");const path=await upload(file,"designs");await insert("client_design_versions",{client_id:client.id,title:designTitle.trim(),version_label:`V${versions.length+1}`,file_path:path,file_name:file.name,mime_type:file.type});setDesignTitle("");toast.success("Desain diunggah")})}}/></Label></div>{activeVersion?<><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">{activeVersion.title} · {activeVersion.version_label}</p><p className="text-xs text-muted-foreground">{fmt(activeVersion.created_at)}</p></div><Badge>{activeVersion.status}</Badge></div><div className="relative overflow-hidden rounded-lg border bg-slate-100" onClick={e=>{const r=e.currentTarget.getBoundingClientRect();setPin({x:((e.clientX-r.left)/r.width)*100,y:((e.clientY-r.top)/r.height)*100})}}>{activeVersion.mime_type?.startsWith("image/")?<DesignImage path={activeVersion.file_path}/>:<div className="p-12 text-center text-sm">Preview tidak tersedia untuk format ini. <Button variant="link" onClick={()=>void signed(activeVersion.file_path)}>Buka file</Button></div>}{activeComments.filter(x=>x.x!=null).map((c,i)=><span key={c.id} style={{left:`${c.x}%`,top:`${c.y}%`}} className="absolute flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-[10px] font-bold text-white">{i+1}</span>)}{pin&&<span style={{left:`${pin.x}%`,top:`${pin.y}%`}} className="absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-orange-500"/>}</div><p className="text-xs text-muted-foreground">Klik area preview untuk menambahkan pin revisi.</p><div className="flex flex-wrap gap-2"><Button size="sm" disabled={busy||activeVersion.status==="approved"} onClick={()=>void run(async()=>{const {error}=await (supabase.from("client_design_versions" as any) as any).update({status:"approved",reviewed_at:new Date().toISOString()}).eq("id",activeVersion.id);if(error)throw error;toast.success("Desain disetujui")})}><Check className="mr-1 size-4"/>Approve Desain</Button><Button size="sm" variant="outline" disabled={busy||activeVersion.status==="revision"} onClick={()=>void run(async()=>{const {error}=await (supabase.from("client_design_versions" as any) as any).update({status:"revision",reviewed_at:new Date().toISOString()}).eq("id",activeVersion.id);if(error)throw error;toast.success("Status revisi diperbarui")})}>Ajukan Revisi</Button></div></>:<div className="rounded-lg border border-dashed p-12 text-center text-sm text-muted-foreground">Belum ada preview desain. Upload desain pertama untuk memulai review.</div>}</CardContent></Card><Card><CardHeader><CardTitle className="text-sm">Komentar & Revisi</CardTitle></CardHeader><CardContent className="space-y-3"><Textarea rows={3} value={comment} onChange={e=>setComment(e.target.value)} placeholder={pin?"Jelaskan revisi pada titik pin…":"Komentar umum desain…"}/><div className="flex gap-2"><Button className="flex-1" disabled={busy||!comment.trim()||!activeVersion} onClick={()=>void run(async()=>{await insert("client_design_comments",{client_id:client.id,version_id:activeVersion.id,comment:comment.trim(),x:pin?.x??null,y:pin?.y??null});setComment("");setPin(null)})}><Send className="mr-1 size-4"/>Kirim Komentar</Button><Button size="icon" variant="outline" onClick={()=>setPin(null)}><X className="size-4"/></Button></div>{activeComments.map((c,i)=><div key={c.id} className="rounded-lg border p-3 text-xs"><p className="whitespace-pre-wrap">{c.comment}</p><p className="mt-2 text-[10px] text-muted-foreground">{c.x==null?"Komentar umum":`Pin ${i+1} · ${Math.round(c.x)}%, ${Math.round(c.y)}%`} · {fmt(c.created_at)}</p></div>)}</CardContent></Card></div>}
- </div>;
-}
-
-function DesignImage({path}:{path:string}) {
- const [url,setUrl]=useState("");
- useEffect(()=>{let alive=true;void supabase.storage.from("client-files").createSignedUrl(path,300).then(({data,error})=>{if(alive)setUrl(error?"":data?.signedUrl??"");});return()=>{alive=false};},[path]);
- return url?<img src={url} alt="Preview desain client" className="mx-auto max-h-[620px] w-full object-contain"/>:<div className="p-12 text-center text-xs text-muted-foreground">Memuat preview…</div>;
+  );
 }

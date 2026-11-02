@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B2B CRM - Form Timeline & Profile</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #dce3e8;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .toast-enter {
+      animation: slideInRight 0.3s ease-out forwards;
+    }
+    /* Animasi fade in konten tab */
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 p-2 sm:p-6 lg:p-8 flex flex-col items-center">
+
+  <!-- Container Toast Notification -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main Unified Container -->
+  <div class="w-full max-w-[1400px] bg-[#f8fafc] rounded-xl shadow-2xl overflow-hidden border border-slate-300">
+    
+    <!-- Top Navigation Bar -->
+    <header class="bg-[#003837] text-white px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs tracking-wide select-none">
+      <div class="flex items-center space-x-3 overflow-x-auto custom-scrollbar">
+        <div class="w-7 h-7 rounded-md bg-[#ea580c] flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <nav class="flex items-center space-x-1">
+          <button type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded text-slate-200 hover:text-white hover:bg-[#012a29] transition">
+            <i data-lucide="briefcase" class="w-3.5 h-3.5 opacity-80"></i><span>Companies</span>
+          </button>
+          <button type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#012625] text-white font-medium transition hover:bg-[#022e2d]">
+            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 opacity-90"></i><span>Workspace</span>
+          </button>
+        </nav>
+      </div>
+      <div class="flex items-center space-x-3 text-slate-300">
+        <button type="button" class="hover:text-white transition"><i data-lucide="search" class="w-4 h-4"></i></button>
+        <button type="button" class="hover:text-white transition"><i data-lucide="bell" class="w-4 h-4"></i></button>
+        <div class="w-7 h-7 rounded-full bg-[#f59e0b] text-[#78350f] font-bold flex items-center justify-center text-xs shadow">BF</div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <main class="p-4 sm:p-6 space-y-4">
+
+      <!-- 1. Client Profile Header Card -->
+      <section class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-slate-50 to-transparent opacity-50 pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+          <div class="flex items-start space-x-3">
+            <button type="button" class="mt-1.5 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 transition" title="Back to Companies">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-4">
+              <div class="w-14 h-14 rounded-full border border-slate-200 shadow-sm overflow-hidden bg-white flex items-center justify-center p-1 shrink-0">
+                <div class="w-full h-full bg-gradient-to-br from-[#c9a75d] to-[#a67c27] rounded-full flex items-center justify-center text-white font-serif font-bold text-xs text-center leading-none">
+                  SULTAN<br>HARAMAIN
+                </div>
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h1 class="text-xl font-bold text-slate-900 tracking-tight">Sultan Haramain Gresik</h1>
+                  <span class="inline-flex items-center space-x-1 bg-[#fff8eb] text-[#d97706] font-medium text-[10px] px-2 py-0.5 rounded border border-[#fde68a]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+                    <span>Active Partner</span>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1.5">PT Sultan Barokah Haramain (Kantor Cabang Gresik) · Travel Umrah & Haji</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-Navigation Tabs (SPA Routing Simulation) -->
+        <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between overflow-x-auto custom-scrollbar text-xs relative z-10">
+          <div class="flex items-center space-x-5" id="tab-nav-container">
+            <button type="button" onclick="switchTab('profile')" id="nav-profile" class="flex items-center space-x-1.5 pb-1 font-bold text-[#003837] border-b-2 border-[#003837] whitespace-nowrap transition-all">
+              <i data-lucide="layout-template" class="w-4 h-4 text-emerald-600"></i><span>Profile Client</span>
+            </button>
+            <button type="button" onclick="switchTab('timeline')" id="nav-timeline" class="flex items-center space-x-1.5 pb-1 text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-all whitespace-nowrap">
+              <i data-lucide="activity" class="w-3.5 h-3.5"></i><span>Timeline / Agenda</span>
+            </button>
+            <button type="button" class="flex items-center space-x-1.5 pb-1 text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-all whitespace-nowrap">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i><span>Daftar Aset Digital</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB CONTENT: PROFILE CLIENT (ACTIVE)         -->
+      <!-- ========================================== -->
+      <div id="tab-profile" class="block animate-fade-in space-y-5">
+        
+        <!-- ✨ AI PROFILE BUILDER WIDGET ✨ -->
+        <div class="bg-gradient-to-br from-emerald-50 to-white rounded-xl border border-emerald-200 shadow-sm mb-6 overflow-hidden relative">
+          <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+            <div class="w-32 h-32 bg-emerald-400 rounded-full blur-3xl"></div>
+          </div>
+
+          <div class="px-5 py-4 border-b border-emerald-100 flex items-center justify-between relative z-10">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 class="text-sm font-bold text-slate-900 leading-none mb-1">AI Profile Builder</h2>
+                <p class="text-[10px] text-slate-500">Auto-generate seluruh card profil klien dari berbagai sumber data.</p>
+              </div>
+            </div>
+            <button type="button" class="text-xs font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md transition flex items-center gap-1.5" onclick="toggleAIPanel()">
+              <span id="ai-panel-text" class="flex items-center gap-1.5">
+                <i data-lucide="chevron-up" id="ai-panel-icon" class="w-3.5 h-3.5"></i> Sembunyikan
+              </span>
+            </button>
+          </div>
+
+          <div id="ai-builder-panel" class="p-5 relative z-10 block">
+            <div class="flex flex-wrap gap-2 mb-5">
+              <button type="button" onclick="setAITab('upload')" id="tab-ai-upload" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition ai-tab-btn"><i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload File</button>
+              <button type="button" onclick="setAITab('link')" id="tab-ai-link" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition ai-tab-btn"><i data-lucide="link" class="w-3.5 h-3.5"></i> Link / URL</button>
+              <button type="button" onclick="setAITab('social')" id="tab-ai-social" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition ai-tab-btn"><i data-lucide="instagram" class="w-3.5 h-3.5"></i> Social Media</button>
+              <button type="button" onclick="setAITab('prompt')" id="tab-ai-prompt" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition ai-tab-btn"><i data-lucide="message-square-dashed" class="w-3.5 h-3.5"></i> Custom Prompt</button>
+            </div>
+
+            <!-- Upload Content -->
+            <div id="ai-content-upload" class="ai-content-section block">
+              <div class="border-2 border-dashed border-emerald-200 rounded-lg p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-emerald-50 transition-colors cursor-pointer group">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><i data-lucide="cloud-upload" class="w-5 h-5"></i></div>
+                <h3 class="text-xs font-bold text-slate-700 mb-1">Upload Brand Guideline / Company Profile / Brief</h3>
+                <p class="text-[10px] text-slate-500">PDF, DOCX, PPTX, atau TXT. AI akan mengekstrak warna, font, dan profil secara otomatis.</p>
+              </div>
+            </div>
+            
+            <div class="mt-5 flex justify-end">
+              <button type="button" onclick="showToast('AI Agent sedang mengumpulkan dan menyusun data profil klien...', 'success')" class="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 rounded-md shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+                <i data-lucide="brain-circuit" class="w-4 h-4"></i> Generate Profile Klien
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start mt-4">
+          
+          <!-- GRID KIRI: Brand, Blueprint & Catatan -->
+          <div class="space-y-5">
+            
+            <!-- Card 1: Brand Identity -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-purple-100 text-purple-600 flex items-center justify-center border border-purple-200">
+                    <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none">Brand Identity</h2>
+                </div>
+                <!-- Action Buttons: AI & Edit -->
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('Memproses AI Generation untuk Card ini...', 'success')"><i data-lucide="sparkles" class="w-3 h-3"></i> AI</button>
+                  <button type="button" class="text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('Mode Edit Brand Identity diaktifkan', 'info')"><i data-lucide="edit-3" class="w-3 h-3"></i> Edit</button>
+                </div>
+              </div>
+              <div class="p-4 space-y-5">
+                <div>
+                  <h3 class="text-xs font-semibold text-slate-700 mb-2">Primary Color Palette</h3>
+                  <div class="flex gap-2">
+                    <div class="flex flex-col items-center gap-1 group cursor-pointer" onclick="copyToClipboard('#C9A75D', 'Warna Emas')">
+                      <div class="w-10 h-10 rounded shadow-sm border border-slate-200 bg-[#C9A75D] group-hover:scale-105 transition-transform"></div>
+                      <span class="text-[9px] font-mono text-slate-500 uppercase">#C9A75D</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 group cursor-pointer" onclick="copyToClipboard('#003837', 'Warna Hijau Gelap')">
+                      <div class="w-10 h-10 rounded shadow-sm border border-slate-200 bg-[#003837] group-hover:scale-105 transition-transform"></div>
+                      <span class="text-[9px] font-mono text-slate-500 uppercase">#003837</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h3 class="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5"><i data-lucide="mic" class="w-3.5 h-3.5 text-slate-400"></i> Tone of Voice</h3>
+                  <div class="p-3 border border-blue-200 rounded-lg bg-blue-50 relative group">
+                    <button class="absolute top-2 right-2 text-blue-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition" onclick="copyToClipboard('Gunakan bahasa formal namun hangat...', 'Tone of Voice')"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <p class="text-[11px] text-blue-800 leading-relaxed font-medium">"Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan <strong class="font-bold">Sahabat Haramain</strong>."</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Company Overview -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200">
+                    <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none">About Us & Agency Objectives</h2>
+                </div>
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('AI menganalisa dan menyusun Company Overview...', 'success')"><i data-lucide="sparkles" class="w-3 h-3"></i> AI</button>
+                  <button type="button" class="text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('Mode Edit diaktifkan', 'info')"><i data-lucide="edit-3" class="w-3 h-3"></i> Edit</button>
+                </div>
+              </div>
+              <div class="p-4 space-y-4">
+                <div>
+                  <h3 class="text-xs font-bold text-slate-800 mb-1">Company Overview</h3>
+                  <p class="text-[11px] text-slate-600 leading-relaxed">Sultan Barokah Haramain Cabang Gresik adalah biro perjalanan resmi penyedia layanan Umrah, Haji Khusus, serta distributor tunggal Air Zam Zam...</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="p-3 border border-orange-200 bg-orange-50 rounded-lg">
+                    <h4 class="text-[10px] font-bold text-orange-800 mb-1 flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Pain Points Klien</h4>
+                    <ul class="text-[10px] text-orange-700 space-y-1 list-disc list-inside">
+                      <li>Desain promosi lama kaku.</li>
+                    </ul>
+                  </div>
+                  <div class="p-3 border border-emerald-200 bg-emerald-50 rounded-lg">
+                    <h4 class="text-[10px] font-bold text-emerald-800 mb-1 flex items-center gap-1"><i data-lucide="briefcase" class="w-3 h-3"></i> Tugas Kita</h4>
+                    <ul class="text-[10px] text-emerald-700 space-y-1 list-disc list-inside">
+                      <li>Rebranding aset digital premium.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Baru 1: Catatan Penting (Rich Text Editor) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center border border-amber-200">
+                    <i data-lucide="sticky-note" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none">Catatan Penting</h2>
+                </div>
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('AI merangkum percakapan menjadi catatan...', 'success')"><i data-lucide="sparkles" class="w-3 h-3"></i> AI Rangkum</button>
+                  <button type="button" class="text-blue-700 bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('Catatan berhasil disimpan!', 'success')"><i data-lucide="save" class="w-3 h-3"></i> Save</button>
+                </div>
+              </div>
+              <div class="p-4">
+                <div class="border border-slate-200 rounded-md overflow-hidden shadow-sm focus-within:border-amber-400 transition-colors bg-white">
+                  <!-- Editor Toolbar -->
+                  <div class="bg-slate-50 border-b border-slate-200 p-1.5 flex items-center gap-1 overflow-x-auto">
+                    <button type="button" class="p-1.5 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Bold"><i data-lucide="bold" class="w-3.5 h-3.5"></i></button>
+                    <button type="button" class="p-1.5 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Italic"><i data-lucide="italic" class="w-3.5 h-3.5"></i></button>
+                    <button type="button" class="p-1.5 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Underline"><i data-lucide="underline" class="w-3.5 h-3.5"></i></button>
+                    <div class="w-px h-4 bg-slate-300 mx-1"></div>
+                    <button type="button" class="p-1.5 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Bullet List"><i data-lucide="list" class="w-3.5 h-3.5"></i></button>
+                    <button type="button" class="p-1.5 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Numbered List"><i data-lucide="list-ordered" class="w-3.5 h-3.5"></i></button>
+                    <div class="w-px h-4 bg-slate-300 mx-1"></div>
+                    <button type="button" class="p-1.5 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Link"><i data-lucide="link" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                  <!-- Content Editable Area -->
+                  <div contenteditable="true" class="w-full min-h-[120px] p-3 text-xs text-slate-700 focus:outline-none">
+                    <p><strong>Note untuk Tim Internal:</strong></p>
+                    <ul class="list-disc ml-4 mt-1 space-y-1">
+                      <li>Kontrak kerja sama diperpanjang hingga <strong>Desember 2026</strong>.</li>
+                      <li>Fokus Q4 adalah kampanye <em>"Umrah Nyaman Bersama Keluarga"</em>.</li>
+                      <li>Dilarang mengubah aset logo tanpa persetujuan <span class="bg-yellow-100 text-yellow-800 px-1 rounded">Bpk. Dwi</span>.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- GRID KANAN: Guardrails, Data & File -->
+          <div class="space-y-5">
+            
+            <!-- Card 3: System Guardrails -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-rose-100 text-rose-600 flex items-center justify-center border border-rose-200">
+                    <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none">System Guardrails</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('AI menganalisa Rules baru...', 'success')"><i data-lucide="sparkles" class="w-3 h-3"></i> AI</button>
+                  <button type="button" class="text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('Mode Edit diaktifkan', 'info')"><i data-lucide="edit-3" class="w-3 h-3"></i> Edit</button>
+                </div>
+              </div>
+              <div class="p-4">
+                <div class="space-y-2">
+                  <div class="p-2.5 border border-emerald-200 bg-emerald-50/50 rounded-md flex items-start gap-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"></i>
+                    <div>
+                      <h4 class="text-[11px] font-bold text-emerald-800">DO's (Wajib Dilakukan)</h4>
+                      <ul class="text-[10px] text-emerald-700 mt-1 space-y-1 list-disc list-inside"><li>Selalu sertakan logo "Izin Kemenag".</li></ul>
+                    </div>
+                  </div>
+                  <div class="p-2.5 border border-rose-200 bg-rose-50/50 rounded-md flex items-start gap-2">
+                    <i data-lucide="x-circle" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></i>
+                    <div>
+                      <h4 class="text-[11px] font-bold text-rose-800">DON'Ts (Pantangan)</h4>
+                      <ul class="text-[10px] text-rose-700 mt-1 space-y-1 list-disc list-inside"><li>Jangan pernah menggunakan font Comic Sans.</li></ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Directory -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-teal-100 text-teal-600 flex items-center justify-center border border-teal-200">
+                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none">Directory & Performance</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('AI mengupdate data performa digital...', 'success')"><i data-lucide="sparkles" class="w-3 h-3"></i> AI Auto-Sync</button>
+                  <button type="button" class="text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('Mode Edit diaktifkan', 'info')"><i data-lucide="edit-3" class="w-3 h-3"></i> Edit</button>
+                </div>
+              </div>
+              <div class="p-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="p-3 border border-slate-200 rounded-lg text-center">
+                    <i data-lucide="instagram" class="w-4 h-4 text-pink-600 mx-auto mb-1"></i>
+                    <div class="text-sm font-bold text-slate-900">12.4K</div>
+                    <div class="text-[9px] text-slate-500 uppercase">Followers IG</div>
+                  </div>
+                  <div class="p-3 border border-slate-200 rounded-lg text-center">
+                    <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-emerald-600 mx-auto mb-1"></i>
+                    <div class="text-sm font-bold text-slate-900">5.2K</div>
+                    <div class="text-[9px] text-slate-500 uppercase">Traffic Web</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Baru 2: Dokumen Pendukung (Attach File) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-md bg-indigo-100 text-indigo-600 flex items-center justify-center border border-indigo-200">
+                    <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <h2 class="text-sm font-bold text-slate-900 leading-none">Dokumen Pendukung</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                   <button type="button" class="text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" onclick="showToast('AI menganalisa file dan folder...', 'success')"><i data-lucide="sparkles" class="w-3 h-3"></i> AI Analyze</button>
+                </div>
+              </div>
+              <div class="p-4 space-y-4">
+                
+                <!-- Dropzone Upload Area -->
+                <div class="border-2 border-dashed border-slate-300 rounded-lg p-5 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition-colors cursor-pointer group" onclick="document.getElementById('hidden-file-input').click()">
+                  <div class="w-8 h-8 rounded-full bg-white shadow-sm text-slate-400 flex items-center justify-center mb-2 group-hover:text-indigo-600 group-hover:scale-110 transition-transform border border-slate-200">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                  </div>
+                  <h3 class="text-[11px] font-bold text-slate-700 mb-0.5">Upload File / Aset Baru</h3>
+                  <p class="text-[9px] text-slate-400">PDF, JPG, ZIP, DOCX (Maks 10MB)</p>
+                  <input type="file" id="hidden-file-input" class="hidden" onchange="showToast('File berhasil diunggah ke server!', 'success')">
+                </div>
+
+                <!-- File List & Actions -->
+                <div class="space-y-2">
+                  <!-- File Item 1 -->
+                  <div class="flex items-center justify-between p-2.5 border border-slate-200 rounded-lg bg-white shadow-sm hover:border-indigo-200 transition">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                      <div class="w-8 h-8 rounded bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                      </div>
+                      <div class="truncate">
+                        <p class="text-[11px] font-bold text-slate-700 truncate">Brand_Guideline_SultanHaramain.pdf</p>
+                        <p class="text-[9px] text-slate-400">2.4 MB • 24 Okt 2026</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0 ml-2">
+                      <button class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Preview File"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+                      <button class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition" title="Download File"><i data-lucide="download" class="w-3.5 h-3.5"></i></button>
+                      <button class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete File" onclick="this.parentElement.parentElement.remove(); showToast('File berhasil dihapus', 'info');"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                  </div>
+
+                  <!-- File Item 2 -->
+                  <div class="flex items-center justify-between p-2.5 border border-slate-200 rounded-lg bg-white shadow-sm hover:border-indigo-200 transition">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                      <div class="w-8 h-8 rounded bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                        <i data-lucide="image" class="w-4 h-4"></i>
+                      </div>
+                      <div class="truncate">
+                        <p class="text-[11px] font-bold text-slate-700 truncate">Logo_Vector_Pack.zip</p>
+                        <p class="text-[9px] text-slate-400">5.1 MB • 20 Okt 2026</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0 ml-2">
+                      <button class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition" title="Preview File"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+                      <button class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition" title="Download File"><i data-lucide="download" class="w-3.5 h-3.5"></i></button>
+                      <button class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete File" onclick="this.parentElement.parentElement.remove(); showToast('File berhasil dihapus', 'info');"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Re-use Toast Logic
+    window.showToast = function(message, type = 'success') {
+      const toastContainer = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let bgClass = type === 'success' ? 'bg-emerald-600' : 'bg-slate-800';
+      let icon = type === 'success' ? '<i data-lucide="check-circle" class="w-4 h-4"></i>' : '<i data-lucide="info" class="w-4 h-4"></i>';
+
+      toast.className = `flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-white text-xs font-semibold ${bgClass} toast-enter`;
+      toast.innerHTML = `${icon} ${message}`;
+      
+      toastContainer.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    };
+
+    window.copyToClipboard = function(text, labelName) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`Berhasil menyalin ${labelName} ke clipboard!`, 'success');
+      });
+    };
+
+    window.setAITab = function(tabName) {
+      document.querySelectorAll('.ai-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white', 'font-semibold');
+        btn.classList.add('bg-white', 'text-slate-600', 'font-medium');
+      });
+      const activeBtn = document.getElementById('tab-ai-' + tabName);
+      if(activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-slate-600', 'font-medium');
+        activeBtn.classList.add('bg-emerald-600', 'text-white', 'font-semibold');
+      }
+      document.querySelectorAll('.ai-content-section').forEach(section => {
+        section.classList.add('hidden');
+        section.classList.remove('block');
+      });
+      const targetSection = document.getElementById('ai-content-' + (tabName === 'upload' ? 'upload' : ''));
+      if(targetSection) {
+        targetSection.classList.remove('hidden');
+        targetSection.classList.add('block');
+      }
+    };
+
+    window.toggleAIPanel = function() {
+      const panel = document.getElementById('ai-builder-panel');
+      const textSpan = document.getElementById('ai-panel-text');
+      
+      if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        textSpan.innerHTML = `<i data-lucide="chevron-up" class="w-3.5 h-3.5"></i> Sembunyikan`;
+      } else {
+        panel.classList.add('hidden');
+        textSpan.innerHTML = `<i data-lucide="chevron-down" class="w-3.5 h-3.5"></i> Tampilkan AI Builder`;
+      }
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>

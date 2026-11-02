@@ -1,6 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ProjectsClientsView } from "@/components/vault/ProjectsClientsView";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+
 export const Route = createFileRoute("/_authenticated/clients")({
-  head: () => ({ meta: [{ title: "Client · Ebran Data Email" }] }),
-  component: () => <ProjectsClientsView mode="clients" />,
+  component: () => <Outlet />,
 });

@@ -24,15 +24,35 @@ import type { WorkboardActivity, WorkboardClient, WorkboardTask } from "./useWor
 /* ---------------------------------------------------------------- Calendar */
 
 const monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 /** Highlights from the reference design (October). */
 const highlights: Record<number, "orange" | "teal" | "lavender"> = {
-  2: "orange", 3: "orange",
-  6: "teal", 9: "teal", 12: "teal", 15: "teal", 19: "teal", 24: "teal", 26: "teal", 27: "teal",
-  18: "lavender", 21: "lavender", 29: "lavender",
+  2: "orange",
+  3: "orange",
+  6: "teal",
+  9: "teal",
+  12: "teal",
+  15: "teal",
+  19: "teal",
+  24: "teal",
+  26: "teal",
+  27: "teal",
+  18: "lavender",
+  21: "lavender",
+  29: "lavender",
 };
 
 function localDateKey(value: string | Date) {
@@ -46,12 +66,15 @@ function localDateKey(value: string | Date) {
 
 function formatDate(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString("id-ID", {
-    day: "numeric", month: "short", year: "numeric",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
 export function CalendarPanel({
-  tasks = [], activities = [],
+  tasks = [],
+  activities = [],
 }: {
   tasks?: WorkboardTask[];
   activities?: WorkboardActivity[];
@@ -108,50 +131,110 @@ export function CalendarPanel({
   return (
     <div className="rounded-3xl bg-wb-beige p-3 shadow-card">
       <div className="flex items-center gap-2">
-        <span className="rounded-full border border-wb-beige-deep px-4 py-2 text-[13px] font-semibold text-wb-ink">Kalender kerja</span>
-        <span className="ml-auto text-[9px] text-muted-foreground">{tasks.length} task · {activities.length} aktivitas</span>
+        <span className="rounded-full border border-wb-beige-deep px-4 py-2 text-[13px] font-semibold text-wb-ink">
+          Kalender kerja
+        </span>
+        <span className="ml-auto text-[9px] text-muted-foreground">
+          {tasks.length} task · {activities.length} aktivitas
+        </span>
       </div>
       <div className="mt-4 flex items-center justify-between">
-        <button type="button" aria-label="Bulan sebelumnya" onClick={() => shift(-1)} className="flex size-8 items-center justify-center rounded-full border border-wb-beige-deep text-wb-ink hover:bg-wb-beige-deep"><ArrowLeft className="size-4" /></button>
-        <span className="text-[13px] font-semibold text-wb-ink">{new Date(cursor.year, cursor.month, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" })}</span>
-        <button type="button" aria-label="Bulan berikutnya" onClick={() => shift(1)} className="flex size-8 items-center justify-center rounded-full border border-wb-beige-deep text-wb-ink hover:bg-wb-beige-deep"><ArrowRight className="size-4" /></button>
+        <button
+          type="button"
+          aria-label="Bulan sebelumnya"
+          onClick={() => shift(-1)}
+          className="flex size-8 items-center justify-center rounded-full border border-wb-beige-deep text-wb-ink hover:bg-wb-beige-deep"
+        >
+          <ArrowLeft className="size-4" />
+        </button>
+        <span className="text-[13px] font-semibold text-wb-ink">
+          {new Date(cursor.year, cursor.month, 1).toLocaleDateString("id-ID", {
+            month: "long",
+            year: "numeric",
+          })}
+        </span>
+        <button
+          type="button"
+          aria-label="Bulan berikutnya"
+          onClick={() => shift(1)}
+          className="flex size-8 items-center justify-center rounded-full border border-wb-beige-deep text-wb-ink hover:bg-wb-beige-deep"
+        >
+          <ArrowRight className="size-4" />
+        </button>
       </div>
       <div className="mt-4 grid grid-cols-7 gap-1 text-center">
-        {["S", "S", "R", "K", "J", "S", "M"].map((day, index) => <span key={index} className="pb-1 text-[11px] font-medium text-wb-ink">{day}</span>)}
+        {["S", "S", "R", "K", "J", "S", "M"].map((day, index) => (
+          <span key={index} className="pb-1 text-[11px] font-medium text-wb-ink">
+            {day}
+          </span>
+        ))}
         {cells.map((cell, index) => {
-          const dateKey = cell.current ? localDateKey(new Date(cursor.year, cursor.month, cell.day)) : "";
+          const dateKey = cell.current
+            ? localDateKey(new Date(cursor.year, cursor.month, cell.day))
+            : "";
           const hasTask = !!tasksByDate.get(dateKey)?.length;
           const hasActivity = !!activitiesByDate.get(dateKey)?.length;
           const isSelected = !!dateKey && selectedDate === dateKey;
           return (
-            <button key={index} type="button" disabled={!cell.current} onClick={() => setSelectedDate(dateKey)}
-              className={cn("relative flex h-9 flex-col items-center justify-center rounded-md text-[11px] transition",
+            <button
+              key={index}
+              type="button"
+              disabled={!cell.current}
+              onClick={() => setSelectedDate(dateKey)}
+              className={cn(
+                "relative flex h-9 flex-col items-center justify-center rounded-md text-[11px] transition",
                 !cell.current && "text-muted-foreground/40",
                 cell.current && "bg-card/70 text-wb-ink hover:bg-card",
-                isSelected && "ring-2 ring-wb-ink ring-offset-1 ring-offset-wb-beige")}>
+                isSelected && "ring-2 ring-wb-ink ring-offset-1 ring-offset-wb-beige",
+              )}
+            >
               {cell.day}
-              {cell.current && (hasTask || hasActivity) && <span className="absolute bottom-1 flex gap-0.5">
-                {hasTask && <i className="size-1 rounded-full bg-wb-blue-strong" />}
-                {hasActivity && <i className="size-1 rounded-full bg-wb-orange" />}
-              </span>}
+              {cell.current && (hasTask || hasActivity) && (
+                <span className="absolute bottom-1 flex gap-0.5">
+                  {hasTask && <i className="size-1 rounded-full bg-wb-blue-strong" />}
+                  {hasActivity && <i className="size-1 rounded-full bg-wb-orange" />}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-[9px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><i className="size-1.5 rounded-full bg-wb-blue-strong" /> Deadline task</span>
-        <span className="inline-flex items-center gap-1"><i className="size-1.5 rounded-full bg-wb-orange" /> Aktivitas aktual</span>
+        <span className="inline-flex items-center gap-1">
+          <i className="size-1.5 rounded-full bg-wb-blue-strong" /> Deadline task
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <i className="size-1.5 rounded-full bg-wb-orange" /> Aktivitas aktual
+        </span>
       </div>
-      {selectedDate && <div className="mt-3 border-t border-wb-beige-deep pt-3">
-        <p className="text-[10px] font-bold text-wb-ink">{formatDate(selectedDate)}</p>
-        {selectedTasks.map((task) => <div key={task.id} className="mt-2 flex items-start justify-between gap-2 text-[9px]">
-          <span className="min-w-0 flex-1 text-wb-ink">{task.title}</span><span className="shrink-0 text-muted-foreground">{task.status}</span>
-        </div>)}
-        {selectedActivities.map((activity) => <div key={activity.id} className="mt-2 border-l-2 border-wb-orange pl-2 text-[9px]">
-          <p className="font-semibold text-wb-ink">{activity.title}</p><p className="text-muted-foreground">{activity.event_type} · {new Date(activity.occurred_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</p>
-        </div>)}
-        {!selectedTasks.length && !selectedActivities.length && <p className="mt-2 text-[9px] text-muted-foreground">Tidak ada deadline atau aktivitas tercatat pada tanggal ini.</p>}
-      </div>}
+      {selectedDate && (
+        <div className="mt-3 border-t border-wb-beige-deep pt-3">
+          <p className="text-[10px] font-bold text-wb-ink">{formatDate(selectedDate)}</p>
+          {selectedTasks.map((task) => (
+            <div key={task.id} className="mt-2 flex items-start justify-between gap-2 text-[9px]">
+              <span className="min-w-0 flex-1 text-wb-ink">{task.title}</span>
+              <span className="shrink-0 text-muted-foreground">{task.status}</span>
+            </div>
+          ))}
+          {selectedActivities.map((activity) => (
+            <div key={activity.id} className="mt-2 border-l-2 border-wb-orange pl-2 text-[9px]">
+              <p className="font-semibold text-wb-ink">{activity.title}</p>
+              <p className="text-muted-foreground">
+                {activity.event_type} ·{" "}
+                {new Date(activity.occurred_at).toLocaleTimeString("id-ID", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          ))}
+          {!selectedTasks.length && !selectedActivities.length && (
+            <p className="mt-2 text-[9px] text-muted-foreground">
+              Tidak ada deadline atau aktivitas tercatat pada tanggal ini.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -159,7 +242,8 @@ export function CalendarPanel({
 /* ---------------------------------------------------------- Work list */
 
 export function WorkListPanel({
-  tasks, clients,
+  tasks,
+  clients,
 }: {
   tasks: WorkboardTask[];
   clients: WorkboardClient[];
@@ -169,9 +253,19 @@ export function WorkListPanel({
   const clientById = new Map(clients.map((client) => [client.id, client]));
   const today = localDateKey(new Date());
   const items = useMemo(() => {
-    const filtered = tasks.filter((task) => !query || [
-      task.title, task.description ?? "", task.assignee ?? "", clientById.get(task.client_id)?.name ?? "",
-    ].join(" ").toLowerCase().includes(query.toLowerCase()));
+    const filtered = tasks.filter(
+      (task) =>
+        !query ||
+        [
+          task.title,
+          task.description ?? "",
+          task.assignee ?? "",
+          clientById.get(task.client_id)?.name ?? "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query.toLowerCase()),
+    );
     return filtered.sort((a, b) => {
       const aDone = ["finished", "cancel"].includes(a.status);
       const bDone = ["finished", "cancel"].includes(b.status);
@@ -191,23 +285,95 @@ export function WorkListPanel({
     return formatDate(task.due_date);
   }
 
-  return <div className="min-w-0">
-    <div className="flex items-center justify-between gap-2"><h3 className="text-[15px] font-extrabold tracking-tight text-wb-ink">DAFTAR PEKERJAAN</h3><span className="rounded-full bg-card px-3 py-1 text-[10px] text-wb-ink shadow-soft">{items.length} task</span></div>
-    <label className="mt-2 flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 shadow-soft"><Search className="size-3 text-wb-ink"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari task / proyek / client" className="min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-wb-ink outline-none placeholder:text-muted-foreground"/></label>
-    <ul className="mt-2 border-r border-border bg-card">
-      {items.slice(0, 12).map((task) => {
-        const overdue = task.due_date && task.due_date < today && !["finished", "cancel"].includes(task.status);
-        return <li key={task.id}><button type="button" onClick={() => setActive(task.id)} className={cn("flex w-full items-start gap-3 border-b border-border px-2 py-3 text-left hover:bg-muted/60", selected?.id === task.id && "bg-muted/70")}>
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-wb-blue text-[9px] font-bold text-wb-ink">{(clientById.get(task.client_id)?.name ?? "C").slice(0, 2).toUpperCase()}</span>
-          <span className="min-w-0 flex-1"><span className="flex items-baseline justify-between gap-2"><span className="truncate text-[11px] font-semibold text-wb-ink">{task.title}</span><span className={cn("shrink-0 text-[8px]", overdue ? "font-bold text-destructive" : "text-muted-foreground")}>{deadlineLabel(task)}</span></span>
-          <span className="mt-0.5 block truncate text-[9px] text-muted-foreground">{clientById.get(task.client_id)?.name ?? "Client tidak ditemukan"} · {task.status}</span>
-          <span className="mt-1 block text-[8px] text-muted-foreground">Aktual diperbarui: {new Date(task.updated_at).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span></span>
-        </button></li>;
-      })}
-      {!items.length && <li className="px-2 py-6 text-center text-[10px] text-muted-foreground">Belum ada task sesuai pencarian.</li>}
-    </ul>
-    {selected && <div className="mt-2 rounded-lg border bg-card p-3"><p className="text-[10px] font-bold text-wb-ink">{selected.title}</p><p className="mt-1 text-[9px] text-muted-foreground">{selected.description || "Tidak ada deskripsi."}</p><p className="mt-2 text-[9px] text-muted-foreground">PIC: {selected.assignee || "Belum ditentukan"} · Prioritas: {selected.priority}</p><p className="mt-1 text-[9px] text-muted-foreground">Deadline: {selected.due_date ? formatDate(selected.due_date) : "Belum ditentukan"} · Aktivitas terakhir: {new Date(selected.updated_at).toLocaleString("id-ID")}</p></div>}
-  </div>;
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-[15px] font-extrabold tracking-tight text-wb-ink">DAFTAR PEKERJAAN</h3>
+        <span className="rounded-full bg-card px-3 py-1 text-[10px] text-wb-ink shadow-soft">
+          {items.length} task
+        </span>
+      </div>
+      <label className="mt-2 flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 shadow-soft">
+        <Search className="size-3 text-wb-ink" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Cari task / proyek / client"
+          className="min-w-0 flex-1 bg-transparent text-[9px] font-semibold text-wb-ink outline-none placeholder:text-muted-foreground"
+        />
+      </label>
+      <ul className="mt-2 border-r border-border bg-card">
+        {items.slice(0, 12).map((task) => {
+          const overdue =
+            task.due_date && task.due_date < today && !["finished", "cancel"].includes(task.status);
+          return (
+            <li key={task.id}>
+              <button
+                type="button"
+                onClick={() => setActive(task.id)}
+                className={cn(
+                  "flex w-full items-start gap-3 border-b border-border px-2 py-3 text-left hover:bg-muted/60",
+                  selected?.id === task.id && "bg-muted/70",
+                )}
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-wb-blue text-[9px] font-bold text-wb-ink">
+                  {(clientById.get(task.client_id)?.name ?? "C").slice(0, 2).toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[11px] font-semibold text-wb-ink">
+                      {task.title}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 text-[8px]",
+                        overdue ? "font-bold text-destructive" : "text-muted-foreground",
+                      )}
+                    >
+                      {deadlineLabel(task)}
+                    </span>
+                  </span>
+                  <span className="mt-0.5 block truncate text-[9px] text-muted-foreground">
+                    {clientById.get(task.client_id)?.name ?? "Client tidak ditemukan"} ·{" "}
+                    {task.status}
+                  </span>
+                  <span className="mt-1 block text-[8px] text-muted-foreground">
+                    Aktual diperbarui:{" "}
+                    {new Date(task.updated_at).toLocaleString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+        {!items.length && (
+          <li className="px-2 py-6 text-center text-[10px] text-muted-foreground">
+            Belum ada task sesuai pencarian.
+          </li>
+        )}
+      </ul>
+      {selected && (
+        <div className="mt-2 rounded-lg border bg-card p-3">
+          <p className="text-[10px] font-bold text-wb-ink">{selected.title}</p>
+          <p className="mt-1 text-[9px] text-muted-foreground">
+            {selected.description || "Tidak ada deskripsi."}
+          </p>
+          <p className="mt-2 text-[9px] text-muted-foreground">
+            PIC: {selected.assignee || "Belum ditentukan"} · Prioritas: {selected.priority}
+          </p>
+          <p className="mt-1 text-[9px] text-muted-foreground">
+            Deadline: {selected.due_date ? formatDate(selected.due_date) : "Belum ditentukan"} ·
+            Aktivitas terakhir: {new Date(selected.updated_at).toLocaleString("id-ID")}
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* -------------------------------------------------------- AI secretary */
@@ -268,7 +434,9 @@ export function AiSecretaryPanel() {
           <button
             key={label}
             type="button"
-            onClick={() => toast(`Prompt "${label}" dipilih`, { description: "Buka Tanya AI untuk memulai." })}
+            onClick={() =>
+              toast(`Prompt "${label}" dipilih`, { description: "Buka Tanya AI untuk memulai." })
+            }
             className="flex items-center justify-center gap-0.5 rounded-md bg-muted py-1.5 text-[9.5px] font-semibold text-wb-ink transition-colors hover:bg-border"
           >
             {label}

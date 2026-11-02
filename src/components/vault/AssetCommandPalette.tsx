@@ -235,7 +235,6 @@ export function AssetCommandPalette() {
                       <p className="truncate font-medium text-foreground">{acc.email}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {acc.projects[0]?.name ?? "Tanpa Proyek"}
-                        
                       </p>
                     </div>
                     {acc.usageTag && (

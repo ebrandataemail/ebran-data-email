@@ -12,26 +12,37 @@ const text = (value: unknown, max: number) =>
 export const workspaceList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [clientsResult, projectsResult, accountsResult, developerAssetsResult, adsAssetsResult] =
-      await Promise.all([
-        context.supabase
-          .from("clients")
-          .select("id,name,description,website,legal_name,industry,contact_name,contact_email,contact_phone,address,city,logo_path,company_profile,scope_of_work,internal_notes,client_status,created_at,updated_at")
-          .order("name"),
-        context.supabase
-          .from("projects")
-          .select("id,name,description,status,client_id,created_at,updated_at")
-          .order("name"),
-        context.supabase.from("email_accounts").select("id,email,project_id").order("email"),
-        context.supabase
-          .from("developer_assets")
-          .select("id,project_id")
-          .order("created_at", { ascending: false }),
-        context.supabase
-          .from("ads_assets")
-          .select("id,project_id")
-          .order("created_at", { ascending: false }),
-      ]);
+    const [
+      clientsResult,
+      projectsResult,
+      accountsResult,
+      developerAssetsResult,
+      adsAssetsResult,
+      digitalAssetsResult,
+      documentsResult,
+    ] = await Promise.all([
+      context.supabase
+        .from("clients")
+        .select(
+          "id,name,description,website,legal_name,industry,contact_name,contact_email,contact_phone,address,city,logo_path,company_profile,scope_of_work,internal_notes,client_status,created_at,updated_at",
+        )
+        .order("name"),
+      context.supabase
+        .from("projects")
+        .select("id,name,description,status,client_id,created_at,updated_at")
+        .order("name"),
+      context.supabase.from("email_accounts").select("id,email,project_id").order("email"),
+      context.supabase
+        .from("developer_assets")
+        .select("id,project_id")
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("ads_assets")
+        .select("id,project_id")
+        .order("created_at", { ascending: false }),
+      context.supabase.from("client_digital_assets").select("id,client_id"),
+      context.supabase.from("client_documents").select("id,client_id"),
+    ]);
     if (
       clientsResult.error ||
       projectsResult.error ||
@@ -45,6 +56,8 @@ export const workspaceList = createServerFn({ method: "POST" })
     const accounts = accountsResult.data ?? [];
     const developerAssets = developerAssetsResult.data ?? [];
     const adsAssets = adsAssetsResult.data ?? [];
+    const digitalAssets = digitalAssetsResult.data ?? [];
+    const documents = documentsResult.data ?? [];
     return {
       clients: clients.map((client) => {
         const clientProjects = projects.filter((project) => project.client_id === client.id);
@@ -64,6 +77,8 @@ export const workspaceList = createServerFn({ method: "POST" })
           internalNotes: client.internal_notes,
           clientStatus: client.client_status,
           projectCount: clientProjects.length,
+          digitalAssetCount: digitalAssets.filter((item) => item.client_id === client.id).length,
+          documentCount: documents.filter((item) => item.client_id === client.id).length,
           emailCount: accounts.filter((account) => projectIds.has(account.project_id ?? "")).length,
           developerAssetCount: developerAssets.filter((item) =>
             projectIds.has(item.project_id ?? ""),
@@ -93,10 +108,18 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
       name: string;
       description?: string | null;
       website?: string | null;
-      legalName?: string | null; industry?: string | null; contactName?: string | null;
-      contactEmail?: string | null; contactPhone?: string | null; address?: string | null;
-      city?: string | null; logoPath?: string | null; companyProfile?: string | null;
-      scopeOfWork?: string | null; internalNotes?: string | null; clientStatus?: string;
+      legalName?: string | null;
+      industry?: string | null;
+      contactName?: string | null;
+      contactEmail?: string | null;
+      contactPhone?: string | null;
+      address?: string | null;
+      city?: string | null;
+      logoPath?: string | null;
+      companyProfile?: string | null;
+      scopeOfWork?: string | null;
+      internalNotes?: string | null;
+      clientStatus?: string;
     }) => {
       const name = text(input?.name, 120);
       if (!name) throw new Error("Nama client wajib diisi.");
@@ -116,7 +139,11 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
         company_profile: text(input?.companyProfile, 5000) || null,
         scope_of_work: text(input?.scopeOfWork, 5000) || null,
         internal_notes: text(input?.internalNotes, 3000) || null,
-        client_status: ["prospect","active","on-hold","completed","inactive"].includes(input?.clientStatus ?? "") ? input!.clientStatus! : "active",
+        client_status: ["prospect", "active", "on-hold", "completed", "inactive"].includes(
+          input?.clientStatus ?? "",
+        )
+          ? input!.clientStatus!
+          : "active",
       };
     },
   )
@@ -125,18 +152,14 @@ export const workspaceSaveClient = createServerFn({ method: "POST" })
     const { id, ...clientFields } = data;
     const payload = { ...clientFields, user_id: context.userId };
     const result = id
-      ? await context.supabase
-          .from("clients")
-          .update(payload)
-          .eq("id", id)
-          .select("id")
-          .single()
+      ? await context.supabase.from("clients").update(payload).eq("id", id).select("id").single()
       : await context.supabase.from("clients").insert(payload).select("id").single();
     if (result.error) {
       console.error("[workspaceSaveClient] Supabase error:", result.error);
       if (result.error.code === "23505") throw new Error("Nama client sudah digunakan.");
       if (result.error.code === "23502") throw new Error("Ada kolom wajib yang belum terisi.");
-      if (result.error.code === "42501") throw new Error("Tidak memiliki izin untuk menyimpan client. Silakan login ulang.");
+      if (result.error.code === "42501")
+        throw new Error("Tidak memiliki izin untuk menyimpan client. Silakan login ulang.");
       throw new Error(result.error.message || "Gagal menyimpan client.");
     }
     return result.data;
@@ -228,9 +251,17 @@ export const workspaceUpdateProjectStatus = createServerFn({ method: "POST" })
     const id = uuid(input?.id);
     const requestedStatus = text(input?.status, 50);
     const statusAliases: Record<string, string> = {
-      "things-to-do": "active", "queue-on-process": "active", "on-process": "active",
-      pending: "paused", revision: "paused", done: "archived", finished: "archived",
-      cancel: "archived", active: "active", paused: "paused", archived: "archived",
+      "things-to-do": "active",
+      "queue-on-process": "active",
+      "on-process": "active",
+      pending: "paused",
+      revision: "paused",
+      done: "archived",
+      finished: "archived",
+      cancel: "archived",
+      active: "active",
+      paused: "paused",
+      archived: "archived",
     };
     const status = statusAliases[requestedStatus];
     if (!status) throw new Error("Status proyek tidak valid.");

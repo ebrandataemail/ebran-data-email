@@ -20,7 +20,8 @@ export default defineConfig({
         process.env.VITE_SUPABASE_URL || "https://trqneozkhcswmiwhtdvc.supabase.co",
       ),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
-        process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_vsctG36gRKl4B9WU8eQqwg_Z3IxU5_y",
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+          "sb_publishable_vsctG36gRKl4B9WU8eQqwg_Z3IxU5_y",
       ),
     },
     optimizeDeps: {

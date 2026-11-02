@@ -1,13 +1,16 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   BriefcaseBusiness,
+  Building2,
   Calendar,
   CodeXml,
+  ExternalLink,
   Flame,
   FolderKanban,
+  Globe,
   LayoutGrid,
   Mail,
   Megaphone,
@@ -40,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 import {
   workspaceDeleteClient,
   workspaceDeleteProject,
@@ -53,15 +57,72 @@ import {
   parseProjectDescription,
   type PriorityLevel,
 } from "@/lib/projects/deadline";
-import { ClientDialog, type ClientData } from "./clients/ClientDialog";
-import { ClientWorkspacePanel } from "./clients/ClientWorkspacePanel";
 import { ClientDetailWorkspace } from "./clients/ClientDetailWorkspace";
+import { ClientDialog, type ClientData } from "./clients/ClientDialog";
 import { KanbanBoard } from "./projects/KanbanBoard";
 
 const KEY = ["workspace", "projects-clients"] as const;
 type Workspace = Awaited<ReturnType<typeof workspaceList>>;
 type Client = Workspace["clients"][number];
 type Project = Workspace["projects"][number];
+
+function ClientLogoAvatar({ logoPath, name }: { logoPath?: string | null; name: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!logoPath) return;
+    if (logoPath.startsWith("http")) {
+      setUrl(logoPath);
+      return;
+    }
+    supabase.storage
+      .from("client-files")
+      .createSignedUrl(logoPath, 3600)
+      .then(({ data }) => {
+        if (data?.signedUrl) setUrl(data.signedUrl);
+      });
+  }, [logoPath]);
+
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={name}
+        className="size-10 rounded-lg object-cover border border-slate-200"
+      />
+    );
+  }
+
+  return (
+    <span className="flex size-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold text-sm dark:bg-emerald-950 dark:text-emerald-200 shrink-0">
+      {name.slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
+const statusBadgeStyles: Record<string, { label: string; class: string }> = {
+  active: {
+    label: "Active Partner",
+    class:
+      "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200",
+  },
+  prospect: {
+    label: "New Lead / Prospek",
+    class: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-200",
+  },
+  "on-hold": {
+    label: "On Hold",
+    class: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
+  },
+  completed: {
+    label: "Completed",
+    class: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-200",
+  },
+  inactive: {
+    label: "Tidak Aktif",
+    class: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950 dark:text-rose-200",
+  },
+};
 
 export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) {
   const navigate = useNavigate();
@@ -74,11 +135,11 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
   const query = useQuery({ queryKey: KEY, queryFn: () => listFn(), staleTime: 30_000 });
   const data = query.data;
 
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"kanban" | "grid">("kanban");
   const [open, setOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -189,11 +250,12 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
               </span>
               <div>
                 <h1 className="text-xl font-semibold">
-                  {isClients ? "Client" : "Proyek & Workflows"}
+                  {isClients ? "Daftar Client & Perusahaan" : "Proyek & Workflows"}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Kelola status proyek, prioritas, tenggat waktu, dan data client yang
-                  tersinkronisasi.
+                  {isClients
+                    ? "Kelola data perusahaan, profil, kontak, aset digital, dan dokumen kerjasama."
+                    : "Kelola status proyek, prioritas, tenggat waktu, dan data client yang tersinkronisasi."}
                 </p>
               </div>
             </div>
@@ -222,9 +284,11 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                 </div>
               )}
 
-              <Button onClick={startCreate}>
+              <Button
+                onClick={() => (isClients ? void navigate({ to: "/clients/new" }) : startCreate())}
+              >
                 <Plus className="mr-1 size-4" />
-                Tambah {isClients ? "Client" : "Proyek"}
+                Tambah {isClients ? "Client Baru" : "Proyek"}
               </Button>
             </div>
           </div>
@@ -232,200 +296,303 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
 
         {/* Content Section */}
         <section className="mx-auto max-w-[1400px] space-y-5 px-4 py-6 sm:px-8">
-          {isClients && selectedClientId && data?.clients.some((client) => client.id === selectedClientId) ? (
+          {isClients &&
+          selectedClientId &&
+          data?.clients.some((client) => client.id === selectedClientId) ? (
             <ClientDetailWorkspace
-              client={data.clients.find((client) => client.id === selectedClientId)! as Client & ClientData}
+              client={
+                data.clients.find((client) => client.id === selectedClientId)! as Client &
+                  ClientData
+              }
               onBack={() => setSelectedClientId(null)}
-              onEdit={() => startClientEdit(data.clients.find((client) => client.id === selectedClientId)!)}
+              onEdit={() =>
+                startClientEdit(data.clients.find((client) => client.id === selectedClientId)!)
+              }
             />
           ) : (
-          <>
-          {!isClients && (
             <>
-              {/* Summary Metric Cards */}
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <BriefcaseBusiness className="text-muted-foreground" />
-                <div>
-                  <p className="text-2xl font-semibold">{data?.projects.length ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Total proyek</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <Users className="text-muted-foreground" />
-                <div>
-                  <p className="text-2xl font-semibold">{data?.clients.length ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Total client</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <Mail className="text-muted-foreground" />
-                <div>
-                  <p className="text-2xl font-semibold">{data?.unassignedEmailCount ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Email belum terhubung proyek</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <CodeXml className="text-muted-foreground" />
-                <div>
-                  <p className="text-2xl font-semibold">
-                    {data?.unassignedDeveloperAssetCount ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Aset developer belum terhubung proyek
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <Megaphone className="text-muted-foreground" />
-                <div>
-                  <p className="text-2xl font-semibold">{data?.unassignedAdsAssetCount ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Aset Ads belum terhubung proyek</p>
-                </div>
-              </CardContent>
-            </Card>
-              </div>
-            </>
-          )}
-
-          {query.isPending ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">Memuat data…</p>
-          ) : query.isError ? (
-            <div className="rounded-xl border p-6 text-center">
-              <p className="text-sm text-destructive">Gagal memuat data workspace.</p>
-              <Button className="mt-3" variant="outline" onClick={() => query.refetch()}>
-                Coba lagi
-              </Button>
-            </div>
-          ) : !isClients && viewMode === "kanban" ? (
-            /* Kanban Board View */
-            <KanbanBoard
-              projects={data?.projects ?? []}
-              clients={data?.clients ?? []}
-              queryKey={KEY}
-              onEditProject={startProjectEdit}
-              onAddProject={startCreate}
-            />
-          ) : (
-            /* Grid View */
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {(isClients ? data!.clients : data!.projects).map((item) => {
-                const client = isClients ? (item as Client) : null;
-                const project = isClients ? null : (item as Project);
-                const title = client?.name ?? project!.name;
-                const parsedDesc = project ? parseProjectDescription(project.description) : null;
-                const priorityInfo = parsedDesc ? getPriorityInfo(parsedDesc.priority) : null;
-
-                return (
-                  <Card key={item.id} className={isClients ? "cursor-pointer shadow-sm transition hover:border-primary/50 hover:shadow-md" : "shadow-sm"}>
-                    <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
-                          {isClients ? (
-                            <Users className="size-4" />
-                          ) : (
-                            <FolderKanban className="size-4" />
-                          )}
-                        </span>
+              {!isClients && (
+                <>
+                  {/* Summary Metric Cards */}
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <Card>
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <BriefcaseBusiness className="text-muted-foreground" />
                         <div>
-                          <CardTitle className="text-sm">{isClients ? <button type="button" className="text-left hover:text-primary" onClick={() => setSelectedClientId(item.id)}>{title}</button> : title}</CardTitle>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {isClients
-                              ? client!.website || "Client"
-                              : project!.clientName || "Tanpa client"}
+                          <p className="text-2xl font-semibold">{data?.projects.length ?? 0}</p>
+                          <p className="text-xs text-muted-foreground">Total proyek</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <Users className="text-muted-foreground" />
+                        <div>
+                          <p className="text-2xl font-semibold">{data?.clients.length ?? 0}</p>
+                          <p className="text-xs text-muted-foreground">Total client</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <Mail className="text-muted-foreground" />
+                        <div>
+                          <p className="text-2xl font-semibold">
+                            {data?.unassignedEmailCount ?? 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Email belum terhubung proyek
                           </p>
                         </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            isClients ? startClientEdit(client!) : startProjectEdit(project!)
-                          }
-                          aria-label="Edit"
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => void remove(item.id)}
-                          aria-label="Hapus"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-1 space-y-2">
-                      {priorityInfo && (
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className={priorityInfo.badgeClass}>
-                            <span
-                              className={`size-1.5 rounded-full mr-1 ${priorityInfo.dotClass}`}
-                            />
-                            {priorityInfo.label}
-                          </Badge>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <CodeXml className="text-muted-foreground" />
+                        <div>
+                          <p className="text-2xl font-semibold">
+                            {data?.unassignedDeveloperAssetCount ?? 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Aset developer belum terhubung proyek
+                          </p>
                         </div>
-                      )}
-                      <p className="line-clamp-2 min-h-10 text-xs text-muted-foreground">
-                        {parsedDesc
-                          ? parsedDesc.cleanDescription || "Belum ada deskripsi."
-                          : item.description || "Belum ada deskripsi."}
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <Megaphone className="text-muted-foreground" />
+                        <div>
+                          <p className="text-2xl font-semibold">
+                            {data?.unassignedAdsAssetCount ?? 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Aset Ads belum terhubung proyek
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              )}
+
+              {query.isPending ? (
+                <p className="py-16 text-center text-sm text-muted-foreground">Memuat data…</p>
+              ) : query.isError ? (
+                <div className="rounded-xl border p-6 text-center">
+                  <p className="text-sm text-destructive">Gagal memuat data workspace.</p>
+                  <Button className="mt-3" variant="outline" onClick={() => query.refetch()}>
+                    Coba lagi
+                  </Button>
+                </div>
+              ) : !isClients && viewMode === "kanban" ? (
+                /* Kanban Board View */
+                <KanbanBoard
+                  projects={data?.projects ?? []}
+                  clients={data?.clients ?? []}
+                  queryKey={KEY}
+                  onEditProject={startProjectEdit}
+                  onAddProject={startCreate}
+                />
+              ) : (
+                /* Grid View */
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {(isClients ? data!.clients : data!.projects).map((item) => {
+                    const client = isClients ? (item as Client) : null;
+                    const project = isClients ? null : (item as Project);
+                    const title = client?.name ?? project!.name;
+                    const parsedDesc = project
+                      ? parseProjectDescription(project.description)
+                      : null;
+                    const priorityInfo = parsedDesc ? getPriorityInfo(parsedDesc.priority) : null;
+                    const clientStatusMeta = client?.clientStatus
+                      ? statusBadgeStyles[client.clientStatus]
+                      : null;
+
+                    return (
+                      <Card
+                        key={item.id}
+                        className={
+                          isClients
+                            ? "group cursor-pointer shadow-sm transition hover:border-emerald-500/60 hover:shadow-md"
+                            : "shadow-sm"
+                        }
+                        onClick={(e) => {
+                          if (isClients && !(e.target as HTMLElement).closest("button")) {
+                            setSelectedClientId(item.id);
+                          }
+                        }}
+                      >
+                        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {isClients ? (
+                              <ClientLogoAvatar
+                                logoPath={client?.logoPath}
+                                name={client?.name ?? "Client"}
+                              />
+                            ) : (
+                              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                                <FolderKanban className="size-5" />
+                              </span>
+                            )}
+                            <div className="min-w-0">
+                              <CardTitle className="text-sm font-semibold truncate">
+                                {isClients ? (
+                                  <button
+                                    type="button"
+                                    className="text-left font-bold text-slate-900 hover:text-emerald-700 dark:text-slate-100 dark:hover:text-emerald-400"
+                                    onClick={() => setSelectedClientId(item.id)}
+                                  >
+                                    {title}
+                                  </button>
+                                ) : (
+                                  title
+                                )}
+                              </CardTitle>
+                              <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                                {isClients
+                                  ? client?.legalName
+                                    ? `${client.legalName} ${client.city ? `· ${client.city}` : ""}`
+                                    : client!.website || "Client"
+                                  : project!.clientName || "Tanpa client"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                isClients ? startClientEdit(client!) : startProjectEdit(project!)
+                              }
+                              aria-label="Edit"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => void remove(item.id)}
+                              aria-label="Hapus"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-3">
+                          {isClients && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {clientStatusMeta && (
+                                <Badge variant="outline" className={clientStatusMeta.class}>
+                                  {clientStatusMeta.label}
+                                </Badge>
+                              )}
+                              {client?.industry && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Building2 className="mr-1 size-3 text-muted-foreground" />
+                                  {client.industry}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
+                          {!isClients && priorityInfo && (
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" className={priorityInfo.badgeClass}>
+                                <span
+                                  className={`size-1.5 rounded-full mr-1 ${priorityInfo.dotClass}`}
+                                />
+                                {priorityInfo.label}
+                              </Badge>
+                            </div>
+                          )}
+
+                          <p className="line-clamp-2 min-h-10 text-xs text-muted-foreground">
+                            {parsedDesc
+                              ? parsedDesc.cleanDescription || "Belum ada deskripsi."
+                              : item.description || "Belum ada deskripsi."}
+                          </p>
+
+                          {isClients && (client?.contactEmail || client?.contactPhone) && (
+                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground pt-1 border-t">
+                              {client.contactEmail && (
+                                <span className="flex items-center gap-1 truncate">
+                                  <Mail className="size-3 shrink-0" />
+                                  {client.contactEmail}
+                                </span>
+                              )}
+                              {client.contactPhone && (
+                                <span className="flex items-center gap-1 truncate">
+                                  <Globe className="size-3 shrink-0" />
+                                  {client.contactPhone}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="mt-3 flex items-center justify-between pt-1 border-t">
+                            {isClients ? (
+                              <>
+                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                  {client!.projectCount} proyek ·{" "}
+                                  {(client as any).digitalAssetCount ?? 0} aset ·{" "}
+                                  {(client as any).documentCount ?? 0} dokumen
+                                </span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 dark:text-emerald-400"
+                                  onClick={() => setSelectedClientId(item.id)}
+                                >
+                                  Buka Workspace
+                                  <ExternalLink className="ml-1 size-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Badge variant="outline" className="capitalize text-xs">
+                                  {project!.status}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {project!.emailCount} email · {project!.developerAssetCount} dev ·{" "}
+                                  {project!.adsAssetCount} ads
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  {(isClients ? data!.clients : data!.projects).length === 0 && (
+                    <div className="col-span-full rounded-xl border border-dashed p-12 text-center">
+                      <p className="text-sm font-medium">
+                        Belum ada {isClients ? "client" : "proyek"}.
                       </p>
-                      <div className="mt-3 flex items-center justify-between">
-                        {isClients ? (
-                          <Badge variant="secondary">
-                            {client!.projectCount} proyek ·{" "}
-                            {client!.emailCount +
-                              client!.developerAssetCount +
-                              client!.adsAssetCount}{" "}
-                            aset
-                          </Badge>
-                        ) : (
-                          <>
-                            <Badge variant="outline" className="capitalize text-xs">
-                              {project!.status}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {project!.emailCount} email · {project!.developerAssetCount} dev ·{" "}
-                              {project!.adsAssetCount} ads
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-              {(isClients ? data!.clients : data!.projects).length === 0 && (
-                <div className="col-span-full rounded-xl border border-dashed p-12 text-center">
-                  <p className="text-sm font-medium">
-                    Belum ada {isClients ? "client" : "proyek"}.
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Tambahkan data pertama untuk mulai menghubungkan akun email dan status proyek.
-                  </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {isClients
+                          ? "Klik 'Tambah Client Baru' untuk membuka Formulir Pendaftaran Klien & Proyek Baru."
+                          : "Tambahkan data pertama untuk mulai menghubungkan akun email dan status proyek."}
+                      </p>
+                      {isClients && (
+                        <Button
+                          className="mt-4 bg-[#003837] text-white hover:bg-[#022e2d]"
+                          onClick={() => void navigate({ to: "/clients/new" })}
+                        >
+                          <Plus className="mr-1.5 size-4" />
+                          Tambah Client Baru
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-          {isClients && data && <ClientWorkspacePanel clients={data.clients} />}
-          </>
+            </>
           )}
         </section>
       </main>
 
-      {/* Client Dialog */}
+      {/* Client Edit Dialog */}
       <ClientDialog
         open={open && isClients}
         onOpenChange={setOpen}
@@ -440,12 +607,6 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                 name: clientData.name,
                 description: clientData.description,
                 website: clientData.website,
-                legalName: clientData.legalName, industry: clientData.industry,
-                contactName: clientData.contactName, contactEmail: clientData.contactEmail,
-                contactPhone: clientData.contactPhone, address: clientData.address, city: clientData.city,
-                logoPath: clientData.logoPath, companyProfile: clientData.companyProfile,
-                scopeOfWork: clientData.scopeOfWork, internalNotes: clientData.internalNotes,
-                clientStatus: clientData.clientStatus,
               },
             });
             await queryClient.invalidateQueries({ queryKey: KEY });

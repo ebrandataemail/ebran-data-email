@@ -264,8 +264,13 @@ export function AiChatPageContent() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">Asisten AI Ebran</p>
           <p className="truncate text-xs text-muted-foreground">
-            Konteks: {assetId === "workspace" ? "Seluruh Workspace Client & Proyek" : assetId === asset.id ? "Instagram Newton" : assetId.slice(0, 8)} · Rahasia
-            terlindungi
+            Konteks:{" "}
+            {assetId === "workspace"
+              ? "Seluruh Workspace Client & Proyek"
+              : assetId === asset.id
+                ? "Instagram Newton"
+                : assetId.slice(0, 8)}{" "}
+            · Rahasia terlindungi
           </p>
         </div>
       </div>

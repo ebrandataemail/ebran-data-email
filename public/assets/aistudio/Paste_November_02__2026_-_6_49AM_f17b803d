@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B2B CRM - Tambah Klien Baru</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Menggunakan Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #dce3e8; /* Background utama B2B CRM */
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 p-2 sm:p-6 lg:p-8 flex flex-col items-center">
+
+  <!-- Main Unified Container -->
+  <div class="w-full max-w-[1400px] bg-[#f8fafc] rounded-xl shadow-2xl overflow-hidden border border-slate-300">
+    
+    <!-- Top Navigation Bar (Dark Teal) -->
+    <header class="bg-[#003837] text-white px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs tracking-wide select-none">
+      <div class="flex items-center space-x-3 overflow-x-auto custom-scrollbar">
+        <!-- Platform Logo Emblem -->
+        <div class="w-7 h-7 rounded-md bg-[#ea580c] flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0" title="Enterprise CRM Platform">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+
+        <nav class="flex items-center space-x-1">
+          <button type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#012625] text-white font-medium transition hover:bg-[#022e2d]">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5 opacity-90"></i>
+            <span>Tambah Klien</span>
+          </button>
+          <button type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded text-slate-200 hover:text-white hover:bg-[#012a29] transition">
+            <i data-lucide="building-2" class="w-3.5 h-3.5 opacity-80"></i>
+            <span>Daftar Perusahaan</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Right Nav controls -->
+      <div class="flex items-center space-x-3 text-slate-300">
+        <!-- Workspace User Badge -->
+        <div class="w-7 h-7 rounded-full bg-[#f59e0b] text-[#78350f] font-bold flex items-center justify-center text-xs shadow" title="Workspace Admin">
+          BF
+        </div>
+      </div>
+    </header>
+
+    <!-- Header Formulir -->
+    <div class="bg-white border-b border-slate-200 px-6 py-5 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight">Formulir Pendaftaran Klien &amp; Proyek Baru</h1>
+        <p class="text-xs text-slate-500 mt-1">Lengkapi data informasi perusahaan, kontak, timeline proyek, dan aset digital (kredensial).</p>
+      </div>
+      <button type="button" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition shadow-sm">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5 text-slate-500"></i>
+        <span>Kembali</span>
+      </button>
+    </div>
+
+    <!-- Area Formulir -->
+    <form id="add-client-form" class="p-4 sm:p-6" onsubmit="event.preventDefault(); showToast('Klien berhasil disimpan!');">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Kolom Kiri (8 Cols) - Data Utama, Timeline, Kredensial, Dokumen -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <!-- Card 1: Informasi Utama Klien -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
+              <i data-lucide="building" class="w-4 h-4 text-emerald-600"></i>
+              Profil Utama Klien
+            </h2>
+
+            <!-- UPLOAD LOGO SECTION -->
+            <div class="flex items-center space-x-5 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <div class="relative group cursor-pointer" id="logo-upload-trigger">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 overflow-hidden group-hover:border-emerald-500 group-hover:text-emerald-600 transition-colors relative z-10" id="logo-preview-container">
+                  <i data-lucide="image-plus" class="w-5 h-5 mb-0.5" id="logo-icon"></i>
+                  <span class="text-[8px] font-semibold text-center leading-tight" id="logo-text">Upload<br>Logo</span>
+                  <img id="logo-preview-img" src="" alt="Preview Logo" class="hidden absolute inset-0 w-full h-full object-cover bg-white z-20">
+                </div>
+                <input type="file" id="logo-upload-input" accept="image/png, image/jpeg, image/jpg, image/svg+xml" class="hidden">
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Logo / Foto Profil Perusahaan</h3>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Unggah logo resmi klien untuk mempermudah identifikasi pada Kanban dan Dashboard. <br>
+                  <span class="font-medium">Format:</span> JPG, PNG, atau SVG (Maks. 2MB).
+                </p>
+                <div class="mt-2 flex gap-2">
+                  <button type="button" class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded hover:bg-emerald-100 transition" onclick="document.getElementById('logo-upload-input').click();">Pilih Gambar</button>
+                  <button type="button" id="btn-remove-logo" class="hidden text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded hover:bg-red-100 transition">Hapus</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Nama Perusahaan -->
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Perusahaan / Merek <span class="text-red-500">*</span></label>
+                <input type="text" placeholder="Cth: Sultan Haramain Gresik" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-sm" required>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Kontak Resmi <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <input type="email" placeholder="Cth: kontak@perusahaan.com" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-sm" required>
+                </div>
+              </div>
+
+              <!-- Telepon -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nomor Telepon / WhatsApp <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <input type="tel" placeholder="Cth: 0811-3107-707" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-sm" required>
+                </div>
+              </div>
+
+              <!-- Website -->
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Website Utama</label>
+                <div class="relative">
+                  <i data-lucide="globe" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <input type="url" placeholder="Cth: www.sultanharamaingresik.com" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-sm">
+                </div>
+              </div>
+
+              <!-- Alamat Lengkap -->
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alamat Lengkap Perusahaan <span class="text-red-500">*</span></label>
+                <textarea rows="3" placeholder="Jl. Samanhudi No. 37, Kebungson, Kec. Gresik, Jawa Timur 61114" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-sm resize-none"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Pengaturan Proyek & Timeline -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
+              <i data-lucide="calendar-clock" class="w-4 h-4 text-blue-600"></i>
+              Timeline &amp; Skala Proyek
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <!-- Start Project -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Tanggal Start Project <span class="text-red-500">*</span></label>
+                <input type="datetime-local" id="start-project" value="2026-10-20T10:00" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm">
+              </div>
+
+              <!-- Target Penyelesaian -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Target Penyelesaian <span class="text-red-500">*</span></label>
+                <input type="datetime-local" id="target-project" value="2026-10-25T10:00" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm">
+              </div>
+
+              <!-- Hasil Kalkulasi Jangka Waktu -->
+              <div class="md:col-span-2 bg-[#ccfbf1] border border-[#99f6e4] text-[#0f766e] rounded-md p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span class="text-xs font-bold uppercase tracking-wider">Kalkulasi Jangka Waktu :</span>
+                </div>
+                <div class="font-bold font-mono text-sm tracking-wide bg-white/50 px-3 py-1 rounded border border-[#99f6e4]" id="duration-display">
+                  10d : 3h : 50m : 2s
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Manajemen Kredensial & Aset Digital (NEW) -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-2 pb-3 border-b border-slate-100">
+              <i data-lucide="shield-check" class="w-4 h-4 text-rose-500"></i>
+              Daftar Aset Digital &amp; Kredensial Klien
+            </h2>
+            <p class="text-xs text-slate-500 mb-5 leading-relaxed">
+              Simpan informasi kredensial yang diserahkan klien (Email utama, Social Media, Website/CMS, Kunci 2FA, dll). Data ini terenkripsi dan dapat diatur hak aksesnya (Parent-Child account).
+            </p>
+
+            <div class="space-y-5">
+              <!-- A. Akun Pusat (Email Utama) -->
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h3 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"><i data-lucide="key" class="w-3.5 h-3.5 text-slate-500"></i> Akun Utama Klien (Master Email)</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Email Utama / Username</label>
+                    <input type="text" placeholder="admin@domainklien.com" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 shadow-sm">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Password</label>
+                    <div class="relative">
+                      <input type="password" placeholder="••••••••" class="w-full pl-3 pr-10 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 shadow-sm pwd-input">
+                      <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 toggle-pwd">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">No. HP Pemulihan (Recovery)</label>
+                    <input type="text" placeholder="0812-xxxx-xxxx" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 shadow-sm">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kode Pemulihan / 2FA Secret Key</label>
+                    <input type="text" placeholder="Teks base32 rahasia / 8-digit backup codes" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 shadow-sm">
+                  </div>
+                </div>
+              </div>
+
+              <!-- B. Custom Accounts Repeater -->
+              <div>
+                <h3 class="text-xs font-bold text-slate-800 mb-2.5">Daftar Akun Lainnya (Medsos, Web, API, dll)</h3>
+                
+                <!-- Container untuk baris kredensial dinamis -->
+                <div id="custom-accounts-container" class="space-y-3">
+                  <!-- Baris 1 (Default) -->
+                  <div class="flex flex-col md:flex-row gap-3 items-end p-3 bg-white border border-slate-200 rounded-lg relative group transition-colors hover:border-slate-300">
+                    <div class="w-full md:w-1/4">
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Platform / Web / URL Login</label>
+                      <input type="text" placeholder="Instagram / Link WP Admin" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition">
+                    </div>
+                    <div class="w-full md:w-1/4">
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">User / ID / API Key</label>
+                      <input type="text" placeholder="@username / id_klien" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition">
+                    </div>
+                    <div class="w-full md:w-1/4">
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Password / Secret</label>
+                      <div class="relative">
+                        <input type="password" placeholder="••••••••" class="w-full pl-2.5 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition pwd-input">
+                        <button type="button" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 toggle-pwd"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+                      </div>
+                    </div>
+                    <div class="w-full md:w-1/4">
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Note (Role / Hak Akses)</label>
+                      <input type="text" placeholder="Misal: Hanya Admin" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition">
+                    </div>
+                    <button type="button" class="md:absolute right-3 top-3 md:top-auto md:bottom-2 text-slate-300 hover:text-red-500 transition-colors bg-white remove-account-btn" title="Hapus Baris">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Tombol Tambah Baris -->
+                <button type="button" id="btn-add-account" class="mt-3 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-md transition flex items-center gap-1.5">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Akun / Kredensial Lainnya
+                </button>
+              </div>
+
+              <!-- C. Catatan Keamanan / Vault Note -->
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1.5">Catatan Penting Keamanan &amp; Integrasi</label>
+                <textarea rows="2" placeholder="Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif (expired date) hosting/domain, atau struktur parent-child account..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 shadow-sm resize-none"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Dokumen Pendukung (FILE UPLOAD) -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+              <i data-lucide="folder-open" class="w-4 h-4 text-amber-500"></i>
+              Dokumen Pendukung
+            </h2>
+
+            <!-- Dropzone Area -->
+            <div id="doc-dropzone" class="w-full border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer group">
+              <div class="w-10 h-10 rounded-full bg-white shadow-sm text-blue-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform border border-slate-200">
+                <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+              </div>
+              <h3 class="text-xs font-bold text-slate-900 mb-1">Klik untuk unggah atau seret &amp; lepas</h3>
+              <p class="text-[10px] text-slate-500">NPWP, Kontrak, Guideline (PDF, DOCX, JPG - Maks 10MB)</p>
+              <input type="file" id="doc-upload-input" multiple class="hidden">
+            </div>
+
+            <!-- List Preview File yang Diunggah -->
+            <div id="doc-file-list" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
+              <!-- Item dilempar ke sini via JavaScript -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Kolom Kanan (4 Cols) - Status, Klasifikasi & Aksi -->
+        <div class="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+          
+          <!-- Card 5: Klasifikasi & Penugasan -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-2 pb-3 border-b border-slate-100">
+              <i data-lucide="tags" class="w-4 h-4 text-purple-600"></i>
+              Klasifikasi &amp; Penugasan
+            </h2>
+
+            <!-- Status Klien / Project -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Status Client / Project <span class="text-red-500">*</span></label>
+              <select class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 shadow-sm">
+                <option value="active">🟢 Active Partner</option>
+                <option value="onhold" selected>🔴 On Hold</option>
+                <option value="lead">🟡 New Lead / Prospek</option>
+                <option value="completed">🔵 Completed / Selesai</option>
+              </select>
+            </div>
+
+            <!-- Priority -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prioritas Layanan</label>
+              <select class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 shadow-sm">
+                <option value="enterprise" selected>Enterprise (High Priority)</option>
+                <option value="standard">Standard</option>
+                <option value="basic">Basic / Freelance Task</option>
+              </select>
+            </div>
+
+            <!-- Kategori Industri / Tags -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Label Kategori (Tags)</label>
+              <input type="text" placeholder="Cth: Umrah, Tour & Travel" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 shadow-sm">
+              <p class="text-[10px] text-slate-500 mt-1">Pisahkan dengan tanda koma (,)</p>
+            </div>
+            
+            <!-- Tim Terlibat -->
+            <div class="pt-3 border-t border-slate-100">
+              <label class="block text-xs font-semibold text-slate-700 mb-2">Assignees (Otomatis ditambahkan)</label>
+              <div class="flex items-center -space-x-2">
+                <div class="w-7 h-7 rounded-full ring-2 ring-white bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">DS</div>
+                <div class="w-7 h-7 rounded-full ring-2 ring-white bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">AM</div>
+                <div class="w-7 h-7 rounded-full border border-slate-300 ring-2 ring-white bg-slate-50 text-slate-400 text-xs flex items-center justify-center shadow-sm cursor-pointer hover:bg-slate-100">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6: Tombol Aksi Simpan -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <p class="text-[11px] text-slate-500 mb-4 leading-relaxed">
+              Dengan menyimpan form ini, Workspace Proyek dan Vault Kredensial baru akan secara otomatis dibuat.
+            </p>
+            <div class="flex flex-col gap-2.5">
+              <button type="submit" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-[#003837] text-white rounded-md text-sm font-bold hover:bg-[#022e2d] transition shadow-md">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Simpan Klien Baru</span>
+              </button>
+              <button type="button" class="w-full flex items-center justify-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+                Batalkan
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // Inisialisasi Ikon Lucide
+    lucide.createIcons();
+    
+    // ----------------------------------------------------
+    // LOGIKA TOAST NOTIFICATION (Menggantikan alert())
+    // ----------------------------------------------------
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgColor = type === 'error' ? 'bg-red-500' : 'bg-emerald-600';
+      const icon = type === 'error' ? 'alert-circle' : 'check-circle';
+      
+      toast.className = `flex items-center gap-2 ${bgColor} text-white px-4 py-3 rounded shadow-lg text-sm transition-all duration-300 transform translate-y-4 opacity-0`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${message}</span>`;
+      
+      container.appendChild(toast);
+      lucide.createIcons();
+      
+      // Animate In
+      setTimeout(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+      }, 10);
+      
+      // Animate Out & Remove
+      setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // ----------------------------------------------------
+    // LOGIKA PREVIEW UPLOAD LOGO (Card 1)
+    // ----------------------------------------------------
+    const logoInput = document.getElementById('logo-upload-input');
+    const logoPreviewImg = document.getElementById('logo-preview-img');
+    const logoIcon = document.getElementById('logo-icon');
+    const logoText = document.getElementById('logo-text');
+    const btnRemoveLogo = document.getElementById('btn-remove-logo');
+    const logoContainer = document.getElementById('logo-upload-trigger');
+
+    logoContainer.addEventListener('click', () => logoInput.click());
+
+    logoInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if(file.size > 2 * 1024 * 1024) {
+          showToast("Ukuran file terlalu besar. Maksimal 2MB.", 'error');
+          this.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          logoPreviewImg.src = event.target.result;
+          logoPreviewImg.classList.remove('hidden');
+          logoIcon.classList.add('hidden');
+          logoText.classList.add('hidden');
+          btnRemoveLogo.classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    btnRemoveLogo.addEventListener('click', function() {
+      logoInput.value = '';
+      logoPreviewImg.src = '';
+      logoPreviewImg.classList.add('hidden');
+      logoIcon.classList.remove('hidden');
+      logoText.classList.remove('hidden');
+      this.classList.add('hidden');
+    });
+
+    // ----------------------------------------------------
+    // LOGIKA PERHITUNGAN DURASI (Card 2)
+    // ----------------------------------------------------
+    const startInput = document.getElementById('start-project');
+    const targetInput = document.getElementById('target-project');
+    const durationDisplay = document.getElementById('duration-display');
+
+    function calculateDuration() {
+      const start = new Date(startInput.value);
+      const target = new Date(targetInput.value);
+
+      if (isNaN(start) || isNaN(target) || start >= target) {
+        durationDisplay.textContent = "0d : 0h : 0m : 0s";
+        durationDisplay.classList.add("text-red-500");
+        return;
+      }
+      durationDisplay.classList.remove("text-red-500");
+      let diff = Math.abs(target - start) / 1000;
+      const days = Math.floor(diff / 86400);
+      diff -= days * 86400;
+      const hours = Math.floor(diff / 3600) % 24;
+      diff -= hours * 3600;
+      const minutes = Math.floor(diff / 60) % 60;
+      const seconds = 0; 
+      durationDisplay.textContent = `${days}d : ${hours}h : ${minutes}m : ${seconds}s`;
+    }
+    calculateDuration();
+    startInput.addEventListener('change', calculateDuration);
+    targetInput.addEventListener('change', calculateDuration);
+
+    // ----------------------------------------------------
+    // LOGIKA DINAMIS KREDENSIAL / ASET DIGITAL (Card 3)
+    // ----------------------------------------------------
+    // Toggle Password Visibility
+    document.addEventListener('click', function(e) {
+      const toggleBtn = e.target.closest('.toggle-pwd');
+      if(toggleBtn) {
+        const input = toggleBtn.previousElementSibling;
+        const icon = toggleBtn.querySelector('svg');
+        if(input.type === 'password') {
+          input.type = 'text';
+          toggleBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>'; // Update with lucide string then render
+          lucide.createIcons();
+        } else {
+          input.type = 'password';
+          toggleBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+          lucide.createIcons();
+        }
+      }
+    });
+
+    // Add New Custom Account Row
+    const btnAddAccount = document.getElementById('btn-add-account');
+    const accountsContainer = document.getElementById('custom-accounts-container');
+
+    btnAddAccount.addEventListener('click', function() {
+      const row = document.createElement('div');
+      row.className = 'flex flex-col md:flex-row gap-3 items-end p-3 bg-white border border-slate-200 rounded-lg relative group transition-colors hover:border-slate-300';
+      row.innerHTML = `
+        <div class="w-full md:w-1/4">
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Platform / Web / URL Login</label>
+          <input type="text" placeholder="..." class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition">
+        </div>
+        <div class="w-full md:w-1/4">
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">User / ID / API Key</label>
+          <input type="text" placeholder="..." class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition">
+        </div>
+        <div class="w-full md:w-1/4">
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Password / Secret</label>
+          <div class="relative">
+            <input type="password" placeholder="••••••••" class="w-full pl-2.5 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition pwd-input">
+            <button type="button" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 toggle-pwd"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+        <div class="w-full md:w-1/4">
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Note (Role / Hak Akses)</label>
+          <input type="text" placeholder="..." class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs focus:bg-white focus:outline-none focus:border-rose-400 transition">
+        </div>
+        <button type="button" class="md:absolute right-3 top-3 md:top-auto md:bottom-2 text-slate-300 hover:text-red-500 transition-colors bg-white remove-account-btn" title="Hapus Baris">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `;
+      accountsContainer.appendChild(row);
+      lucide.createIcons();
+    });
+
+    // Remove Custom Account Row
+    accountsContainer.addEventListener('click', function(e) {
+      const removeBtn = e.target.closest('.remove-account-btn');
+      if(removeBtn) {
+        removeBtn.parentElement.remove();
+      }
+    });
+
+    // ----------------------------------------------------
+    // LOGIKA MULTI-UPLOAD DOKUMEN PENDUKUNG (Card 4)
+    // ----------------------------------------------------
+    const docDropzone = document.getElementById('doc-dropzone');
+    const docUploadInput = document.getElementById('doc-upload-input');
+    const docFileList = document.getElementById('doc-file-list');
+    let selectedDocs = [];
+
+    docDropzone.addEventListener('click', () => {
+      docUploadInput.click();
+    });
+
+    // Fitur Drag & Drop Dasar
+    docDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      docDropzone.classList.add('bg-blue-50', 'border-blue-400');
+    });
+    docDropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      docDropzone.classList.remove('bg-blue-50', 'border-blue-400');
+    });
+    docDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      docDropzone.classList.remove('bg-blue-50', 'border-blue-400');
+      if (e.dataTransfer.files.length) {
+        handleDocFiles(e.dataTransfer.files);
+      }
+    });
+
+    docUploadInput.addEventListener('change', (e) => {
+      handleDocFiles(e.target.files);
+    });
+
+    function handleDocFiles(files) {
+      const newFiles = Array.from(files);
+      const validFiles = newFiles.filter(file => {
+        if(file.size > 10 * 1024 * 1024) {
+          showToast(`File ${file.name} terlalu besar (Maks. 10MB).`, 'error');
+          return false;
+        }
+        return true;
+      });
+      selectedDocs = [...selectedDocs, ...validFiles];
+      renderDocList();
+    }
+
+    function renderDocList() {
+      if (selectedDocs.length > 0) {
+        docFileList.classList.remove('hidden');
+      } else {
+        docFileList.classList.add('hidden');
+      }
+      
+      docFileList.innerHTML = '';
+      selectedDocs.forEach((file, index) => {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 border border-slate-200 rounded-md bg-slate-50 hover:bg-slate-100 transition';
+        item.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="p-2 bg-white rounded shadow-sm text-slate-500 border border-slate-100">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+            </div>
+            <div class="truncate">
+              <p class="text-xs font-bold text-slate-700 truncate w-40 sm:w-48">${file.name}</p>
+              <p class="text-[10px] text-slate-400 font-medium">${sizeMB} MB</p>
+            </div>
+          </div>
+          <button type="button" class="text-slate-400 hover:text-red-600 bg-white p-1.5 rounded border border-slate-200 hover:border-red-200 transition" onclick="removeDoc(${index})" title="Hapus File">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        docFileList.appendChild(item);
+      });
+      lucide.createIcons(); // render ulang ikon lucide
+    }
+
+    window.removeDoc = function(index) {
+      selectedDocs.splice(index, 1);
+      docUploadInput.value = ''; 
+      renderDocList();
+    };
+  </script>
+</body>
+</html>
