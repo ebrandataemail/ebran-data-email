@@ -136,7 +136,7 @@ export function ClientDetailWorkspace({
   const [newAssetUser, setNewAssetUser] = useState("");
   const [newAssetNote, setNewAssetNote] = useState("");
 
-  const queryKey = ["client-workspace-detail", client.id];
+  const queryKey = useMemo(() => ["client-workspace-detail", client.id], [client.id]);
 
   useEffect(() => {
     let active = true;
@@ -240,7 +240,7 @@ export function ClientDetailWorkspace({
       active = false;
       void supabase.removeChannel(channel);
     };
-  }, [client.id, qc]);
+  }, [client.id, qc, queryKey]);
 
   const dbData = query.data;
 
