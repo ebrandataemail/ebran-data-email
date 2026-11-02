@@ -357,6 +357,7 @@ export function ClientCreatePage() {
           do_rules: dosRules.trim() || null,
           dont_rules: dontsRules.trim() || null,
           important_notes: catatanPenting.trim() || null,
+          vault_notes: vaultNote.trim() || null,
           tags: tagsInput.split(",").map((tag) => tag.trim()).filter(Boolean),
           service_priority: priority === "basic" ? "standard" : priority,
         });
@@ -388,6 +389,7 @@ export function ClientCreatePage() {
             prioritas: briefPrioritas,
             pic: briefPic,
             konfirmasi: briefKonfirmasi,
+            deadline: briefDeadline || null,
           },
         },
         targetAt
