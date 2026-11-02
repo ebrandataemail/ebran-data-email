@@ -115,6 +115,7 @@ export async function handleAiChat(request: Request) {
   if (assetId === "workspace") {
     const [
       clientsResult,
+      brandProfilesResult,
       projectsResult,
       tasksResult,
       assetsResult,
@@ -129,6 +130,8 @@ export async function handleAiChat(request: Request) {
         .eq("user_id", auth.userId)
         .order("name")
         .limit(100),
+      (auth.supabase.from("client_brand_profiles" as any) as any)
+        .select("client_id,primary_color,secondary_color,tone_of_voice,company_overview,pain_points,agency_goals,do_rules,dont_rules,important_notes,tags,service_priority"),
       auth.supabase
         .from("projects")
         .select("id,client_id,name,description,status,created_at,updated_at")
@@ -167,6 +170,7 @@ export async function handleAiChat(request: Request) {
 
     const errors = [
       clientsResult.error,
+      brandProfilesResult.error,
       projectsResult.error,
       tasksResult.error,
       assetsResult.error,
@@ -179,6 +183,7 @@ export async function handleAiChat(request: Request) {
     }
 
     const clients = clientsResult.data ?? [];
+    const brandProfiles = brandProfilesResult.data ?? [];
     const projects = projectsResult.data ?? [];
     const byClient = (rows: Array<{ client_id: string }>, clientId: string) =>
       rows.filter((row) => row.client_id === clientId);
@@ -195,6 +200,7 @@ export async function handleAiChat(request: Request) {
       },
       clients: clients.map((client) => ({
         ...client,
+        brandProfile: brandProfiles.find((profile: any) => profile.client_id === client.id) ?? null,
         projects: byClient(projects, client.id),
         tasks: byClient(tasksResult.data ?? [], client.id),
         digitalAssets: byClient(assetsResult.data ?? [], client.id),
