@@ -174,8 +174,6 @@ type CustomAccountRow = {
   id?: string;
   platform: string;
   username: string;
-  password: string;
-  showPassword?: boolean;
   note: string;
 };
 
@@ -228,13 +226,8 @@ export function ClientDetailWorkspace({
 
   // Digital Assets & Kredensial Form State
   const [masterEmail, setMasterEmail] = useState("");
-  const [masterPassword, setMasterPassword] = useState("");
-  const [showMasterPassword, setShowMasterPassword] = useState(false);
-  const [recoveryPhone, setRecoveryPhone] = useState("");
-  const [recovery2fa, setRecovery2fa] = useState("");
   const [newAssetPlatform, setNewAssetPlatform] = useState("");
   const [newAssetUser, setNewAssetUser] = useState("");
-  const [newAssetPass, setNewAssetPass] = useState("");
   const [newAssetNote, setNewAssetNote] = useState("");
   const [vaultNote, setVaultNote] = useState(
     "Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif hosting/domain, atau struktur parent-child account...",
@@ -295,14 +288,6 @@ export function ClientDetailWorkspace({
       );
       if (masterAsset) {
         setMasterEmail(masterAsset.username || "");
-        if (masterAsset.notes) {
-          const passMatch = masterAsset.notes.match(/Password:\s*([^|]+)/);
-          const recMatch = masterAsset.notes.match(/Recovery HP:\s*([^|]+)/);
-          const secretMatch = masterAsset.notes.match(/2FA Secret:\s*([^|]+)/);
-          if (passMatch) setMasterPassword(passMatch[1].trim());
-          if (recMatch) setRecoveryPhone(recMatch[1].trim());
-          if (secretMatch) setRecovery2fa(secretMatch[1].trim());
-        }
       }
     }
   }, [dbData]);
@@ -467,9 +452,7 @@ export function ClientDetailWorkspace({
         asset_type: "other",
         platform: newAssetPlatform.trim() || null,
         username: newAssetUser.trim() || null,
-        notes: [newAssetPass ? `Password: ${newAssetPass}` : null, newAssetNote ? `Note: ${newAssetNote}` : null]
-          .filter(Boolean)
-          .join(" | "),
+        notes: newAssetNote.trim() || null,
       });
 
       if (error) throw error;
@@ -477,7 +460,6 @@ export function ClientDetailWorkspace({
       await qc.invalidateQueries({ queryKey });
       setNewAssetPlatform("");
       setNewAssetUser("");
-      setNewAssetPass("");
       setNewAssetNote("");
       toast.success("Aset digital baru berhasil ditambahkan!");
     } catch (err) {
@@ -1858,54 +1840,9 @@ export function ClientDetailWorkspace({
                           className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
                         />
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                          Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showMasterPassword ? "text" : "password"}
-                            value={masterPassword}
-                            onChange={(e) => setMasterPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-3 pr-10 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowMasterPassword(!showMasterPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                          >
-                            {showMasterPassword ? (
-                              <EyeOff className="size-4" />
-                            ) : (
-                              <Eye className="size-4" />
-                            )}
-                          </button>
-                        </div>
+                      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
+                        Password, recovery code, dan secret 2FA belum dapat disimpan dengan aman. Fitur kredensial rahasia dinonaktifkan sampai Secure Vault terenkripsi tersedia.
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                          No. HP Pemulihan (Recovery)
-                        </label>
-                        <input
-                          type="text"
-                          value={recoveryPhone}
-                          onChange={(e) => setRecoveryPhone(e.target.value)}
-                          placeholder="0812-xxxx-xxxx"
-                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                          Kode Pemulihan / 2FA Secret Key
-                        </label>
-                        <input
-                          type="text"
-                          value={recovery2fa}
-                          onChange={(e) => setRecovery2fa(e.target.value)}
-                          placeholder="Teks base32 rahasia / 8-digit backup codes"
-                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
-                        />
                       </div>
                     </div>
                   </div>
@@ -1983,17 +1920,8 @@ export function ClientDetailWorkspace({
                             className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                            Password
-                          </label>
-                          <input
-                            type="password"
-                            value={newAssetPass}
-                            onChange={(e) => setNewAssetPass(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
-                          />
+                        <div className="flex items-center rounded border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10px] text-amber-800">
+                          Secret tidak disimpan sebelum Secure Vault tersedia.
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
