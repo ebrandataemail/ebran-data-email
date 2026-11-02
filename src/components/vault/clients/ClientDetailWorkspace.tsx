@@ -929,7 +929,7 @@ export function ClientDetailWorkspace({
                         AI Profile Builder
                       </h2>
                       <p className="text-[10px] text-slate-500">
-                        Auto-generate seluruh card profil klien dari berbagai sumber data.
+                        Simpan sumber brand dan brief ke database. Tidak ada pemanggilan AI eksternal atau token Lovable.
                       </p>
                     </div>
                   </div>
@@ -1012,18 +1012,14 @@ export function ClientDetailWorkspace({
                           Upload Brand Guideline / Company Profile / Brief
                         </h3>
                         <p className="text-[10px] text-slate-500">
-                          PDF, DOCX, PPTX, atau TXT. AI akan mengekstrak warna, font, dan profil secara otomatis.
+                          PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, WEBP · Maks. 20 MB.
                         </p>
                         <input
                           type="file"
                           id="ai-file-input"
-                          accept=".pdf,.docx,.pptx,.txt"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
                           className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files?.length) {
-                              toast.success(`File "${e.target.files[0].name}" siap dianalisis AI!`);
-                            }
-                          }}
+                          onChange={(e) => setBrandSourceFile(e.target.files?.[0] ?? null)}
                         />
                       </div>
                     )}
@@ -1035,7 +1031,9 @@ export function ClientDetailWorkspace({
                         </label>
                         <input
                           type="url"
-                          placeholder="https://sultanharamaingresik.com"
+                          value={brandSourceUrl}
+                          onChange={(e) => setBrandSourceUrl(e.target.value)}
+                          placeholder="https://example.com"
                           className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -1048,7 +1046,9 @@ export function ClientDetailWorkspace({
                         </label>
                         <input
                           type="text"
-                          placeholder="@sultanharamain_gresik"
+                          value={brandSourceSocial}
+                          onChange={(e) => setBrandSourceSocial(e.target.value)}
+                          placeholder="@username"
                           className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -1061,7 +1061,9 @@ export function ClientDetailWorkspace({
                         </label>
                         <textarea
                           rows={2}
-                          placeholder="Ringkaskan profil bisnis travel umrah, keunggulan hotel bintang 5 Makkah/Madinah, dan poin komunikasi utama..."
+                          value={brandSourcePrompt}
+                          onChange={(e) => setBrandSourcePrompt(e.target.value)}
+                          placeholder="Instruksi khusus tentang profil, tone, dan batasan brand..."
                           className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -1070,14 +1072,12 @@ export function ClientDetailWorkspace({
                     <div className="mt-5 flex justify-end">
                       <button
                         type="button"
-                        onClick={() =>
-                          toast.success(
-                            "AI Agent sedang mengumpulkan dan menyusun data profil klien...",
-                          )
-                        }
-                        className="flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg"
+                        onClick={() => void handleSaveBrandSource()}
+                        disabled={busy}
+                        className="flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50"
                       >
-                        <BrainCircuit className="size-4" /> Generate Profile Klien
+                        <Save className="size-4" />
+                        {busy ? "Menyimpan..." : "Simpan Sumber Profil"}
                       </button>
                     </div>
                   </div>
