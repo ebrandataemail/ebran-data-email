@@ -16,12 +16,13 @@ import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
-import { Route as AuthenticatedClientsNewRouteImport } from './routes/_authenticated/clients.new'
 import { Route as AuthenticatedDeveloperToolsRouteImport } from './routes/_authenticated/developer-tools'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as AuthenticatedWorkboardRouteImport } from './routes/_authenticated/workboard'
+import { Route as AuthenticatedClientsIndexRouteImport } from './routes/_authenticated/clients.index'
+import { Route as AuthenticatedClientsNewRouteImport } from './routes/_authenticated/clients.new'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -58,11 +59,6 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedClientsNewRoute = AuthenticatedClientsNewRouteImport.update({
-  id: '/clients/new',
-  path: '/clients/new',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDeveloperToolsRoute =
   AuthenticatedDeveloperToolsRouteImport.update({
     id: '/developer-tools',
@@ -89,6 +85,17 @@ const AuthenticatedWorkboardRoute = AuthenticatedWorkboardRouteImport.update({
   path: '/workboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientsIndexRoute =
+  AuthenticatedClientsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedClientsRoute,
+  } as any)
+const AuthenticatedClientsNewRoute = AuthenticatedClientsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedClientsRoute,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai/chat',
   path: '/api/ai/chat',
@@ -101,14 +108,15 @@ export interface FileRoutesByFullPath {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
-  '/clients': typeof AuthenticatedClientsRoute
-  '/clients/new': typeof AuthenticatedClientsNewRoute
+  '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
+  '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
+  '/clients/': typeof AuthenticatedClientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -116,13 +124,14 @@ export interface FileRoutesByTo {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
-  '/clients': typeof AuthenticatedClientsRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
+  '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
+  '/clients': typeof AuthenticatedClientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,14 +141,15 @@ export interface FileRoutesById {
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
-  '/_authenticated/clients': typeof AuthenticatedClientsRoute
-  '/_authenticated/clients/new': typeof AuthenticatedClientsNewRoute
+  '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
   '/_authenticated/developer-tools': typeof AuthenticatedDeveloperToolsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/_authenticated/workboard': typeof AuthenticatedWorkboardRoute
+  '/_authenticated/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
+  '/_authenticated/clients/': typeof AuthenticatedClientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,13 +160,14 @@ export interface FileRouteTypes {
     | '/ads'
     | '/ai'
     | '/clients'
-    | '/clients/new'
     | '/developer-tools'
     | '/projects'
     | '/social'
     | '/vault'
     | '/workboard'
+    | '/clients/new'
     | '/api/ai/chat'
+    | '/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -164,13 +175,14 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/ads'
     | '/ai'
-    | '/clients'
     | '/developer-tools'
     | '/projects'
     | '/social'
     | '/vault'
     | '/workboard'
+    | '/clients/new'
     | '/api/ai/chat'
+    | '/clients'
   id:
     | '__root__'
     | '/'
@@ -180,13 +192,14 @@ export interface FileRouteTypes {
     | '/_authenticated/ads'
     | '/_authenticated/ai'
     | '/_authenticated/clients'
-    | '/_authenticated/clients/new'
     | '/_authenticated/developer-tools'
     | '/_authenticated/projects'
     | '/_authenticated/social'
     | '/_authenticated/vault'
     | '/_authenticated/workboard'
+    | '/_authenticated/clients/new'
     | '/api/ai/chat'
+    | '/_authenticated/clients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -247,13 +260,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/clients/new': {
-      id: '/_authenticated/clients/new'
-      path: '/clients/new'
-      fullPath: '/clients/new'
-      preLoaderRoute: typeof AuthenticatedClientsNewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/developer-tools': {
       id: '/_authenticated/developer-tools'
       path: '/developer-tools'
@@ -289,6 +295,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clients/': {
+      id: '/_authenticated/clients/'
+      path: '/'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof AuthenticatedClientsIndexRouteImport
+      parentRoute: typeof AuthenticatedClientsRoute
+    }
+    '/_authenticated/clients/new': {
+      id: '/_authenticated/clients/new'
+      path: '/new'
+      fullPath: '/clients/new'
+      preLoaderRoute: typeof AuthenticatedClientsNewRouteImport
+      parentRoute: typeof AuthenticatedClientsRoute
+    }
     '/api/ai/chat': {
       id: '/api/ai/chat'
       path: '/api/ai/chat'
@@ -299,12 +319,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedClientsRouteChildren {
+  AuthenticatedClientsNewRoute: typeof AuthenticatedClientsNewRoute
+  AuthenticatedClientsIndexRoute: typeof AuthenticatedClientsIndexRoute
+}
+
+const AuthenticatedClientsRouteChildren: AuthenticatedClientsRouteChildren = {
+  AuthenticatedClientsNewRoute: AuthenticatedClientsNewRoute,
+  AuthenticatedClientsIndexRoute: AuthenticatedClientsIndexRoute,
+}
+
+const AuthenticatedClientsRouteWithChildren =
+  AuthenticatedClientsRoute._addFileChildren(AuthenticatedClientsRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
-  AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
-  AuthenticatedClientsNewRoute: typeof AuthenticatedClientsNewRoute
+  AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
   AuthenticatedDeveloperToolsRoute: typeof AuthenticatedDeveloperToolsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
@@ -316,8 +348,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
-  AuthenticatedClientsRoute: AuthenticatedClientsRoute,
-  AuthenticatedClientsNewRoute: AuthenticatedClientsNewRoute,
+  AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
   AuthenticatedDeveloperToolsRoute: AuthenticatedDeveloperToolsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
