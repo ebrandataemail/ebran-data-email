@@ -99,84 +99,6 @@ export type WorkboardTask = {
   perluKonfirmasi: string;
 };
 
-const DUMMY_WORKBOARD_TASKS: WorkboardTask[] = [
-  {
-    id: "WB-V3",
-    judul: "Revisi Desain Spanduk Air Zam Zam — V3",
-    clientProyek: "PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah",
-    ringkasan: "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
-    spesifikasi: "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
-    checklist: [
-      { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
-      { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
-    ],
-    deadline: "2026-10-28T15:00",
-    deadlineDisplay: "Oct 28, 2026 · 15:00 WIB",
-    prioritas: "Enterprise",
-    prioritasBadge: "bg-purple-100 text-purple-700 border-purple-200",
-    pic: "DS",
-    perluKonfirmasi: "ukuran logo yang diinginkan client belum disebut.",
-  },
-  {
-    id: "WB-102",
-    judul: "Revisi Copywriting Brosur Umroh Promo Ramadhan 1448H",
-    clientProyek: "Sultan Haramain Gresik · Brosur Cetak A5",
-    ringkasan: "Penyesuaian legalitas Kemenag dan revisi paket bintang lima Makkah/Madinah.",
-    spesifikasi: "Brosur Lipat 3 · Art Paper 150gsm · Laminasi Doff",
-    checklist: [
-      { text: "Update nomor registrasi PPIU Kemenag No. 102/2024", note: "Legal", done: true },
-      { text: "Perjelas fasilitas hotel bintang lima & kereta cepat", note: "Direksi", done: false },
-    ],
-    deadline: "2026-11-04T12:00",
-    deadlineDisplay: "Nov 04, 2026 · 12:00 WIB",
-    prioritas: "Urgent",
-    prioritasBadge: "bg-rose-100 text-rose-700 border-rose-200",
-    pic: "AM",
-    perluKonfirmasi: "Nomor kontak CS Gresik belum diverifikasi oleh admin cabang.",
-  },
-  {
-    id: "WB-103",
-    judul: "Setup Landing Page Katalog Produk & Pemesanan Grosir",
-    clientProyek: "Sultan Haramain Gresik · Portal Online",
-    ringkasan: "Integrasi formulir pemesanan distributor dan webhook notifikasi WhatsApp tim CS.",
-    spesifikasi: "Next.js Frontend · TailwindCSS · PostgreSQL database",
-    checklist: [
-      { text: "Integrasikan form checkout grosir dengan API ekspedisi", note: "Dev", done: false },
-      { text: "Pasang badge sertifikasi Halal & BPOM di footer", note: "Legal", done: false },
-    ],
-    deadline: "2026-11-10T23:59",
-    deadlineDisplay: "Nov 10, 2026 · 23:59 WIB",
-    prioritas: "High",
-    prioritasBadge: "bg-amber-100 text-amber-700 border-amber-200",
-    pic: "DS",
-    perluKonfirmasi: "Kredensial API WhatsApp Gateway belum diterima dari tim IT.",
-  },
-  {
-    id: "WB-104",
-    judul: "Quality Check & Verifikasi Aset Kredensial Hosting cPanel",
-    clientProyek: "Sultan Haramain Gresik · Infrastruktur Digital",
-    ringkasan: "Audit sertifikat keamanan SSL, backup harian database, dan pembersihan file cache.",
-    spesifikasi: "Cloud Server Linux · cPanel & WHM · Multi-region backup",
-    checklist: [
-      { text: "Perbarui sertifikat SSL Let's Encrypt domain utama", note: "Sec", done: true },
-      { text: "Uji restore snapshot database cabang Gresik", note: "QC", done: true },
-    ],
-    deadline: "2026-11-02T15:00",
-    deadlineDisplay: "Nov 02, 2026 · 15:00 WIB",
-    prioritas: "Normal",
-    prioritasBadge: "bg-blue-100 text-blue-700 border-blue-200",
-    pic: "FM",
-    perluKonfirmasi: "",
-  },
-];
-
-type CustomAccountRow = {
-  id?: string;
-  platform: string;
-  username: string;
-  note: string;
-};
-
 export function ClientDetailWorkspace({
   client,
   onBack,
@@ -211,24 +133,15 @@ export function ClientDetailWorkspace({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Timeline Form State
-  const [judul, setJudul] = useState("Revisi Desain Spanduk Air Zam Zam — V3");
-  const [clientProyek, setClientProyek] = useState(
-    `${client.name} · Spanduk Keberangkatan Umrah`,
-  );
-  const [ringkasan, setRingkasan] = useState(
-    "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
-  );
-  const [spesifikasi, setSpesifikasi] = useState(
-    "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
-  );
-  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([
-    { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
-    { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
-  ]);
-  const [deadline, setDeadline] = useState("2026-10-28T15:00");
-  const [prioritas, setPrioritas] = useState("Enterprise");
-  const [pic, setPic] = useState("DS");
-  const [konfirmasi, setKonfirmasi] = useState("ukuran logo yang diinginkan client belum disebut.");
+  const [judul, setJudul] = useState("");
+  const [clientProyek, setClientProyek] = useState(client.name);
+  const [ringkasan, setRingkasan] = useState("");
+  const [spesifikasi, setSpesifikasi] = useState("");
+  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([]);
+  const [deadline, setDeadline] = useState("");
+  const [prioritas, setPrioritas] = useState("Standard");
+  const [pic, setPic] = useState("");
+  const [konfirmasi, setKonfirmasi] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
@@ -236,9 +149,7 @@ export function ClientDetailWorkspace({
   // Profile AI Builder & Interactive State
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [aiTab, setAITab] = useState<"upload" | "link" | "social" | "prompt">("upload");
-  const [catatanPentingText, setCatatanPentingText] = useState(
-    `Note untuk Tim Internal:\n• Kontrak kerja sama diperpanjang hingga Desember 2026.\n• Fokus Q4 adalah kampanye "Umrah Nyaman Bersama Keluarga".\n• Dilarang mengubah aset logo tanpa persetujuan Bpk. Dwi.`,
-  );
+  const [catatanPentingText, setCatatanPentingText] = useState("");
 
   // Digital Assets & Kredensial Form State
   const [masterEmail, setMasterEmail] = useState("");
@@ -334,17 +245,36 @@ export function ClientDetailWorkspace({
   }, [dbData]);
 
   // Filtered workboard tasks inside modal
-  const filteredWorkboardTasks = useMemo(() => {
+  const filteredWorkboardTasks = useMemo<WorkboardTask[]>(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return DUMMY_WORKBOARD_TASKS;
-    return DUMMY_WORKBOARD_TASKS.filter(
-      (t) =>
-        t.judul.toLowerCase().includes(q) ||
-        t.clientProyek.toLowerCase().includes(q) ||
-        t.pic.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q),
-    );
-  }, [searchQuery]);
+    return (dbData?.tasks ?? [])
+      .map((task: DBRow) => {
+        const priority = String(task.priority || "medium");
+        const deadline = task.due_date ? `${task.due_date}T00:00` : "";
+        return {
+          id: task.id,
+          judul: task.title,
+          clientProyek: client.name,
+          ringkasan: task.description || "",
+          spesifikasi: "",
+          checklist: [],
+          deadline,
+          deadlineDisplay: task.due_date
+            ? new Date(`${task.due_date}T00:00:00`).toLocaleDateString("id-ID")
+            : "Tanpa deadline",
+          prioritas: priority,
+          prioritasBadge: priority === "urgent" || priority === "high"
+            ? "bg-rose-100 text-rose-700 border-rose-200"
+            : "bg-slate-100 text-slate-700 border-slate-200",
+          pic: task.assignee || "",
+          perluKonfirmasi: "",
+        };
+      })
+      .filter((task: WorkboardTask) =>
+        !q || [task.judul, task.clientProyek, task.pic, task.id]
+          .some((value) => value.toLowerCase().includes(q)),
+      );
+  }, [dbData?.tasks, searchQuery, client.name]);
 
   // Apply a Workboard Task to form
   const applyWorkboardTask = (task: WorkboardTask) => {
@@ -1752,7 +1682,9 @@ export function ClientDetailWorkspace({
                   </div>
 
                   <div className="space-y-2.5">
-                    {DUMMY_WORKBOARD_TASKS.slice(0, 3).map((task) => (
+                    {filteredWorkboardTasks.length === 0 ? (
+                      <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada task tersimpan untuk client ini.</p>
+                    ) : filteredWorkboardTasks.slice(0, 3).map((task) => (
                       <div
                         key={task.id}
                         className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 transition hover:border-emerald-200 hover:bg-white"
@@ -1828,6 +1760,11 @@ export function ClientDetailWorkspace({
                         </div>
                       ))
                     ) : (
+                      <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada agenda atau aktivitas tersimpan.</p>
+                    )}
+                  </div>
+                </div>
+                {false && (
                       <>
                         <div className="group relative flex gap-3">
                           <div className="absolute left-[11px] top-6 -z-0 h-full w-px bg-slate-200"></div>
@@ -1863,6 +1800,7 @@ export function ClientDetailWorkspace({
                     )}
                   </div>
                 </div>
+                )}
 
                 <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
                   <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-blue-900">
@@ -1887,7 +1825,7 @@ export function ClientDetailWorkspace({
                   Daftar Aset Digital &amp; Kredensial Klien
                 </h2>
                 <p className="mb-5 text-xs leading-relaxed text-slate-500">
-                  Simpan informasi kredensial yang diserahkan klien (Email utama, Social Media, Website/CMS, Kunci 2FA, dll). Data ini terenkripsi dan dapat diatur hak aksesnya (Parent-Child account).
+                  Simpan metadata aset digital seperti platform, URL, dan username. Password serta secret 2FA dinonaktifkan sampai Secure Vault terenkripsi tersedia.
                 </p>
 
                 <div className="space-y-5">
