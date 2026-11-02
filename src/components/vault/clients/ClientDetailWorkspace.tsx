@@ -182,7 +182,22 @@ export function ClientDetailWorkspace({
   onBack,
   onEdit,
 }: {
-  client: ClientData & { id: string };
+  client: ClientData & {
+    id: string;
+    brandProfile?: {
+      primary_color?: string;
+      secondary_color?: string;
+      tone_of_voice?: string | null;
+      company_overview?: string | null;
+      pain_points?: string | null;
+      agency_goals?: string | null;
+      do_rules?: string | null;
+      dont_rules?: string | null;
+      important_notes?: string | null;
+      tags?: string[];
+      service_priority?: string;
+    } | null;
+  };
   onBack: () => void;
   onEdit: () => void;
 }) {
@@ -216,6 +231,7 @@ export function ClientDetailWorkspace({
   const [konfirmasi, setKonfirmasi] = useState("ukuran logo yang diinginkan client belum disebut.");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
 
   // Profile AI Builder & Interactive State
   const [showAIPanel, setShowAIPanel] = useState(true);
@@ -235,10 +251,27 @@ export function ClientDetailWorkspace({
 
   const queryKey = ["client-workspace-detail", client.id];
 
+  useEffect(() => {
+    let active = true;
+    if (!client.logoPath) {
+      setLogoUrl("");
+      return () => { active = false; };
+    }
+    if (client.logoPath.startsWith("http")) {
+      setLogoUrl(client.logoPath);
+      return () => { active = false; };
+    }
+    void supabase.storage.from("client-files").createSignedUrl(client.logoPath, 3600)
+      .then(({ data, error }) => {
+        if (active) setLogoUrl(error ? "" : data?.signedUrl ?? "");
+      });
+    return () => { active = false; };
+  }, [client.logoPath]);
+
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const [eventsRes, assetsRes, docsRes, tasksRes] = await Promise.all([
+      const [eventsRes, assetsRes, docsRes, tasksRes, brandProfileRes] = await Promise.all([
         supabase
           .from("client_timeline_events")
           .select("*")
@@ -259,7 +292,14 @@ export function ClientDetailWorkspace({
           .select("*")
           .eq("client_id", client.id)
           .order("created_at", { ascending: false }),
+        (supabase.from("client_brand_profiles" as any) as any)
+          .select("*")
+          .eq("client_id", client.id)
+          .maybeSingle(),
       ]);
+
+      const queryError = eventsRes.error || assetsRes.error || docsRes.error || tasksRes.error || brandProfileRes.error;
+      if (queryError) throw new Error(queryError.message || "Gagal memuat workspace client.");
 
       const events: DBRow[] = eventsRes.data ?? [];
       const assets: DBRow[] = assetsRes.data ?? [];
@@ -273,6 +313,7 @@ export function ClientDetailWorkspace({
         assets,
         docs,
         tasks,
+        brandProfile: brandProfileRes.data ?? null,
         userId: authData.user?.id ?? "",
       };
     },
@@ -753,14 +794,11 @@ export function ClientDetailWorkspace({
 
                 <div className="flex items-center space-x-4">
                   <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-                    {client.logoPath ? (
+                    {logoUrl ? (
                       <img
-                        src={`https://s7dviyflfx6iihwzteii2r.supabase.co/storage/v1/object/public/client-files/${client.logoPath}`}
+                        src={logoUrl}
                         alt={client.name}
                         className="size-full rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center rounded-full bg-gradient-to-br from-[#c9a75d] to-[#a67c27] text-center font-serif text-xs font-bold leading-none text-white">
@@ -844,6 +882,38 @@ export function ClientDetailWorkspace({
           {/* TAB CONTENT: PROFILE CLIENT */}
           {activeTab === "profile" && (
             <div className="space-y-5 animate-fade-in">
+              {dbData?.brandProfile && (
+                <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-sm font-bold text-slate-900">Brand Profile Tersimpan</h2>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                      Prioritas {dbData.brandProfile.service_priority || "standard"}
+                    </span>
+                  </div>
+                  <div className="mb-4 flex items-center gap-3 text-[11px] text-slate-600">
+                    <span className="flex items-center gap-1.5"><i className="size-4 rounded border" style={{ backgroundColor: dbData.brandProfile.primary_color }} /> Warna utama</span>
+                    <span className="flex items-center gap-1.5"><i className="size-4 rounded border" style={{ backgroundColor: dbData.brandProfile.secondary_color }} /> Warna sekunder</span>
+                    {dbData.brandProfile.tags?.map((tag: string) => <span key={tag} className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">{tag}</span>)}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      ["Overview", dbData.brandProfile.company_overview],
+                      ["Tone of Voice", dbData.brandProfile.tone_of_voice],
+                      ["Pain Points", dbData.brandProfile.pain_points],
+                      ["Agency Goals", dbData.brandProfile.agency_goals],
+                      ["DOs", dbData.brandProfile.do_rules],
+                      ["DONTs", dbData.brandProfile.dont_rules],
+                      ["Catatan Penting", dbData.brandProfile.important_notes],
+                    ].filter((item) => item[1]).map(([label, value]) => (
+                      <div key={label} className="rounded-lg bg-slate-50 p-3">
+                        <h3 className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</h3>
+                        <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* ✨ AI PROFILE BUILDER WIDGET ✨ */}
               <div className="relative mb-6 overflow-hidden rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-sm">
                 <div className="pointer-events-none absolute right-0 top-0 p-8 opacity-20">
