@@ -627,6 +627,12 @@ export function TaskBriefWorkspace({
                 {activeSection === "resources" && <></>}
                 {activeSection === "risks" && <section className="rounded-xl border border-border p-4"><h4 className="text-sm font-bold">Risks &amp; Open Questions</h4><textarea value={brief.open_questions.join("\n")} onChange={(e) => patchBrief({ open_questions: splitLines(e.target.value) })} rows={5} className="mt-2 w-full rounded-md border border-border bg-background p-2 text-xs" placeholder="Pertanyaan yang belum terjawab, risiko, dan dependensi…" /></section>}
                 {activeSection === "specifications" && <section className="rounded-xl border border-border p-4"><h4 className="text-sm font-bold">Technical Specifications</h4><p className="mt-2 text-xs text-muted-foreground">Tuliskan ukuran, resolusi, platform, format file, aksesibilitas, browser/device, brand rules, dan batasan teknis.</p></section>}
+                <section className="space-y-3 rounded-xl border border-border p-4">
+                  <div><h4 className="text-sm font-bold">Internal Notes &amp; Comments</h4><p className="text-[10px] text-muted-foreground">Catatan ini hanya terlihat oleh tim internal dan tidak ikut ke client share.</p></div>
+                  <textarea value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} rows={2} placeholder="Catatan internal untuk bagian ini…" className="w-full rounded-md border border-border bg-background p-2 text-xs" />
+                  <button type="button" onClick={() => void addInternalComment()} disabled={!brief.id || !commentDraft.trim()} className="rounded-md border px-3 py-2 text-xs disabled:opacity-50">Add internal note</button>
+                  {comments.filter((comment) => !comment.section_key || comment.section_key === activeSection).map((comment) => <div key={comment.id} className="border-t border-border pt-2 text-xs"><p>{comment.comment}</p><p className="mt-1 text-[9px] text-muted-foreground">{new Date(comment.created_at).toLocaleString("id-ID")}</p></div>)}
+                </section>
               </main>
             </div>
             <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/30 px-4 py-3">
