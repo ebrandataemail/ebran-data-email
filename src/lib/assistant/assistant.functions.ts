@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { UIMessage } from "ai";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asset } from "@/data/asset";
 import { extractDocument, formatEnv, generateNote, runAudit } from "./assistant.server";
@@ -8,11 +11,7 @@ import { extractDocument, formatEnv, generateNote, runAudit } from "./assistant.
 const MAX_OCR_BYTES = 8 * 1024 * 1024;
 const OCR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
 
-type AuthedSupabase = Parameters<
-  Parameters<ReturnType<typeof createServerFn>["handler"]>[0]
-> extends never
-  ? never
-  : import("@supabase/supabase-js").SupabaseClient<import("@/integrations/supabase/types").Database>;
+type AuthedSupabase = SupabaseClient<Database>;
 
 /** A chat target is the sample asset, the workspace, or a row the signed-in user owns. */
 async function isOwnedChatTarget(supabase: AuthedSupabase, userId: string, assetId: string) {
