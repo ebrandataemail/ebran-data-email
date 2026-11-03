@@ -28,6 +28,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { aiChatHistory, aiClearChat } from "@/lib/assistant/assistant.functions";
 import { errorMessage } from "./use-ai";
 
+const CLIENT_SUGGESTIONS = [
+  "Ringkas profil dan status client ini untuk tim.",
+  "Task apa yang mendesak atau menunggu konfirmasi?",
+  "Buat ide 3 konten sesuai tone of voice client ini.",
+];
+
 const SUGGESTIONS = [
   "Apa risiko keamanan terbesar akun ini?",
   "Kapan token API harus dirotasi?",
@@ -128,7 +134,7 @@ function ChatWindow({
                   </p>
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
-                  {SUGGESTIONS.map((s) => (
+                  {(assetId.startsWith("client:") ? CLIENT_SUGGESTIONS : SUGGESTIONS).map((s) => (
                     <Button
                       key={s}
                       variant="outline"
@@ -269,7 +275,9 @@ export function AiChatPageContent() {
               ? "Seluruh Workspace Client & Proyek"
               : assetId === asset.id
                 ? "Instagram Newton"
-                : assetId.slice(0, 8)}{" "}
+                : assetId.startsWith("client:")
+                  ? "Profil client terpilih"
+                  : assetId.slice(0, 8)}{" "}
             · Rahasia terlindungi
           </p>
         </div>

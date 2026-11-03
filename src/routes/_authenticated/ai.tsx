@@ -5,6 +5,10 @@ import { AiChatPageContent } from "@/components/vault/AiChat";
 
 export const Route = createFileRoute("/_authenticated/ai")({
   head: () => ({ meta: [{ title: "Tanya AI · Ebran Aset Digital" }] }),
+  validateSearch: (search: Record<string, unknown>): { assetId?: string } =>
+    typeof search["assetId"] === "string" && search["assetId"].length <= 100
+      ? { assetId: search["assetId"] }
+      : {},
   component: AiPage,
 });
 

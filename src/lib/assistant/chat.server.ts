@@ -10,6 +10,8 @@ import { asset } from "@/data/asset";
 import { createAiModel, aiProviderOptions, toAiError } from "@/lib/ai/lovable.server";
 import { chatInstructions } from "./assistant.server";
 import { buildAssetBrief } from "./context";
+import { redactSecrets } from "@/lib/clients/client-ai-shared";
+import { loadClientBrief } from "@/lib/clients/client-ai.server";
 
 const HISTORY_LIMIT = 40;
 
@@ -180,7 +182,7 @@ export async function handleAiChat(request: Request) {
 
     const clients = clientsResult.data ?? [];
     const projects = projectsResult.data ?? [];
-    const byClient = (rows: Array<{ client_id: string }>, clientId: string) =>
+    const byClient = <T extends { client_id: string | null }>(rows: T[], clientId: string) =>
       rows.filter((row) => row.client_id === clientId);
     brief = {
       type: "workspace",
@@ -197,7 +199,10 @@ export async function handleAiChat(request: Request) {
         ...client,
         projects: byClient(projects, client.id),
         tasks: byClient(tasksResult.data ?? [], client.id),
-        digitalAssets: byClient(assetsResult.data ?? [], client.id),
+        digitalAssets: byClient(assetsResult.data ?? [], client.id).map((item) => ({
+          ...item,
+          notes: redactSecrets(item.notes),
+        })),
         documents: byClient(documentsResult.data ?? [], client.id),
         timeline: byClient(timelineResult.data ?? [], client.id),
       })),
@@ -207,6 +212,15 @@ export async function handleAiChat(request: Request) {
       securityNote:
         "Konteks ini hanya memuat metadata operasional. Password, encrypted values, API secrets, token, dan kode 2FA tidak pernah dimuat.",
     };
+  } else if (assetId.startsWith("client:")) {
+    // One saved conversation per client; context is loaded server-side and secrets are masked.
+    const clientId = assetId.slice("client:".length);
+    if (!/^[0-9a-f-]{36}$/i.test(clientId)) return json(400, "Client tidak valid.");
+    try {
+      brief = await loadClientBrief(auth.supabase, auth.userId, clientId);
+    } catch {
+      return json(500, "Gagal memuat data client untuk AI.");
+    }
   } else if (assetId === asset.id) {
     // Dummy asset fallback (legacy/home page)
     brief = buildAssetBrief();
