@@ -180,6 +180,7 @@ export function WorkboardContent() {
         query={query}
         tasks={boardTasks}
         clients={clients}
+        projects={projects}
         loading={loading}
         onCreate={createTask}
         onUpdate={updateTask}
