@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertCircle, CheckCircle2, ClipboardCheck, Clock3, Download, FileText,
-  History, Link2, Loader2, Plus, Save, Share2, Sparkles, Trash2, Wand2, X,
+  ClipboardCheck, Download, FileText, History, Loader2, Plus, Save, Share2, Sparkles, Trash2, Wand2, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,8 +34,6 @@ const EMPTY_BRIEF: BriefRow = {
   work_steps: [], assumptions: [], open_questions: [], current_version: 1,
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const statusLabel = (status: string) => status === "confirmed" ? "Confirmed" : status === "needs_confirmation" ? "Needs confirmation" : "Missing";
-const statusClass = (status: string) => status === "confirmed" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : status === "needs_confirmation" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-rose-200 bg-rose-50 text-rose-700";
 const splitLines = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean);
 
 export function TaskBriefWorkspace({
