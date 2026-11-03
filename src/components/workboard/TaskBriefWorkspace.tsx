@@ -56,6 +56,8 @@ export function TaskBriefWorkspace({
   const [approvals, setApprovals] = useState<any[]>([]);
   const [shares, setShares] = useState<any[]>([]);
   const [shareFeedback, setShareFeedback] = useState<any[]>([]);
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentDraft, setCommentDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -92,6 +94,7 @@ export function TaskBriefWorkspace({
       setApprovals([]);
       setShares([]);
       setShareFeedback([]);
+      setComments([]);
       setDirty(false);
       hydrated.current = true;
       return;
@@ -110,8 +113,9 @@ export function TaskBriefWorkspace({
         setApprovals([]);
         setShares([]);
         setShareFeedback([]);
+        setComments([]);
       } else {
-        const [d, s, r, v, a, sh] = await Promise.all([
+        const [d, s, r, v, a, sh, cm] = await Promise.all([
           (supabase.from("task_brief_deliverables" as any) as any).select("*").eq("brief_id", row.id).order("sort_order"),
           (supabase.from("task_brief_sources" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
           (supabase.from("task_brief_revision_requests" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
@@ -119,7 +123,7 @@ export function TaskBriefWorkspace({
           (supabase.from("task_brief_approvals" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
           (supabase.from("task_brief_shares" as any) as any).select("id,allow_comments,allow_confirmation,expires_at,revoked_at,created_at").eq("brief_id", row.id).order("created_at", { ascending: false }),
         ]);
-        for (const result of [d, s, r, v, a, sh]) if (result.error) throw result.error;
+        for (const result of [d, s, r, v, a, sh, cm]) if (result.error) throw result.error;
         const deliverableRows = d.data ?? [];
         const criteria = deliverableRows.length
           ? await (supabase.from("task_brief_acceptance_criteria" as any) as any).select("*").in("deliverable_id", deliverableRows.map((x: any) => x.id)).order("sort_order")
@@ -148,6 +152,7 @@ export function TaskBriefWorkspace({
           if (feedback.error) throw feedback.error;
           setShareFeedback(feedback.data ?? []);
         } else setShareFeedback([]);
+        setComments(cm.data ?? []);
       }
       setDirty(false);
       hydrated.current = true;
