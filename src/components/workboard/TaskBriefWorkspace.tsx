@@ -54,6 +54,8 @@ export function TaskBriefWorkspace({
   const [revisions, setRevisions] = useState<any[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
   const [approvals, setApprovals] = useState<any[]>([]);
+  const [shares, setShares] = useState<any[]>([]);
+  const [shareFeedback, setShareFeedback] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -86,6 +88,8 @@ export function TaskBriefWorkspace({
       setRevisions([]);
       setVersions([]);
       setApprovals([]);
+      setShares([]);
+      setShareFeedback([]);
       setDirty(false);
       hydrated.current = true;
       return;
@@ -109,8 +113,9 @@ export function TaskBriefWorkspace({
           (supabase.from("task_brief_revision_requests" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
           (supabase.from("task_brief_versions" as any) as any).select("id,version_number,status,change_note,created_at").eq("brief_id", row.id).order("version_number", { ascending: false }),
           (supabase.from("task_brief_approvals" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
+          (supabase.from("task_brief_shares" as any) as any).select("id,allow_comments,allow_confirmation,expires_at,revoked_at,created_at").eq("brief_id", row.id).order("created_at", { ascending: false }),
         ]);
-        for (const result of [d, s, r, v, a]) if (result.error) throw result.error;
+        for (const result of [d, s, r, v, a, sh]) if (result.error) throw result.error;
         const deliverableRows = d.data ?? [];
         const criteria = deliverableRows.length
           ? await (supabase.from("task_brief_acceptance_criteria" as any) as any).select("*").in("deliverable_id", deliverableRows.map((x: any) => x.id)).order("sort_order")
@@ -132,6 +137,13 @@ export function TaskBriefWorkspace({
         setRevisions(r.data ?? []);
         setVersions(v.data ?? []);
         setApprovals(a.data ?? []);
+        setShares(sh.data ?? []);
+        const activeShareIds = (sh.data ?? []).map((item: any) => item.id);
+        if (activeShareIds.length) {
+          const feedback = await (supabase.from("task_brief_share_feedback" as any) as any).select("*").in("share_id", activeShareIds).order("created_at", { ascending: false });
+          if (feedback.error) throw feedback.error;
+          setShareFeedback(feedback.data ?? []);
+        } else setShareFeedback([]);
       }
       setDirty(false);
       hydrated.current = true;
@@ -333,7 +345,7 @@ export function TaskBriefWorkspace({
   async function createVersion() {
     let saved = brief;
     try { saved = await persist(); } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal menyimpan"); return; }
-    const next = Number(saved.current_version || 0) + 1;
+    const next = versions.length ? Number(saved.current_version || 1) + 1 : Number(saved.current_version || 1);
     const snapshot = { ...saved, deliverables };
     const { error } = await (supabase.from("task_brief_versions" as any) as any).insert({
       brief_id: saved.id, version_number: next, status: saved.status, snapshot, change_note: "Snapshot manual",
@@ -353,7 +365,7 @@ export function TaskBriefWorkspace({
       toast.error("Lengkapi atau konfirmasi seluruh bagian dan minimal satu deliverable sebelum approval.");
       return;
     }
-    const next = Number(saved.current_version || 0) + 1;
+    const next = versions.length ? Number(saved.current_version || 1) + 1 : Number(saved.current_version || 1);
     const snapshot = { ...saved, status: "approved", deliverables };
     const { error: versionError } = await (supabase.from("task_brief_versions" as any) as any).insert({
       brief_id: saved.id, version_number: next, status: "approved", snapshot, change_note: "Internal approval",
@@ -407,8 +419,17 @@ export function TaskBriefWorkspace({
     if (error) { toast.error(error.message); return; }
     const link = window.location.origin + "/brief-share/" + token;
     setShareLink(link);
+    await load();
     try { await navigator.clipboard.writeText(link); toast.success("Tautan share dibuat dan disalin."); }
     catch { toast.success("Tautan share dibuat."); }
+  }
+
+  async function revokeShare(id: string) {
+    const { error } = await (supabase.from("task_brief_shares" as any) as any)
+      .update({ revoked_at: new Date().toISOString() }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    await load();
+    toast.success("Tautan share dicabut.");
   }
 
   const confirmedCount = brief.sections.filter((s) => s.status === "confirmed").length;
@@ -565,7 +586,9 @@ export function TaskBriefWorkspace({
               </div>
             </footer>
             {aiOpen && <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-xl space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Generate Task Brief with Ebran AI</h3><button type="button" onClick={() => setAiOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">AI membaca task, client profile, brand profile, project, dan metadata dokumen yang tersedia.</p><label className="block text-xs font-semibold">Konteks tambahan<textarea value={aiContext} onChange={(e) => setAiContext(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-border bg-background p-2 font-normal" placeholder="Apa yang client minta? Tujuan kampanye? Informasi dari meeting?" /></label><label className="block text-xs font-semibold">Instruksi khusus<textarea value={aiInstructions} onChange={(e) => setAiInstructions(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-border bg-background p-2 font-normal" placeholder="Pantangan, gaya, target kualitas, batasan, asumsi yang harus diuji…" /></label><label className="block text-xs font-semibold">Lampiran untuk AI<input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv" onChange={(e) => setAiFile(e.target.files?.[0] ?? null)} className="mt-1 block w-full text-xs" /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setAiOpen(false)} className="rounded-md border px-3 py-2 text-xs">Cancel</button><button type="button" onClick={() => void runAi()} disabled={aiLoading} className="inline-flex items-center gap-2 rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast disabled:opacity-50"><Sparkles className="size-3.5" />{aiLoading ? "AI sedang menyusun…" : "Generate Draft"}</button></div></section></div>}
-            {shareOpen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-lg space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Controlled Client Share</h3><button type="button" onClick={() => setShareOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">Akses read-only secara default. Internal notes, AI prompts, cost/margin internal, dan komentar internal tidak ikut dibagikan.</p><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareComments} onChange={(e) => setShareComments(e.target.checked)} /> Izinkan client memberi komentar</label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareConfirmation} onChange={(e) => setShareConfirmation(e.target.checked)} /> Izinkan client mengonfirmasi brief</label><label className="block text-xs">Tautan kedaluwarsa<select value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background p-2"><option value="1">1 hari</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="never">Tidak kedaluwarsa</option></select></label><button type="button" onClick={() => void createControlledShare()} className="w-full rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast">Generate Share Link</button>{shareLink && <div className="break-all rounded-lg bg-muted p-2 text-[10px]">{shareLink}<p className="mt-1 text-amber-700">Halaman penerima share perlu diaktifkan melalui route publik sebelum tautan ini digunakan client.</p></div>}</section></div>}
+            {shareOpen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-lg space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Controlled Client Share</h3><button type="button" onClick={() => setShareOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">Akses read-only secara default. Internal notes, AI prompts, cost/margin internal, dan komentar internal tidak ikut dibagikan.</p><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareComments} onChange={(e) => setShareComments(e.target.checked)} /> Izinkan client memberi komentar</label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareConfirmation} onChange={(e) => setShareConfirmation(e.target.checked)} /> Izinkan client mengonfirmasi brief</label><label className="block text-xs">Tautan kedaluwarsa<select value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background p-2"><option value="1">1 hari</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="never">Tidak kedaluwarsa</option></select></label><button type="button" onClick={() => void createControlledShare()} className="w-full rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast">Generate Share Link</button>{shareLink && <div className="break-all rounded-lg bg-muted p-2 text-[10px]">{shareLink}<p className="mt-1 text-emerald-700">Halaman client share aktif. Tautan dapat dibagikan ke client.</p></div>}
+            {shares.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Share links &amp; access history</p>{shares.map((share) => <div key={share.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-[10px]"><span>{share.revoked_at ? "Revoked" : share.expires_at && new Date(share.expires_at) < new Date() ? "Expired" : "Active"} · {new Date(share.created_at).toLocaleString("id-ID")}</span>{!share.revoked_at && <button type="button" onClick={() => void revokeShare(share.id)} className="text-destructive underline">Revoke</button>}</div>)}</div>}
+            {shareFeedback.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Client feedback</p>{shareFeedback.map((feedback) => <div key={feedback.id} className="rounded-lg bg-muted/50 p-2 text-[10px]"><b>{feedback.client_name}</b> · {new Date(feedback.created_at).toLocaleString("id-ID")}<p className="mt-1">{feedback.decision || "Comment"}{feedback.comment ? " — " + feedback.comment : ""}</p></div>)}</div>}</section></div>}
           </section>
         </div>
       )}
