@@ -615,7 +615,6 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
-          brand_profile: Json
           city: string | null
           client_status: string
           company_profile: string | null
@@ -637,7 +636,6 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          brand_profile?: Json
           city?: string | null
           client_status?: string
           company_profile?: string | null
@@ -659,7 +657,6 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          brand_profile?: Json
           city?: string | null
           client_status?: string
           company_profile?: string | null
