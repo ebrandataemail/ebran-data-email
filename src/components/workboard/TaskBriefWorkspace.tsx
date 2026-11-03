@@ -77,6 +77,8 @@ export function TaskBriefWorkspace({
   const [shareExpiry, setShareExpiry] = useState("7");
   const [shareLink, setShareLink] = useState("");
   const hydrated = useRef(false);
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
   const taskId = task?.id ?? "";
   const isPersistedTask = UUID.test(taskId);
 
@@ -157,6 +159,22 @@ export function TaskBriefWorkspace({
   }, [isPersistedTask, taskId, task?.title]);
 
   useEffect(() => { hydrated.current = false; void load(); }, [load]);
+
+  useEffect(() => {
+    if (!brief.id) return;
+    const channel = supabase.channel("task-brief-live-" + brief.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_brief_revision_requests", filter: "brief_id=eq." + brief.id }, () => {
+        if (!dirtyRef.current) void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_brief_share_feedback" }, () => {
+        if (!dirtyRef.current) void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_brief_approvals", filter: "brief_id=eq." + brief.id }, () => {
+        if (!dirtyRef.current) void load();
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [brief.id, load]);
 
   const completeness = useMemo(() => {
     const sectionScore = brief.sections.filter((s) => s.status === "confirmed").length;
