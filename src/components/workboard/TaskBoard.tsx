@@ -105,6 +105,7 @@ function TaskMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          onClick={(event) => event.stopPropagation()}
           aria-label={"Aksi untuk " + task.title}
           className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
