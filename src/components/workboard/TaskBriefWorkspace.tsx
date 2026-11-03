@@ -106,8 +106,10 @@ export function TaskBriefWorkspace({
         setRevisions([]);
         setVersions([]);
         setApprovals([]);
+        setShares([]);
+        setShareFeedback([]);
       } else {
-        const [d, s, r, v, a] = await Promise.all([
+        const [d, s, r, v, a, sh] = await Promise.all([
           (supabase.from("task_brief_deliverables" as any) as any).select("*").eq("brief_id", row.id).order("sort_order"),
           (supabase.from("task_brief_sources" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
           (supabase.from("task_brief_revision_requests" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
