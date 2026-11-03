@@ -8,6 +8,38 @@ import { extractDocument, formatEnv, generateNote, runAudit } from "./assistant.
 const MAX_OCR_BYTES = 8 * 1024 * 1024;
 const OCR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
 
+type AuthedSupabase = Parameters<
+  Parameters<ReturnType<typeof createServerFn>["handler"]>[0]
+> extends never
+  ? never
+  : import("@supabase/supabase-js").SupabaseClient<import("@/integrations/supabase/types").Database>;
+
+/** A chat target is the sample asset, the workspace, or a row the signed-in user owns. */
+async function isOwnedChatTarget(supabase: AuthedSupabase, userId: string, assetId: string) {
+  if (assetId === asset.id || assetId === "workspace") return true;
+  if (assetId.startsWith("client:")) {
+    const clientId = assetId.slice("client:".length);
+    if (!/^[0-9a-f-]{36}$/i.test(clientId)) return false;
+    const { data } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("id", clientId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    return Boolean(data);
+  }
+  for (const table of ["email_accounts", "developer_assets", "ads_assets"] as const) {
+    const { data } = await supabase
+      .from(table)
+      .select("id")
+      .eq("id", assetId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (data) return true;
+  }
+  return false;
+}
+
 const cleanAssetId = (value: unknown) => {
   const id = String(value ?? "").trim();
   if (!id || id.length > 100) throw new Error("Aset tidak ditemukan.");
@@ -47,34 +79,7 @@ export const aiChatHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
-    let owned = data.assetId === asset.id || data.assetId === "workspace";
-    if (!owned) {
-      const { data: email } = await context.supabase
-        .from("email_accounts")
-        .select("id")
-        .eq("id", data.assetId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      owned = Boolean(email);
-    }
-    if (!owned) {
-      const { data: developer } = await context.supabase
-        .from("developer_assets")
-        .select("id")
-        .eq("id", data.assetId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      owned = Boolean(developer);
-    }
-    if (!owned) {
-      const { data: ads } = await context.supabase
-        .from("ads_assets")
-        .select("id")
-        .eq("id", data.assetId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      owned = Boolean(ads);
-    }
+    const owned = await isOwnedChatTarget(context.supabase, context.userId, data.assetId);
     if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");
     const { data: rows, error } = await context.supabase
       .from("ai_chat_messages")
@@ -100,34 +105,7 @@ export const aiClearChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { assetId: string }) => ({ assetId: cleanAssetId(input?.assetId) }))
   .handler(async ({ data, context }) => {
-    let owned = data.assetId === asset.id || data.assetId === "workspace";
-    if (!owned) {
-      const { data: email } = await context.supabase
-        .from("email_accounts")
-        .select("id")
-        .eq("id", data.assetId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      owned = Boolean(email);
-    }
-    if (!owned) {
-      const { data: developer } = await context.supabase
-        .from("developer_assets")
-        .select("id")
-        .eq("id", data.assetId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      owned = Boolean(developer);
-    }
-    if (!owned) {
-      const { data: ads } = await context.supabase
-        .from("ads_assets")
-        .select("id")
-        .eq("id", data.assetId)
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      owned = Boolean(ads);
-    }
+    const owned = await isOwnedChatTarget(context.supabase, context.userId, data.assetId);
     if (!owned) throw new Error("Aset tidak ditemukan atau tidak dapat diakses.");
     const { error } = await context.supabase
       .from("ai_chat_messages")
