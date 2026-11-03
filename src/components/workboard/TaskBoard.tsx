@@ -30,7 +30,7 @@ import {
   isLate,
   urgencyOf,
 } from "./status";
-import type { WorkboardClient, WorkboardTask } from "./useWorkboardData";
+import type { WorkboardClient, WorkboardProject, WorkboardTask } from "./useWorkboardData";
 
 /** Group tasks by deadline (ascending); tasks without deadline go last. */
 function groupByDate(rows: WorkboardTask[]): [string, WorkboardTask[]][] {
@@ -168,6 +168,7 @@ export function TaskBoard({
   query,
   tasks,
   clients,
+  projects,
   loading,
   onCreate,
   onUpdate,
@@ -178,6 +179,7 @@ export function TaskBoard({
   query: string;
   tasks: WorkboardTask[];
   clients: WorkboardClient[];
+  projects: WorkboardProject[];
   loading: boolean;
   onCreate: (input: CreateInput) => Promise<unknown>;
   onUpdate: (id: string, patch: UpdatePatch) => Promise<unknown>;
@@ -511,6 +513,7 @@ export function TaskBoard({
                   onChange={(e) => setDraft((d) => ({ ...d, client_id: e.target.value }))}
                   className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 >
+                  <option value="" disabled>Pilih client</option>
                   {clients.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -518,6 +521,35 @@ export function TaskBoard({
                   ))}
                 </select>
               </label>
+              {(() => {
+                const selectedClient = clients.find((client) => client.id === draft.client_id);
+                const selectedProject = projects.find((project) => project.client_id === draft.client_id);
+                return (
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-bold text-wb-ink">Konteks Graphic Workspace</p>
+                      <span className="text-[9px] text-muted-foreground">Data master client & proyek</span>
+                    </div>
+                    {selectedClient ? (
+                      <dl className="grid gap-x-4 gap-y-2 text-[10px] sm:grid-cols-2">
+                        <div><dt className="text-muted-foreground">Nama legal / perusahaan</dt><dd className="font-semibold text-wb-ink">{selectedClient.legal_name || selectedClient.name}</dd></div>
+                        <div><dt className="text-muted-foreground">Proyek terkait</dt><dd className="font-semibold text-wb-ink">{selectedProject?.name || "Belum ada proyek"}</dd></div>
+                        <div><dt className="text-muted-foreground">Status proyek / client</dt><dd className="font-semibold text-wb-ink">{selectedProject?.status || selectedClient.client_status || "—"}</dd></div>
+                        <div><dt className="text-muted-foreground">Industri</dt><dd className="font-semibold text-wb-ink">{selectedClient.industry || "—"}</dd></div>
+                        <div><dt className="text-muted-foreground">PIC client</dt><dd className="font-semibold text-wb-ink">{selectedClient.contact_name || "—"}</dd></div>
+                        <div><dt className="text-muted-foreground">Kontak</dt><dd className="font-semibold text-wb-ink">{[selectedClient.contact_email, selectedClient.contact_phone].filter(Boolean).join(" · ") || "—"}</dd></div>
+                        <div className="sm:col-span-2"><dt className="text-muted-foreground">Profil perusahaan</dt><dd className="whitespace-pre-wrap text-wb-ink">{selectedClient.company_profile || selectedClient.description || "Belum diisi"}</dd></div>
+                        <div className="sm:col-span-2"><dt className="text-muted-foreground">Scope of Work</dt><dd className="whitespace-pre-wrap text-wb-ink">{selectedClient.scope_of_work || selectedProject?.description || "Belum diisi"}</dd></div>
+                      </dl>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">Pilih client untuk melihat konteks yang akan tampil di Graphic Workspace.</p>
+                    )}
+                    <p className="mt-2 border-t border-border pt-2 text-[9px] text-muted-foreground">
+                      Konteks ini otomatis mengikuti data master client/proyek. Untuk mengubah profil, kontak, atau scope, perbarui data client/proyek; task akan menyimpan relasi client yang dipilih.
+                    </p>
+                  </div>
+                );
+              })()}
               <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
                 Nama task
                 <input
@@ -530,12 +562,12 @@ export function TaskBoard({
                 />
               </label>
               <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
-                Deskripsi
+                Deskripsi / brief pekerjaan
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={draft.description}
                   onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                  placeholder="Detail pekerjaan dan output yang diharapkan"
+                  placeholder="Tujuan pekerjaan, ruang lingkup, referensi, output/deliverable, dan catatan khusus untuk ditampilkan di Graphic Workspace"
                   className="w-full rounded-md border border-border bg-card p-2 text-sm"
                 />
               </label>
@@ -577,7 +609,7 @@ export function TaskBoard({
                 />
               </label>
               <label className="space-y-1 text-xs font-semibold text-wb-ink">
-                Penanggung jawab
+                Penanggung jawab / PIC task
                 <input
                   maxLength={120}
                   value={draft.assignee}
