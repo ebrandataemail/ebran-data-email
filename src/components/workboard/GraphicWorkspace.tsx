@@ -43,6 +43,7 @@ export function GraphicWorkspace({
   designReviews,
   selectedClientId,
   onDataChanged,
+  selectedTask,
 }: {
   clients: WorkboardClient[];
   projects: WorkboardProject[];
@@ -54,6 +55,7 @@ export function GraphicWorkspace({
   designReviews: WorkboardDesignReview[];
   selectedClientId: string;
   onDataChanged: () => Promise<void>;
+  selectedTask?: WorkboardTask | null;
 }) {
   const client = clients.find((item) => item.id === selectedClientId);
   const project = projects.find((item) => item.client_id === client?.id);
@@ -242,6 +244,28 @@ export function GraphicWorkspace({
         </div>
         <Bell className="size-4 text-muted-foreground" />
       </header>
+
+      {selectedTask && (
+        <section id="graphic-task-detail" className="border-b border-border bg-wb-blue/10 p-4 sm:p-5" aria-live="polite">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-wb-blue-strong px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-brand-contrast">Task terpilih</span>
+                {selectedTask.id.startsWith("demo-task-") && <span className="rounded-full border border-wb-blue-strong/30 px-2.5 py-1 text-[9px] font-semibold text-wb-blue-strong">Data contoh · belum tersimpan</span>}
+              </div>
+              <h3 className="text-base font-extrabold text-wb-ink">{selectedTask.title}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">{clients.find((item) => item.id === selectedTask.client_id)?.name ?? "Client tidak ditemukan"}</p>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-wb-ink">{selectedTask.description || "Belum ada deskripsi task."}</p>
+            </div>
+            <dl className="grid min-w-[220px] grid-cols-2 gap-2 text-xs sm:min-w-[280px]">
+              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Status</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.status}</dd></div>
+              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Prioritas</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.priority}</dd></div>
+              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Deadline</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.due_date ? new Date(selectedTask.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Belum ditentukan"}</dd></div>
+              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Penanggung jawab</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.assignee || "Belum ditentukan"}</dd></div>
+            </dl>
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-3 p-3 lg:grid-cols-[minmax(200px,0.95fr)_minmax(0,1.85fr)_minmax(200px,0.85fr)]">
         <div className="space-y-3">

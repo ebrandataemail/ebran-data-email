@@ -105,6 +105,7 @@ function TaskMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          onClick={(event) => event.stopPropagation()}
           aria-label={"Aksi untuk " + task.title}
           className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -172,6 +173,7 @@ export function TaskBoard({
   onUpdate,
   onDelete,
   onDuplicate,
+  onSelectTask,
 }: {
   query: string;
   tasks: WorkboardTask[];
@@ -181,6 +183,7 @@ export function TaskBoard({
   onUpdate: (id: string, patch: UpdatePatch) => Promise<unknown>;
   onDelete: (id: string) => Promise<void>;
   onDuplicate: (task: WorkboardTask) => Promise<unknown>;
+  onSelectTask: (task: WorkboardTask) => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<TaskDraft>(emptyDraft(clients[0]?.id ?? ""));
@@ -384,7 +387,19 @@ export function TaskBoard({
                             <div key={task.id} className="relative">
                               <span className="absolute -left-[18px] top-5 size-2 rounded-full bg-wb-ink" />
                               <span className="absolute -left-2.5 top-[23px] h-0.5 w-2.5 bg-border" />
-                              <article className="rounded-xl border border-border bg-card p-3 shadow-soft">
+                              <article
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Buka detail task: ${task.title}`}
+                                onClick={() => onSelectTask(task)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    onSelectTask(task);
+                                  }
+                                }}
+                                className="cursor-pointer rounded-xl border border-border bg-card p-3 shadow-soft transition hover:border-wb-blue-strong hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wb-blue-strong"
+                              >
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
                                     <p className="text-sm font-bold leading-snug text-wb-ink">
@@ -394,14 +409,16 @@ export function TaskBoard({
                                       {client?.name ?? "Client tidak ditemukan"}
                                     </p>
                                   </div>
-                                  <TaskMenu
+                                  {task.id.startsWith("demo-task-") ? (
+                                    <span className="rounded-full bg-wb-blue/20 px-2 py-1 text-[9px] font-semibold text-wb-blue-strong">DEMO</span>
+                                  ) : <TaskMenu
                                     task={task}
                                     onEdit={openEdit}
                                     onDuplicate={(t) => void duplicate(t)}
                                     onMove={(id, s) => void move(id, s)}
                                     onPriority={(id, p) => void changePriority(id, p)}
                                     onDelete={(t) => void remove(t)}
-                                  />
+                                  />}
                                 </div>
                                 {task.description && (
                                   <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">

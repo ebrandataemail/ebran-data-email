@@ -30,6 +30,7 @@ export function WorkboardView() {
 export function WorkboardContent() {
   const [query, setQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const {
     clients,
     projects,
@@ -50,6 +51,13 @@ export function WorkboardContent() {
   useEffect(() => {
     if (!selectedClientId && clients.length) setSelectedClientId(clients[0].id);
   }, [clients, selectedClientId]);
+  const demoTasks: WorkboardTask[] = clients.length && !tasks.length ? [
+    { id: "demo-task-1", client_id: clients[0].id, title: "Desain feed Instagram — campaign November", description: "Buat 3 konsep feed Instagram untuk campaign November. Gunakan brand guideline, siapkan preview, lalu kirim untuk review client.", status: "on-process", priority: "high", due_date: "2026-11-06", assignee: "Creative Designer", created_at: "2026-11-01T09:00:00.000Z", updated_at: "2026-11-03T08:00:00.000Z", sort_order: 1 },
+    { id: "demo-task-2", client_id: clients[0].id, title: "Revisi landing page", description: "Perbaiki hero section, CTA, dan tampilan mobile berdasarkan masukan client.", status: "revision", priority: "medium", due_date: "2026-11-08", assignee: "UI/UX Designer", created_at: "2026-11-02T10:00:00.000Z", updated_at: "2026-11-03T08:30:00.000Z", sort_order: 2 },
+    { id: "demo-task-3", client_id: clients[0].id, title: "Susun kalender konten bulanan", description: "Riset topik, susun 12 ide konten, dan ajukan jadwal publikasi untuk persetujuan.", status: "things-to-do", priority: "low", due_date: "2026-11-12", assignee: "Content Strategist", created_at: "2026-11-03T09:00:00.000Z", updated_at: "2026-11-03T09:00:00.000Z", sort_order: 3 },
+  ] : [];
+  const boardTasks = tasks.length ? tasks : demoTasks;
+  const selectedTask = boardTasks.find((task) => task.id === selectedTaskId) ?? null;
   const latestActivities = activities.slice(0, 8);
   const counts = [
     { label: "Total Client", value: clients.length, icon: Users },
@@ -151,10 +159,11 @@ export function WorkboardContent() {
             Menghubungkan ke Supabase…
           </div>
         ) : (
+          <div id="graphic-workspace">
           <GraphicWorkspace
             clients={clients}
             projects={projects}
-            tasks={tasks}
+            tasks={boardTasks}
             documents={documents}
             activities={activities}
             designVersions={designVersions}
@@ -162,18 +171,25 @@ export function WorkboardContent() {
             designReviews={designReviews}
             selectedClientId={selectedClientId}
             onDataChanged={refresh}
+            selectedTask={selectedTask}
           />
+          </div>
         )}
       </div>
       <TaskBoard
         query={query}
-        tasks={tasks}
+        tasks={boardTasks}
         clients={clients}
         loading={loading}
         onCreate={createTask}
         onUpdate={updateTask}
         onDelete={deleteTask}
         onDuplicate={duplicateTask}
+        onSelectTask={(task) => {
+          setSelectedTaskId(task.id);
+          if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
+          window.setTimeout(() => document.getElementById("graphic-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+        }}
       />
       <section className="grid gap-4 lg:grid-cols-[1fr_1.15fr_0.95fr]">
         <CalendarPanel tasks={tasks} activities={activities} />
