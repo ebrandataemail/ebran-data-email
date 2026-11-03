@@ -58,6 +58,15 @@ export function WorkboardContent() {
   ] : [];
   const boardTasks = tasks.length ? tasks : demoTasks;
   const selectedTask = boardTasks.find((task) => task.id === selectedTaskId) ?? null;
+
+  // Scroll only after React has rendered the selected task detail in Graphic Workspace.
+  useEffect(() => {
+    if (!selectedTask) return;
+    document.getElementById("graphic-task-detail")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [selectedTask?.id]);
   const latestActivities = activities.slice(0, 8);
   const counts = [
     { label: "Total Client", value: clients.length, icon: Users },
@@ -142,7 +151,10 @@ export function WorkboardContent() {
             Client aktif
             <select
               value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
+              onChange={(e) => {
+                setSelectedClientId(e.target.value);
+                setSelectedTaskId(null);
+              }}
               className="h-8 max-w-[220px] rounded-md border border-border bg-card px-2 text-[10px] font-semibold text-wb-ink"
             >
               <option value="">Pilih client</option>
@@ -189,7 +201,6 @@ export function WorkboardContent() {
         onSelectTask={(task) => {
           setSelectedTaskId(task.id);
           if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
-          window.setTimeout(() => document.getElementById("graphic-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
         }}
       />
       <section className="grid gap-4 lg:grid-cols-[1fr_1.15fr_0.95fr]">
