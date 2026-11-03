@@ -524,8 +524,10 @@ export function TaskBriefWorkspace({
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-emerald-600" style={{ width: completeness + "%" }} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Estimasi waktu</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.estimated_hours != null ? brief.estimated_hours + " jam" : "Belum dihitung"}</p></div>
+                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Effort</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.estimated_hours != null ? brief.estimated_hours + " jam" : "Belum dihitung"}</p></div>
+                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Durasi kalender</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.estimated_days != null ? brief.estimated_days + " hari" : "—"}</p></div>
                 <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Prioritas AI</p><p className="mt-1 text-sm font-bold capitalize text-wb-ink">{brief.priority_suggestion || "—"}</p></div>
+                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Budget AI</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.budget_min != null || brief.budget_max != null ? (brief.currency || "IDR") + " " + Number(brief.budget_min ?? brief.budget_max).toLocaleString("id-ID") + " – " + Number(brief.budget_max ?? brief.budget_min).toLocaleString("id-ID") : "Belum dihitung"}</p></div>
               </div>
               {brief.ai_summary && <p className="line-clamp-4 text-[10px] leading-relaxed text-muted-foreground">{brief.ai_summary}</p>}
               {brief.open_questions.length > 0 && <p className="text-[10px] text-amber-700">{brief.open_questions.length} pertanyaan perlu dikonfirmasi</p>}
