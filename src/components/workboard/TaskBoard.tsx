@@ -608,6 +608,11 @@ export function TaskBoard({
                   className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 />
               </label>
+              {editing === "new" && (
+                <div className="sm:col-span-2 rounded-lg border border-wb-blue-strong/20 bg-wb-blue/10 p-3 text-[10px] leading-relaxed text-wb-ink">
+                  <b>Langkah berikutnya: Client Brief &amp; Scope.</b> Setelah task disimpan, Graphic Workspace akan otomatis membuka task ini. Lengkapi 12 bagian brief, deliverables, acceptance criteria, estimasi, dan aturan revisi di sana.
+                </div>
+              )}
               <label className="space-y-1 text-xs font-semibold text-wb-ink">
                 Penanggung jawab / PIC task
                 <input

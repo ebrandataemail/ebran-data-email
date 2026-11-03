@@ -1168,12 +1168,546 @@ export type Database = {
           },
         ]
       }
+      task_brief_acceptance_criteria: {
+        Row: {
+          created_at: string
+          criterion: string
+          deliverable_id: string
+          id: string
+          is_completed: boolean
+          is_required: boolean
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          criterion: string
+          deliverable_id: string
+          id?: string
+          is_completed?: boolean
+          is_required?: boolean
+          sort_order?: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          criterion?: string
+          deliverable_id?: string
+          id?: string
+          is_completed?: boolean
+          is_required?: boolean
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_acceptance_deliverable_owner_fkey"
+            columns: ["deliverable_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_brief_deliverables"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_brief_approvals: {
+        Row: {
+          brief_id: string
+          created_at: string
+          decision: string
+          id: string
+          note: string | null
+          reviewer_id: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          brief_id: string
+          created_at?: string
+          decision: string
+          id?: string
+          note?: string | null
+          reviewer_id?: string
+          user_id?: string
+          version_number: number
+        }
+        Update: {
+          brief_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          note?: string | null
+          reviewer_id?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_approvals_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_brief_comments: {
+        Row: {
+          brief_id: string
+          comment: string
+          created_at: string
+          id: string
+          section_key: string | null
+          user_id: string
+        }
+        Insert: {
+          brief_id: string
+          comment: string
+          created_at?: string
+          id?: string
+          section_key?: string | null
+          user_id?: string
+        }
+        Update: {
+          brief_id?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          section_key?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_comments_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_brief_deliverables: {
+        Row: {
+          brief_id: string
+          created_at: string
+          description: string | null
+          format: string | null
+          id: string
+          quantity: number
+          revision_quota: number
+          scope_type: string
+          sort_order: number
+          specifications: Json
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brief_id: string
+          created_at?: string
+          description?: string | null
+          format?: string | null
+          id?: string
+          quantity?: number
+          revision_quota?: number
+          scope_type?: string
+          sort_order?: number
+          specifications?: Json
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          brief_id?: string
+          created_at?: string
+          description?: string | null
+          format?: string | null
+          id?: string
+          quantity?: number
+          revision_quota?: number
+          scope_type?: string
+          sort_order?: number
+          specifications?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_deliverables_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_brief_revision_requests: {
+        Row: {
+          brief_id: string
+          created_at: string
+          deliverable_id: string | null
+          description: string
+          estimated_extra_cost: number | null
+          estimated_extra_hours: number | null
+          id: string
+          quota_consumed: boolean
+          request_type: string
+          resolved_at: string | null
+          round_number: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          brief_id: string
+          created_at?: string
+          deliverable_id?: string | null
+          description: string
+          estimated_extra_cost?: number | null
+          estimated_extra_hours?: number | null
+          id?: string
+          quota_consumed?: boolean
+          request_type: string
+          resolved_at?: string | null
+          round_number?: number | null
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          brief_id?: string
+          created_at?: string
+          deliverable_id?: string | null
+          description?: string
+          estimated_extra_cost?: number | null
+          estimated_extra_hours?: number | null
+          id?: string
+          quota_consumed?: boolean
+          request_type?: string
+          resolved_at?: string | null
+          round_number?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_revisions_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_brief_revisions_deliverable_owner_fkey"
+            columns: ["deliverable_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_brief_deliverables"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_brief_share_feedback: {
+        Row: {
+          client_name: string
+          comment: string | null
+          created_at: string
+          decision: string | null
+          id: string
+          share_id: string
+          user_id: string
+        }
+        Insert: {
+          client_name: string
+          comment?: string | null
+          created_at?: string
+          decision?: string | null
+          id?: string
+          share_id: string
+          user_id: string
+        }
+        Update: {
+          client_name?: string
+          comment?: string | null
+          created_at?: string
+          decision?: string | null
+          id?: string
+          share_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_share_feedback_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "task_brief_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_brief_shares: {
+        Row: {
+          allow_comments: boolean
+          allow_confirmation: boolean
+          brief_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          revoked_at: string | null
+          token_hash: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          allow_comments?: boolean
+          allow_confirmation?: boolean
+          brief_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token_hash: string
+          user_id?: string
+          version_number?: number
+        }
+        Update: {
+          allow_comments?: boolean
+          allow_confirmation?: boolean
+          brief_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_shares_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_brief_shares_version_fkey"
+            columns: ["brief_id", "version_number"]
+            isOneToOne: false
+            referencedRelation: "task_brief_versions"
+            referencedColumns: ["brief_id", "version_number"]
+          },
+        ]
+      }
+      task_brief_sources: {
+        Row: {
+          brief_id: string
+          created_at: string
+          extracted_text: string | null
+          id: string
+          metadata: Json
+          source_status: string
+          source_type: string
+          source_url: string | null
+          storage_path: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          brief_id: string
+          created_at?: string
+          extracted_text?: string | null
+          id?: string
+          metadata?: Json
+          source_status?: string
+          source_type: string
+          source_url?: string | null
+          storage_path?: string | null
+          title: string
+          user_id?: string
+        }
+        Update: {
+          brief_id?: string
+          created_at?: string
+          extracted_text?: string | null
+          id?: string
+          metadata?: Json
+          source_status?: string
+          source_type?: string
+          source_url?: string | null
+          storage_path?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_sources_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_brief_versions: {
+        Row: {
+          brief_id: string
+          change_note: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          snapshot: Json
+          status: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          brief_id: string
+          change_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot: Json
+          status: string
+          user_id?: string
+          version_number: number
+        }
+        Update: {
+          brief_id?: string
+          change_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot?: Json
+          status?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_brief_versions_brief_owner_fkey"
+            columns: ["brief_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_briefs"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_briefs: {
+        Row: {
+          ai_summary: string | null
+          approved_at: string | null
+          approved_by: string | null
+          assumptions: Json
+          budget_max: number | null
+          budget_min: number | null
+          client_id: string
+          created_at: string
+          currency: string
+          current_version: number
+          estimated_days: number | null
+          estimated_hours: number | null
+          id: string
+          open_questions: Json
+          priority_suggestion: string | null
+          project_id: string | null
+          sections: Json
+          status: string
+          suggested_tools: Json
+          task_id: string
+          title: string
+          updated_at: string
+          user_id: string
+          work_steps: Json
+        }
+        Insert: {
+          ai_summary?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assumptions?: Json
+          budget_max?: number | null
+          budget_min?: number | null
+          client_id: string
+          created_at?: string
+          currency?: string
+          current_version?: number
+          estimated_days?: number | null
+          estimated_hours?: number | null
+          id?: string
+          open_questions?: Json
+          priority_suggestion?: string | null
+          project_id?: string | null
+          sections?: Json
+          status?: string
+          suggested_tools?: Json
+          task_id: string
+          title: string
+          updated_at?: string
+          user_id?: string
+          work_steps?: Json
+        }
+        Update: {
+          ai_summary?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assumptions?: Json
+          budget_max?: number | null
+          budget_min?: number | null
+          client_id?: string
+          created_at?: string
+          currency?: string
+          current_version?: number
+          estimated_days?: number | null
+          estimated_hours?: number | null
+          id?: string
+          open_questions?: Json
+          priority_suggestion?: string | null
+          project_id?: string | null
+          sections?: Json
+          status?: string
+          suggested_tools?: Json
+          task_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          work_steps?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_briefs_client_owner_fkey"
+            columns: ["client_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_briefs_project_owner_fkey"
+            columns: ["project_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_briefs_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_shared_task_brief: { Args: { p_token_hash: string }; Returns: Json }
+      submit_shared_task_brief_feedback: {
+        Args: {
+          p_client_name: string
+          p_comment: string
+          p_decision?: string
+          p_token_hash: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

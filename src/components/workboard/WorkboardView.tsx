@@ -194,7 +194,14 @@ export function WorkboardContent() {
         clients={clients}
         projects={projects}
         loading={loading}
-        onCreate={createTask}
+        onCreate={async (input) => {
+          const created = await createTask(input);
+          if (created?.id) {
+            setSelectedClientId(input.client_id);
+            setSelectedTaskId(created.id);
+          }
+          return created;
+        }}
         onUpdate={updateTask}
         onDelete={deleteTask}
         onDuplicate={duplicateTask}

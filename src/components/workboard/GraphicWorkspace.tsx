@@ -29,6 +29,7 @@ import type {
   WorkboardDesignReview,
 } from "./useWorkboardData";
 import { supabase } from "@/integrations/supabase/client";
+import { TaskBriefWorkspace } from "./TaskBriefWorkspace";
 
 type PinDraft = { x: number; y: number } | null;
 
@@ -311,23 +312,13 @@ export function GraphicWorkspace({
               </Row>
             </dl>
           </div>
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-3 py-2 text-[11px] font-semibold text-wb-ink">
-              <FileText className="size-3.5" />
-              Client Brief &amp; Scope
-            </div>
-            <div className="space-y-2 p-3">
-              <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">
-                {client?.company_profile || client?.description || "Profil client belum diisi."}
-              </p>
-              <div className="border-l-2 border-wb-blue pl-2 text-[11px] leading-relaxed text-muted-foreground">
-                <b className="text-wb-ink">Scope of Work:</b>
-                <p className="whitespace-pre-wrap">
-                  {client?.scope_of_work || project?.description || "Belum ada scope of work."}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TaskBriefWorkspace
+            client={client}
+            project={project}
+            task={selectedTask}
+            documents={clientDocs}
+            onDataChanged={onDataChanged}
+          />
           <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
             <h4 className="flex items-center gap-1.5 text-[12px] font-bold text-wb-ink">
               <Paperclip className="size-3.5 text-wb-blue-strong" />
