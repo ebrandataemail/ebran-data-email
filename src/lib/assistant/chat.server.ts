@@ -182,7 +182,7 @@ export async function handleAiChat(request: Request) {
 
     const clients = clientsResult.data ?? [];
     const projects = projectsResult.data ?? [];
-    const byClient = (rows: Array<{ client_id: string }>, clientId: string) =>
+    const byClient = <T extends { client_id: string | null }>(rows: T[], clientId: string) =>
       rows.filter((row) => row.client_id === clientId);
     brief = {
       type: "workspace",

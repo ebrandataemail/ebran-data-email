@@ -1,7 +1,7 @@
 // Server-only AI for the /clients pages: profile builder, per-card generation,
 // public website reading and the sanitized client context used by chat.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ModelMessage } from "ai";
+import type { FilePart, TextPart } from "ai";
 import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
@@ -357,7 +357,7 @@ export async function buildClientProfile(input: {
   const sources: string[] = [];
   const warnings: string[] = [];
   const blocks: string[] = [];
-  const content: Exclude<ModelMessage["content"], string> = [];
+  const content: Array<TextPart | FilePart> = [];
 
   if (input.brief) blocks.push(`Data client yang sudah tersimpan (JSON):\n${JSON.stringify(input.brief)}`);
 
@@ -494,20 +494,20 @@ export async function saveClientProfile(
   }
 
   if (updateClientFields) {
-    const map: Array<[keyof ClientProfile, keyof Database["public"]["Tables"]["clients"]["Update"], number]> = [
-      ["legalName", "legal_name", 180],
-      ["industry", "industry", 120],
-      ["contactEmail", "contact_email", 254],
-      ["contactPhone", "contact_phone", 40],
-      ["website", "website", 300],
-      ["address", "address", 500],
-      ["city", "city", 120],
-    ];
-    const update: Record<string, string> = {};
-    for (const [from, to, max] of map) {
-      const value = profile[from];
-      if (typeof value === "string" && value.trim()) update[to] = value.trim().slice(0, max);
-    }
+    const pick = (value: string | undefined, max: number) =>
+      typeof value === "string" && value.trim() ? value.trim().slice(0, max) : undefined;
+    const fields: Database["public"]["Tables"]["clients"]["Update"] = {
+      legal_name: pick(profile.legalName, 180),
+      industry: pick(profile.industry, 120),
+      contact_email: pick(profile.contactEmail, 254),
+      contact_phone: pick(profile.contactPhone, 40),
+      website: pick(profile.website, 300),
+      address: pick(profile.address, 500),
+      city: pick(profile.city, 120),
+    };
+    const update = Object.fromEntries(
+      Object.entries(fields).filter(([, v]) => v !== undefined),
+    ) as Database["public"]["Tables"]["clients"]["Update"];
     if (Object.keys(update).length) {
       const { error } = await supabase.from("clients").update(update).eq("id", clientId).eq("user_id", userId);
       if (error) console.error("[client AI] update client", error.code, error.message);
