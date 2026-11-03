@@ -1453,6 +1453,7 @@ export type Database = {
           revoked_at: string | null
           token_hash: string
           user_id: string
+          version_number: number
         }
         Insert: {
           allow_comments?: boolean
@@ -1464,6 +1465,7 @@ export type Database = {
           revoked_at?: string | null
           token_hash: string
           user_id?: string
+          version_number?: number
         }
         Update: {
           allow_comments?: boolean
@@ -1475,6 +1477,7 @@ export type Database = {
           revoked_at?: string | null
           token_hash?: string
           user_id?: string
+          version_number?: number
         }
         Relationships: [
           {
@@ -1483,6 +1486,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "task_briefs"
             referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_brief_shares_version_fkey"
+            columns: ["brief_id", "version_number"]
+            isOneToOne: false
+            referencedRelation: "task_brief_versions"
+            referencedColumns: ["brief_id", "version_number"]
           },
         ]
       }
