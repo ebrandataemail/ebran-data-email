@@ -468,6 +468,17 @@ export function TaskBriefWorkspace({
     }
   }
 
+  async function addInternalComment() {
+    const comment = commentDraft.trim();
+    if (!brief.id || !comment) return;
+    const { error } = await (supabase.from("task_brief_comments" as any) as any).insert({
+      brief_id: brief.id, section_key: activeSection, comment,
+    });
+    if (error) { toast.error(error.message); return; }
+    setCommentDraft("");
+    await load();
+    toast.success("Catatan internal tersimpan.");
+  }
   async function revokeShare(id: string) {
     const { error } = await (supabase.from("task_brief_shares" as any) as any)
       .update({ revoked_at: new Date().toISOString() }).eq("id", id);
