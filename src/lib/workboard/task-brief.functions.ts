@@ -66,6 +66,9 @@ export const generateTaskBrief = createServerFn({ method: "POST" })
     context?: string;
     instructions?: string;
     file?: { fileName: string; mediaType: string; base64: string } | null;
+    includeBrandProfile?: boolean;
+    includeProjectContext?: boolean;
+    includeClientDocuments?: boolean;
   }) => {
     if (!UUID.test(String(input?.taskId ?? ""))) throw new Error("Task ID tidak valid.");
     const context = String(input?.context ?? "").trim().slice(0, 6000);
@@ -78,25 +81,34 @@ export const generateTaskBrief = createServerFn({ method: "POST" })
       if (!base64 || base64.length * 0.75 > 8 * 1024 * 1024) throw new Error("File kosong atau melebihi 8 MB.");
       file = { fileName: String(input.file.fileName ?? "referensi").slice(0, 180), mediaType, base64 };
     }
-    return { taskId: input.taskId, context, instructions, file };
+    return {
+      taskId: input.taskId, context, instructions, file,
+      includeBrandProfile: input.includeBrandProfile !== false,
+      includeProjectContext: input.includeProjectContext !== false,
+      includeClientDocuments: input.includeClientDocuments !== false,
+    };
   })
   .handler(async ({ data, context }) => {
     try {
       const db = context.supabase as any;
       const { data: task, error: taskError } = await db.from("client_tasks")
-        .select("id,user_id,client_id,title,description,status,priority,due_date,assignee")
+        .select("id,client_id,title,description,status,priority,due_date,assignee")
         .eq("id", data.taskId).maybeSingle();
       if (taskError) throw taskError;
       if (!task) throw new Error("Task tidak ditemukan atau akses ditolak.");
 
       const [clientResult, brandResult, projectResult, documentsResult] = await Promise.all([
-        db.from("clients").select("id,name,legal_name,industry,website,description,company_profile,scope_of_work,contact_name")
+        db.from("clients").select("id,name,legal_name,industry,website,description,company_profile,scope_of_work")
           .eq("id", task.client_id).maybeSingle(),
-        db.from("client_brand_profiles").select("company_overview,pain_points,agency_goals,tone_of_voice,primary_color,secondary_color,do_rules,dont_rules,important_notes,tags")
-          .eq("client_id", task.client_id).maybeSingle(),
-        db.from("projects").select("id,name,description,status").eq("client_id", task.client_id).limit(10),
-        db.from("client_documents").select("title,document_type,file_name,mime_type,notes,document_date")
-          .eq("client_id", task.client_id).order("created_at", { ascending: false }).limit(20),
+        data.includeBrandProfile
+          ? db.from("client_brand_profiles").select("company_overview,pain_points,agency_goals,tone_of_voice,primary_color,secondary_color,do_rules,dont_rules,important_notes,tags").eq("client_id", task.client_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        data.includeProjectContext
+          ? db.from("projects").select("id,name,description,status").eq("client_id", task.client_id).limit(10)
+          : Promise.resolve({ data: [], error: null }),
+        data.includeClientDocuments
+          ? db.from("client_documents").select("title,document_type,file_name,mime_type,notes,document_date").eq("client_id", task.client_id).order("created_at", { ascending: false }).limit(20)
+          : Promise.resolve({ data: [], error: null }),
       ]);
       if (clientResult.error) throw clientResult.error;
       if (brandResult.error) throw brandResult.error;
@@ -140,7 +152,16 @@ export const generateTaskBrief = createServerFn({ method: "POST" })
         messages,
         "medium",
       );
-      return { ...result, sourceSummary: ["Task & Client Profile", "Brand Profile", "Project & Client Documents", ...(data.file ? [data.file.fileName] : [])] };
+      return {
+        ...result,
+        sourceSummary: [
+          "Task & Client Profile",
+          ...(data.includeBrandProfile ? ["Brand Profile"] : []),
+          ...(data.includeProjectContext ? ["Project Context"] : []),
+          ...(data.includeClientDocuments ? ["Client Documents"] : []),
+          ...(data.file ? [data.file.fileName] : []),
+        ],
+      };
     } catch (error) {
       throw toAiError(error);
     }
