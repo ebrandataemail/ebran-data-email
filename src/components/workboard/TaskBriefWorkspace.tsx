@@ -428,20 +428,37 @@ export function TaskBriefWorkspace({
 
   async function createControlledShare() {
     if (!brief.id) { toast.error("Simpan brief terlebih dahulu."); return; }
-    const token = crypto.randomUUID() + crypto.randomUUID();
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
-    const tokenHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    const expiresAt = shareExpiry === "never" ? null : new Date(Date.now() + Number(shareExpiry) * 86400000).toISOString();
-    const { error } = await (supabase.from("task_brief_shares" as any) as any).insert({
-      brief_id: brief.id, token_hash: tokenHash, allow_comments: shareComments,
-      allow_confirmation: shareConfirmation, expires_at: expiresAt,
-    });
-    if (error) { toast.error(error.message); return; }
-    const link = window.location.origin + "/brief-share/" + token;
-    setShareLink(link);
-    await load();
-    try { await navigator.clipboard.writeText(link); toast.success("Tautan share dibuat dan disalin."); }
-    catch { toast.success("Tautan share dibuat."); }
+    try {
+      const saved = await persist();
+      const nextVersion = versions.length ? Number(saved.current_version || 1) + 1 : Number(saved.current_version || 1);
+      const snapshot = { ...saved, current_version: nextVersion, deliverables };
+      const { error: versionError } = await (supabase.from("task_brief_versions" as any) as any).insert({
+        brief_id: saved.id, version_number: nextVersion, status: saved.status, snapshot,
+        change_note: "Snapshot untuk controlled client share",
+      });
+      if (versionError) throw versionError;
+      const { error: updateError } = await (supabase.from("task_briefs" as any) as any)
+        .update({ current_version: nextVersion }).eq("id", saved.id);
+      if (updateError) throw updateError;
+
+      const token = crypto.randomUUID() + crypto.randomUUID();
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+      const tokenHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const expiresAt = shareExpiry === "never" ? null : new Date(Date.now() + Number(shareExpiry) * 86400000).toISOString();
+      const { error } = await (supabase.from("task_brief_shares" as any) as any).insert({
+        brief_id: saved.id, version_number: nextVersion, token_hash: tokenHash,
+        allow_comments: shareComments, allow_confirmation: shareConfirmation, expires_at: expiresAt,
+      });
+      if (error) throw error;
+      const link = window.location.origin + "/brief-share/" + token;
+      setShareLink(link);
+      setBrief((current) => ({ ...current, current_version: nextVersion }));
+      await load();
+      try { await navigator.clipboard.writeText(link); toast.success("Tautan share versi v" + nextVersion + " dibuat dan disalin."); }
+      catch { toast.success("Tautan share versi v" + nextVersion + " dibuat."); }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Controlled share gagal dibuat.");
+    }
   }
 
   async function revokeShare(id: string) {
@@ -607,7 +624,7 @@ export function TaskBriefWorkspace({
             </footer>
             {aiOpen && <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-xl space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Generate Task Brief with Ebran AI</h3><button type="button" onClick={() => setAiOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">AI membaca task, client profile, brand profile, project, dan metadata dokumen yang tersedia.</p><label className="block text-xs font-semibold">Konteks tambahan<textarea value={aiContext} onChange={(e) => setAiContext(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-border bg-background p-2 font-normal" placeholder="Apa yang client minta? Tujuan kampanye? Informasi dari meeting?" /></label><label className="block text-xs font-semibold">Instruksi khusus<textarea value={aiInstructions} onChange={(e) => setAiInstructions(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-border bg-background p-2 font-normal" placeholder="Pantangan, gaya, target kualitas, batasan, asumsi yang harus diuji…" /></label><label className="block text-xs font-semibold">Lampiran untuk AI<input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv" onChange={(e) => setAiFile(e.target.files?.[0] ?? null)} className="mt-1 block w-full text-xs" /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setAiOpen(false)} className="rounded-md border px-3 py-2 text-xs">Cancel</button><button type="button" onClick={() => void runAi()} disabled={aiLoading} className="inline-flex items-center gap-2 rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast disabled:opacity-50"><Sparkles className="size-3.5" />{aiLoading ? "AI sedang menyusun…" : "Generate Draft"}</button></div></section></div>}
             {shareOpen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-lg space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Controlled Client Share</h3><button type="button" onClick={() => setShareOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">Akses read-only secara default. Internal notes, AI prompts, cost/margin internal, dan komentar internal tidak ikut dibagikan.</p><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareComments} onChange={(e) => setShareComments(e.target.checked)} /> Izinkan client memberi komentar</label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareConfirmation} onChange={(e) => setShareConfirmation(e.target.checked)} /> Izinkan client mengonfirmasi brief</label><label className="block text-xs">Tautan kedaluwarsa<select value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background p-2"><option value="1">1 hari</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="never">Tidak kedaluwarsa</option></select></label><button type="button" onClick={() => void createControlledShare()} className="w-full rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast">Generate Share Link</button>{shareLink && <div className="break-all rounded-lg bg-muted p-2 text-[10px]">{shareLink}<p className="mt-1 text-emerald-700">Halaman client share aktif. Tautan dapat dibagikan ke client.</p></div>}
-            {shares.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Share links &amp; access history</p>{shares.map((share) => <div key={share.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-[10px]"><span>{share.revoked_at ? "Revoked" : share.expires_at && new Date(share.expires_at) < new Date() ? "Expired" : "Active"} · {new Date(share.created_at).toLocaleString("id-ID")}</span>{!share.revoked_at && <button type="button" onClick={() => void revokeShare(share.id)} className="text-destructive underline">Revoke</button>}</div>)}</div>}
+            {shares.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Share links &amp; access history</p>{shares.map((share) => <div key={share.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-[10px]"><span>{share.revoked_at ? "Revoked" : share.expires_at && new Date(share.expires_at) < new Date() ? "Expired" : "Active"} · v{share.version_number} · {new Date(share.created_at).toLocaleString("id-ID")}</span>{!share.revoked_at && <button type="button" onClick={() => void revokeShare(share.id)} className="text-destructive underline">Revoke</button>}</div>)}</div>}
             {shareFeedback.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Client feedback</p>{shareFeedback.map((feedback) => <div key={feedback.id} className="rounded-lg bg-muted/50 p-2 text-[10px]"><b>{feedback.client_name}</b> · {new Date(feedback.created_at).toLocaleString("id-ID")}<p className="mt-1">{feedback.decision || "Comment"}{feedback.comment ? " — " + feedback.comment : ""}</p></div>)}</div>}</section></div>}
           </section>
         </div>
