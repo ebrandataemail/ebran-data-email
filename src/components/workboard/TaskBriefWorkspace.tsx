@@ -121,7 +121,8 @@ export function TaskBriefWorkspace({
           (supabase.from("task_brief_revision_requests" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
           (supabase.from("task_brief_versions" as any) as any).select("id,version_number,status,change_note,created_at").eq("brief_id", row.id).order("version_number", { ascending: false }),
           (supabase.from("task_brief_approvals" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
-          (supabase.from("task_brief_shares" as any) as any).select("id,allow_comments,allow_confirmation,expires_at,revoked_at,created_at").eq("brief_id", row.id).order("created_at", { ascending: false }),
+          (supabase.from("task_brief_shares" as any) as any).select("id,allow_comments,allow_confirmation,expires_at,revoked_at,created_at,version_number").eq("brief_id", row.id).order("created_at", { ascending: false }),
+          (supabase.from("task_brief_comments" as any) as any).select("*").eq("brief_id", row.id).order("created_at", { ascending: false }),
         ]);
         for (const result of [d, s, r, v, a, sh, cm]) if (result.error) throw result.error;
         const deliverableRows = d.data ?? [];
