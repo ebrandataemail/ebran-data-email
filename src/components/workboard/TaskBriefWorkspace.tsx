@@ -272,12 +272,12 @@ export function TaskBriefWorkspace({
   }, [isPersistedTask, client, task, project?.id, brief, deliverables, dirty, onDataChanged]);
 
   useEffect(() => {
-    if (!dirty || !hydrated.current || !isPersistedTask || !editorOpen) return;
+    if (!dirty || !hydrated.current || !isPersistedTask) return;
     const timer = window.setTimeout(() => {
       void persist().catch((error) => toast.error(error instanceof Error ? error.message : "Autosave gagal"));
     }, 1800);
     return () => window.clearTimeout(timer);
-  }, [dirty, editorOpen, isPersistedTask, persist]);
+  }, [dirty, isPersistedTask, persist]);
 
   function patchBrief(patch: Partial<BriefRow>) {
     setBrief((current) => ({ ...current, ...patch }));
