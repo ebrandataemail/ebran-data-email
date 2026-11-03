@@ -143,6 +143,7 @@ export function TaskBriefWorkspace({
         });
         setDeliverables(deliverableRows.map((item: any) => ({
           ...item,
+          specifications: typeof item.specifications === "string" ? item.specifications : item.specifications?.text ?? "",
           acceptance_criteria: (criteria.data ?? []).filter((c: any) => c.deliverable_id === item.id).map((c: any) => c.criterion),
         })));
         setSources(s.data ?? []);
