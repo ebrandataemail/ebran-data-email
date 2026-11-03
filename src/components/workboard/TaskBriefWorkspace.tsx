@@ -184,6 +184,7 @@ export function TaskBriefWorkspace({
 
   const persist = useCallback(async () => {
     if (!isPersistedTask || !client || !task) throw new Error("Simpan brief memerlukan task yang sudah tersimpan di database.");
+    if (brief.id && !dirty) return brief;
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData.user) throw authError ?? new Error("Sesi login tidak ditemukan.");
     setSaving(true);
@@ -249,7 +250,7 @@ export function TaskBriefWorkspace({
     } finally {
       setSaving(false);
     }
-  }, [isPersistedTask, client, task, project?.id, brief, deliverables, onDataChanged]);
+  }, [isPersistedTask, client, task, project?.id, brief, deliverables, dirty, onDataChanged]);
 
   useEffect(() => {
     if (!dirty || !hydrated.current || !isPersistedTask || !editorOpen) return;
@@ -378,6 +379,7 @@ export function TaskBriefWorkspace({
   }
 
   async function approveBrief() {
+    if (brief.status === "approved" && !dirty) { toast.success("Brief versi aktif sudah disetujui."); return; }
     let saved = brief;
     try { saved = await persist(); } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal menyimpan"); return; }
     const missing = saved.sections.filter((s: BriefSection) => s.status !== "confirmed");
