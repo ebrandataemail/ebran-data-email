@@ -50,6 +50,7 @@ function groupByDate(rows: WorkboardTask[]): [string, WorkboardTask[]][] {
 type TaskDraft = {
   client_id: string;
   title: string;
+  task_type: string;
   description: string;
   status: string;
   priority: string;
@@ -59,6 +60,7 @@ type TaskDraft = {
 const emptyDraft = (clientId: string, status = "things-to-do"): TaskDraft => ({
   client_id: clientId,
   title: "",
+  task_type: "general",
   description: "",
   status,
   priority: "medium",
@@ -210,6 +212,7 @@ export function TaskBoard({
     setDraft({
       client_id: task.client_id,
       title: task.title,
+      task_type: task.task_type ?? "general",
       description: task.description ?? "",
       status: task.status,
       priority: task.priority,
@@ -245,6 +248,7 @@ export function TaskBoard({
       const payload = {
         client_id: draft.client_id,
         title: draft.title.trim(),
+        task_type: draft.task_type,
         description: draft.description.trim(),
         status: draft.status,
         priority: draft.priority,
@@ -286,6 +290,7 @@ export function TaskBoard({
       await onCreate({
         client_id: task.client_id,
         title: task.title,
+        task_type: task.task_type ?? "general",
         description: task.description ?? "",
         status: task.status,
         priority: task.priority,
@@ -410,6 +415,7 @@ export function TaskBoard({
                                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                       {client?.name ?? "Client tidak ditemukan"}
                                     </p>
+                                    <span className="mt-1 inline-flex rounded-full bg-wb-blue/10 px-2 py-0.5 text-[9px] font-semibold text-wb-blue-strong">{({design:"Design",content:"Content",social_media:"Social Media",video:"Video",website:"Website",ads_marketing:"Ads & Marketing",seo:"SEO",research:"Research",strategy:"Strategy",analytics:"Analytics",branding:"Branding",general:"General"} as Record<string,string>)[task.task_type ?? "general"] || "General"}</span>
                                   </div>
                                   {task.id.startsWith("demo-task-") ? (
                                     <span className="rounded-full bg-wb-blue/20 px-2 py-1 text-[9px] font-semibold text-wb-blue-strong">DEMO</span>
@@ -505,6 +511,13 @@ export function TaskBoard({
               </button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
+                Jenis task / Workspace
+                <select value={draft.task_type} onChange={(e) => setDraft((d) => ({ ...d, task_type: e.target.value }))} className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm">
+                  <option value="design">Design</option><option value="content">Content Writing</option><option value="social_media">Social Media</option><option value="video">Video Production</option><option value="website">Website Development</option><option value="ads_marketing">Ads & Marketing</option><option value="seo">SEO</option><option value="research">Research</option><option value="strategy">Strategy</option><option value="analytics">Data & Analytics</option><option value="branding">Branding</option><option value="general">General / Other</option>
+                </select>
+                <span className="block text-[10px] font-normal text-muted-foreground">Jenis ini menentukan modul deliverable dan preview yang muncul di Graphic Workspace.</span>
+              </label>
               <label className="space-y-1 text-xs font-semibold text-wb-ink sm:col-span-2">
                 Client
                 <select
