@@ -29,6 +29,7 @@ export type WorkboardTask = {
   id: string;
   client_id: string;
   title: string;
+  task_type?: string;
   description: string | null;
   status: string;
   priority: string;
@@ -116,7 +117,7 @@ export function useWorkboardData() {
         .order("updated_at", { ascending: false }),
       (supabase.from("client_tasks" as any) as any)
         .select(
-          "id,client_id,title,description,status,priority,due_date,assignee,created_at,updated_at,sort_order",
+          "id,client_id,title,task_type,description,status,priority,due_date,assignee,created_at,updated_at,sort_order",
         )
         .order("due_date", { ascending: true, nullsFirst: false })
         .order("sort_order"),
@@ -157,6 +158,7 @@ export function useWorkboardData() {
     async (input: {
       client_id: string;
       title: string;
+      task_type?: string;
       description?: string;
       status: string;
       priority: string;
@@ -180,6 +182,7 @@ export function useWorkboardData() {
       patch: Partial<{
         client_id: string;
         title: string;
+        task_type?: string;
         description: string | null;
         status: string;
         priority: string;
@@ -221,6 +224,7 @@ export function useWorkboardData() {
       return createTask({
         client_id: task.client_id,
         title: task.title.slice(0, 145) + " (Salinan)",
+        task_type: task.task_type ?? "general",
         description: task.description ?? "",
         status: task.status,
         priority: task.priority,
