@@ -571,7 +571,7 @@ export function ClientDetailWorkspace({
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-start bg-[#dce3e8] p-2 text-slate-800 sm:p-5 lg:p-8">
+    <div className="w-full min-w-0 text-slate-800">
       {/* Modal Impor dari Workboard */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
@@ -697,63 +697,9 @@ export function ClientDetailWorkspace({
       )}
 
       {/* Main Unified Container */}
-      <div className="w-full max-w-[1400px] overflow-hidden rounded-2xl border border-slate-300 bg-[#f8fafc] shadow-2xl">
-        {/* Top Navigation Bar */}
-        <header className="flex select-none items-center justify-between bg-[#003837] px-4 py-2.5 text-xs tracking-wide text-white sm:px-6">
-          <div className="flex items-center space-x-3 overflow-x-auto">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#ea580c] font-bold text-white shadow-sm">
-              <svg
-                className="size-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <nav className="flex items-center space-x-1">
-              <button
-                type="button"
-                onClick={onBack}
-                className="flex items-center space-x-1.5 rounded px-3 py-1.5 text-slate-200 transition hover:bg-[#012a29] hover:text-white"
-              >
-                <Briefcase className="size-3.5 opacity-80" />
-                <span>Companies</span>
-              </button>
-              <button
-                type="button"
-                className="flex items-center space-x-1.5 rounded bg-[#012625] px-3 py-1.5 font-medium text-white transition hover:bg-[#022e2d]"
-              >
-                <LayoutDashboard className="size-3.5 opacity-90" />
-                <span>Workspace</span>
-              </button>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-3 text-slate-300">
-            <button type="button" aria-label="Cari" className="p-1 transition hover:text-white">
-              <Search className="size-4" />
-            </button>
-            <button
-              type="button"
-              aria-label="Notifikasi"
-              className="relative p-1 transition hover:text-white"
-            >
-              <Bell className="size-4" />
-              <span className="absolute right-1 top-1 size-1.5 rounded-full bg-amber-400"></span>
-            </button>
-            <div className="flex size-7 items-center justify-center rounded-full bg-[#f59e0b] text-xs font-bold text-[#78350f] shadow ring-2 ring-[#003837]">
-              BF
-            </div>
-          </div>
-        </header>
-
+      <div className="w-full min-w-0 space-y-4">
         {/* Main Workspace Area */}
-        <main className="space-y-4 p-4 sm:p-6">
+        <main className="min-w-0 space-y-4">
           {/* 1. Client Profile Header Card */}
           <section className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="pointer-events-none absolute right-0 top-0 h-full w-64 bg-gradient-to-l from-slate-50 to-transparent opacity-50"></div>
