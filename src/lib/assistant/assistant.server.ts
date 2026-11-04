@@ -1,9 +1,9 @@
-// Server-only AI prompts and Lovable AI calls for every AI feature.
+// Server-only AI prompts and external AI provider calls for every AI feature.
 import { Output, streamText, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import { asset } from "@/data/asset";
-import { aiProviderOptions, createAiModel, toAiError } from "@/lib/ai/lovable.server";
+import { createAiModel, toAiError } from "@/lib/ai/provider.server";
 import { buildAssetBrief } from "./context";
 
 export const PERSONA = `Kamu adalah asisten AI di aplikasi "Ebran Aset Digital - Arsip Data Pribadi Aman" untuk mengelola akun, aset developer, serta aset Ads & Marketing dan konteks proyek/client.
@@ -14,7 +14,7 @@ function briefText(brief?: unknown) {
   return `Data aset (JSON, rahasia sudah disamarkan):\n${JSON.stringify(data, null, 2)}`;
 }
 
-async function runText(instructions: string, prompt: string, effort: "low" | "medium") {
+async function runText(instructions: string, prompt: string, _effort: "low" | "medium") {
   try {
     const { model } = createAiModel();
     const result = streamText({
@@ -22,7 +22,6 @@ async function runText(instructions: string, prompt: string, effort: "low" | "me
       instructions,
       messages: [{ role: "user", content: prompt }],
       maxRetries: 1,
-      providerOptions: aiProviderOptions(effort),
     });
     const text = (await result.text).trim();
     if (!text) throw new Error("Empty AI response");
@@ -36,7 +35,7 @@ export async function runObject<T>(
   schema: z.ZodType<T>,
   instructions: string,
   messages: ModelMessage[],
-  effort: "low" | "medium",
+  _effort: "low" | "medium",
 ): Promise<T> {
   try {
     const { model } = createAiModel();
@@ -46,7 +45,6 @@ export async function runObject<T>(
       messages,
       maxRetries: 1,
       output: Output.object({ schema }),
-      providerOptions: aiProviderOptions(effort),
     });
     return (await result.output) as T;
   } catch (error) {

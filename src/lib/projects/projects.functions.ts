@@ -14,6 +14,7 @@ export const workspaceList = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const [
       clientsResult,
+      brandProfilesResult,
       projectsResult,
       accountsResult,
       developerAssetsResult,
@@ -27,6 +28,8 @@ export const workspaceList = createServerFn({ method: "POST" })
           "id,name,description,website,legal_name,industry,contact_name,contact_email,contact_phone,address,city,logo_path,company_profile,scope_of_work,internal_notes,client_status,created_at,updated_at",
         )
         .order("name"),
+      (context.supabase.from("client_brand_profiles" as any) as any)
+        .select("*"),
       context.supabase
         .from("projects")
         .select("id,name,description,status,client_id,created_at,updated_at")
@@ -45,13 +48,17 @@ export const workspaceList = createServerFn({ method: "POST" })
     ]);
     if (
       clientsResult.error ||
+      brandProfilesResult.error ||
       projectsResult.error ||
       accountsResult.error ||
       developerAssetsResult.error ||
-      adsAssetsResult.error
+      adsAssetsResult.error ||
+      digitalAssetsResult.error ||
+      documentsResult.error
     )
       throw new Error("Gagal memuat data proyek dan client.");
     const clients = clientsResult.data ?? [];
+    const brandProfiles = brandProfilesResult.data ?? [];
     const projects = projectsResult.data ?? [];
     const accounts = accountsResult.data ?? [];
     const developerAssets = developerAssetsResult.data ?? [];
@@ -64,6 +71,7 @@ export const workspaceList = createServerFn({ method: "POST" })
         const projectIds = new Set(clientProjects.map((project) => project.id));
         return {
           ...client,
+          brandProfile: brandProfiles.find((profile: any) => profile.client_id === client.id) ?? null,
           legalName: client.legal_name,
           industry: client.industry,
           contactName: client.contact_name,

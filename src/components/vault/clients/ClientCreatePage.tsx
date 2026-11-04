@@ -3,34 +3,22 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  AlertTriangle,
   ArrowLeft,
-  Bold,
   BrainCircuit,
   Briefcase,
   Building,
   Building2,
   CalendarClock,
   CheckCircle2,
-  CheckSquare,
   ClipboardList,
   CloudUpload,
-  Copy,
-  Eye,
-  EyeOff,
-  FileText,
   FolderOpen,
   Globe,
   ImagePlus,
-  Italic,
   Key,
-  Layers,
-  List,
-  ListOrdered,
   Mail,
   Mic,
   Palette,
-  Paperclip,
   Phone,
   Plus,
   PlusCircle,
@@ -39,12 +27,8 @@ import {
   ShieldCheck,
   Sparkles,
   StickyNote,
-  Tag,
   Tags,
   Target,
-  Trash2,
-  Underline,
-  UserCheck,
   X,
   XCircle,
 } from "lucide-react";
@@ -59,8 +43,6 @@ type CustomAccountRow = {
   id: string;
   platform: string;
   username: string;
-  password: string;
-  showPassword?: boolean;
   note: string;
 };
 
@@ -68,8 +50,6 @@ const createEmptyAccountRow = (): CustomAccountRow => ({
   id: crypto.randomUUID(),
   platform: "",
   username: "",
-  password: "",
-  showPassword: false,
   note: "",
 });
 
@@ -96,77 +76,43 @@ export function ClientCreatePage() {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("Gresik");
+  const [city, setCity] = useState("");
 
   // Profile Client Details (Brand Identity, Overview, Guardrails, Notes)
   const [color1, setColor1] = useState("#C9A75D");
   const [color2, setColor2] = useState("#003837");
-  const [toneOfVoice, setToneOfVoice] = useState(
-    "Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan Sahabat Haramain.",
-  );
+  const [toneOfVoice, setToneOfVoice] = useState("");
   const [companyOverview, setCompanyOverview] = useState("");
-  const [painPoints, setPainPoints] = useState(
-    "• Desain promosi lama kaku.\n• Pesan komunikasi belum terstandardisasi.",
-  );
-  const [agencyGoals, setAgencyGoals] = useState(
-    "• Rebranding aset digital premium.\n• Standardisasi konten social media.",
-  );
-  const [dosRules, setDosRules] = useState(
-    "• Selalu sertakan logo Izin Kemenag.\n• Gunakan dokumentasi keberangkatan jamaah asli.",
-  );
-  const [dontsRules, setDontsRules] = useState(
-    "• Jangan pernah menggunakan font Comic Sans.\n• Dilarang mengubah rasio logo tanpa izin.",
-  );
-  const [catatanPenting, setCatatanPenting] = useState(
-    "• Kontrak kerja sama diperpanjang hingga Desember 2026.\n• Fokus Q4 adalah kampanye 'Umrah Nyaman Bersama Keluarga'.\n• Dilarang mengubah aset logo tanpa persetujuan Bpk. Dwi.",
-  );
+  const [painPoints, setPainPoints] = useState("");
+  const [agencyGoals, setAgencyGoals] = useState("");
+  const [dosRules, setDosRules] = useState("");
+  const [dontsRules, setDontsRules] = useState("");
+  const [catatanPenting, setCatatanPenting] = useState("");
 
   // Card 2: Timeline & Agenda Awal
-  const [startAt, setStartAt] = useState("2026-10-20T10:00");
-  const [targetAt, setTargetAt] = useState("2026-10-25T10:00");
-  const [briefJudul, setBriefJudul] = useState("Revisi Desain Spanduk Air Zam Zam — V3");
-  const [briefRingkasan, setBriefRingkasan] = useState(
-    "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
-  );
-  const [briefSpesifikasi, setBriefSpesifikasi] = useState(
-    "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
-  );
-  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([
-    { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
-    { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
-  ]);
-  const [briefDeadline, setBriefDeadline] = useState("2026-10-28T15:00");
-  const [briefPrioritas, setBriefPrioritas] = useState("Enterprise");
-  const [briefPic, setBriefPic] = useState("DS");
-  const [briefKonfirmasi, setBriefKonfirmasi] = useState(
-    "ukuran logo yang diinginkan client belum disebut.",
-  );
+  const [startAt, setStartAt] = useState("");
+  const [targetAt, setTargetAt] = useState("");
+  const [briefJudul, setBriefJudul] = useState("");
+  const [briefRingkasan, setBriefRingkasan] = useState("");
+  const [briefSpesifikasi, setBriefSpesifikasi] = useState("");
+  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([]);
+  const [briefDeadline, setBriefDeadline] = useState("");
+  const [briefPrioritas, setBriefPrioritas] = useState("Standard");
+  const [briefPic, setBriefPic] = useState("");
+  const [briefKonfirmasi, setBriefKonfirmasi] = useState("");
 
   // Card 3: Master Email & Custom Accounts
   const [masterEmail, setMasterEmail] = useState("");
-  const [masterPassword, setMasterPassword] = useState("");
-  const [showMasterPassword, setShowMasterPassword] = useState(false);
-  const [recoveryPhone, setRecoveryPhone] = useState("");
-  const [recovery2fa, setRecovery2fa] = useState("");
-  const [accounts, setAccounts] = useState<CustomAccountRow[]>([
-    {
-      id: crypto.randomUUID(),
-      platform: "Instagram",
-      username: "@sultanharamain_gresik",
-      password: "••••••••",
-      showPassword: false,
-      note: "Hanya Admin",
-    },
-  ]);
+  const [accounts, setAccounts] = useState<CustomAccountRow[]>([]);
   const [vaultNote, setVaultNote] = useState("");
 
   // Card 4: Dokumen Pendukung
   const [documents, setDocuments] = useState<File[]>([]);
 
   // Card 5: Klasifikasi & Penugasan
-  const [status, setStatus] = useState("onhold");
-  const [priority, setPriority] = useState("enterprise");
-  const [tagsInput, setTagsInput] = useState("Umrah, Tour & Travel");
+  const [status, setStatus] = useState("active");
+  const [priority, setPriority] = useState("standard");
+  const [tagsInput, setTagsInput] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -194,92 +140,27 @@ export function ClientCreatePage() {
   }, [startAt, targetAt]);
 
   // AI Auto-Generate Handler
+  // Local helper only: no external AI provider or Lovable token is called.
   const handleAIGenerate = () => {
+    const prompt = aiPromptInput.trim();
+    if (!prompt) {
+      toast.error("Masukkan nama client atau URL terlebih dahulu.");
+      return;
+    }
     setIsGeneratingAI(true);
-    setTimeout(() => {
-      const p = aiPromptInput.trim() || "Sultan Haramain Gresik";
-      const baseName = p.replace(/(https?:\/\/|www\.)/g, "").split(".")[0];
-      const formattedName = baseName
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-
-      setName(formattedName || "Sultan Haramain Gresik");
-      setLegalName(`PT. ${formattedName || "Sultan Barokah Haramain"} Cabang Gresik`);
-      setIndustry("Travel Umrah & Haji Khusus");
-      setEmail(`kontak@${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamain"}.com`);
-      setPhone("0811-3107-707");
-      setWebsite(`www.${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamaingresik"}.com`);
-      setAddress("Jl. Samanhudi No. 37, Kebungson, Kec. Gresik, Jawa Timur 61114");
-
-      setColor1("#C9A75D");
-      setColor2("#003837");
-      setToneOfVoice(
-        `Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan Sahabat ${formattedName || "Haramain"}.`,
-      );
-      setCompanyOverview(
-        `${formattedName || "Sultan Barokah Haramain"} adalah biro perjalanan resmi penyedia layanan Umrah, Haji Khusus, serta distributor resmi paket perjalanan ibadah terpercaya.`,
-      );
-      setPainPoints(
-        "• Desain promosi lama kaku dan kurang modern.\n• Pesan branding di media sosial belum terstandardisasi.",
-      );
-      setAgencyGoals(
-        "• Rebranding aset digital & visual feed premium.\n• Standardisasi katalog promo dan landing page online.",
-      );
-      setDosRules(
-        "• Selalu cantumkan nomor sertifikat izin resmi Kemenag.\n• Gunakan dokumentasi foto/video jemaah asli.",
-      );
-      setDontsRules(
-        "• Jangan pernah menggunakan font tidak resmi atau kaku.\n• Dilarang mengubah rasio logo tanpa persetujuan tim.",
-      );
-      setCatatanPenting(
-        `• Kontrak kerja sama aktif hingga Desember 2026.\n• Fokus Q4: Kampanye promo Umrah Ramadhan 1448H.\n• Dilarang merubah aset visual tanpa persetujuan manajemen.`,
-      );
-
-      setStartAt("2026-10-20T10:00");
-      setTargetAt("2026-11-20T10:00");
-      setBriefJudul(`Kampanye Branding & Launching Catalog ${formattedName}`);
-      setBriefRingkasan(
-        "Penyusunan aset visual, brosur cetak, dan landing page pemesanan paket Umrah.",
-      );
-      setBriefSpesifikasi("Digital Asset Pack + Landing Page Next.js + Brosur A5 3 Fold");
-      setChecklist([
-        { text: "Verifikasi Izin Kemenag & NPWP", note: "Legal", done: true },
-        { text: "Rilis katalog paket promo terbaru", note: "Desain", done: false },
-        { text: "Setup landing page pendaftaran online", note: "Dev", done: false },
-      ]);
-      setBriefDeadline("2026-11-15T15:00");
-      setBriefPrioritas("Enterprise");
-      setBriefPic("DS");
-      setBriefKonfirmasi("Nomor kontak CS cabang perlu dikonfirmasi kembali.");
-
-      setMasterEmail(`admin@${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamain"}.com`);
-      setMasterPassword("SultanHaramain2026!");
-      setRecoveryPhone("0812-3456-7890");
-      setRecovery2fa("JBSWY3DPEHPK3PXP");
-
-      setAccounts([
-        {
-          id: crypto.randomUUID(),
-          platform: "Instagram",
-          username: `@${baseName.toLowerCase().replace(/\s+/g, "") || "sultanharamain"}_official`,
-          password: "••••••••",
-          showPassword: false,
-          note: "Main Admin",
-        },
-        {
-          id: crypto.randomUUID(),
-          platform: "WordPress Admin",
-          username: "admin_web",
-          password: "••••••••",
-          showPassword: false,
-          note: "CMS Portal",
-        },
-      ]);
-
-      setIsGeneratingAI(false);
-      toast.success("✨ Seluruh profil & timeline klien berhasil dibuat otomatis oleh AI!");
-    }, 1000);
+    const urlMatch = prompt.match(/https?:\/\/[^\s]+/i);
+    const source = urlMatch ? prompt.replace(urlMatch[0], "").trim() : prompt;
+    const formattedName = source
+      .replace(/(https?:\/\/|www\.)/gi, "")
+      .split(".")[0]
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    if (formattedName) setName(formattedName);
+    if (urlMatch) setWebsite(urlMatch[0]);
+    setIsGeneratingAI(false);
+    toast.info("Nama dan URL diisi sebagai draft lokal. AI belum dijalankan dan tidak ada data contoh yang dibuat.");
   };
 
   const handleLogoChange = (file?: File) => {
@@ -365,7 +246,7 @@ export function ClientCreatePage() {
         data: {
           name: name.trim(),
           legalName: legalName.trim() || name.trim(),
-          industry: industry.trim() || tagsInput.trim() || undefined,
+          industry: industry.trim() || undefined,
           contactEmail: email.trim() || undefined,
           contactPhone: phone.trim() || undefined,
           website: website.trim() || undefined,
@@ -381,34 +262,65 @@ export function ClientCreatePage() {
       });
       const clientId = savedClient.id;
 
+      // Persist the form's brand/profile fields as structured, reusable data.
+      const { error: profileError } = await (supabase.from("client_brand_profiles" as any) as any)
+        .insert({
+          user_id: userId,
+          client_id: clientId,
+          primary_color: color1,
+          secondary_color: color2,
+          tone_of_voice: toneOfVoice.trim() || null,
+          company_overview: companyOverview.trim() || null,
+          pain_points: painPoints.trim() || null,
+          agency_goals: agencyGoals.trim() || null,
+          do_rules: dosRules.trim() || null,
+          dont_rules: dontsRules.trim() || null,
+          important_notes: catatanPenting.trim() || null,
+          vault_notes: vaultNote.trim() || null,
+          tags: tagsInput.split(",").map((tag) => tag.trim()).filter(Boolean),
+          service_priority: priority === "basic" ? "standard" : priority,
+        });
+      if (profileError) throw new Error(`Profil brand gagal disimpan: ${profileError.message}`);
+
       // 3. Create Project & Initial Timeline Agenda
       const project = await saveProject({
         data: {
           name: `${name.trim()} - Proyek Utama`,
-          description: briefRingkasan || `Timeline project: Start ${startAt} -> Target ${targetAt}. Priority: ${priority}`,
+          description: briefRingkasan.trim() || null,
           clientId,
-          status: status === "completed" ? "finished" : status === "active" ? "on-process" : "pending",
+          status: status === "completed" ? "archived" : status === "active" ? "active" : "paused",
         },
       });
 
       // Save initial timeline events
+      const hasInitialBrief = Boolean(
+        briefJudul.trim() ||
+        briefRingkasan.trim() ||
+        briefSpesifikasi.trim() ||
+        checklist.length ||
+        briefDeadline ||
+        startAt,
+      );
       const timelineRows = [
-        {
-          user_id: userId,
-          client_id: clientId,
-          event_type: "project",
-          title: briefJudul || "Kickoff Project & Setup Initial Agenda",
-          description: briefRingkasan || "Kickoff meeting dan penyusunan struktur timeline.",
-          occurred_at: startAt ? new Date(startAt).toISOString() : new Date().toISOString(),
-          metadata: {
-            project_id: project.id,
-            spesifikasi: briefSpesifikasi,
-            checklist,
-            prioritas: briefPrioritas,
-            pic: briefPic,
-            konfirmasi: briefKonfirmasi,
-          },
-        },
+        hasInitialBrief
+          ? {
+              user_id: userId,
+              client_id: clientId,
+              event_type: "project",
+              title: briefJudul.trim() || "Kickoff Project",
+              description: briefRingkasan.trim() || null,
+              occurred_at: startAt ? new Date(startAt).toISOString() : new Date().toISOString(),
+              metadata: {
+                project_id: project.id,
+                spesifikasi: briefSpesifikasi,
+                checklist,
+                prioritas: briefPrioritas,
+                pic: briefPic,
+                konfirmasi: briefKonfirmasi,
+                deadline: briefDeadline || null,
+              },
+            }
+          : null,
         targetAt
           ? {
               user_id: userId,
@@ -423,7 +335,8 @@ export function ClientCreatePage() {
       ].filter(Boolean);
 
       if (timelineRows.length) {
-        await supabase.from("client_timeline_events").insert(timelineRows);
+        const { error: timelineError } = await supabase.from("client_timeline_events").insert(timelineRows);
+        if (timelineError) throw new Error(`Timeline gagal disimpan: ${timelineError.message}`);
       }
 
       // 4. Save Master Account & Custom Digital Assets
@@ -435,18 +348,12 @@ export function ClientCreatePage() {
           asset_name: "Akun Utama Klien (Master Email)",
           asset_type: "email",
           username: masterEmail.trim(),
-          notes: [
-            masterPassword ? `Password: ${masterPassword}` : null,
-            recoveryPhone ? `Recovery HP: ${recoveryPhone}` : null,
-            recovery2fa ? `2FA Secret: ${recovery2fa}` : null,
-          ]
-            .filter(Boolean)
-            .join(" | "),
+          notes: null,
         });
       }
 
       accounts.forEach((acc) => {
-        if (acc.platform.trim() || acc.username.trim() || acc.password.trim()) {
+        if (acc.platform.trim() || acc.username.trim()) {
           digitalAssets.push({
             user_id: userId,
             client_id: clientId,
@@ -454,21 +361,20 @@ export function ClientCreatePage() {
             asset_type: "other",
             platform: acc.platform.trim() || null,
             username: acc.username.trim() || null,
-            notes: [acc.password ? `Password: ${acc.password}` : null, acc.note ? `Note: ${acc.note}` : null]
-              .filter(Boolean)
-              .join(" | "),
+            notes: acc.note.trim() || null,
           });
         }
       });
 
       if (digitalAssets.length) {
-        await supabase.from("client_digital_assets").insert(digitalAssets);
+        const { error: assetsError } = await supabase.from("client_digital_assets").insert(digitalAssets);
+        if (assetsError) throw new Error(`Aset digital gagal disimpan: ${assetsError.message}`);
       }
 
       // 5. Upload Supporting Documents
       for (const file of documents) {
         const path = await uploadPrivateFile(userId, clientId, file, "documents");
-        await supabase.from("client_documents").insert({
+        const { error: documentError } = await supabase.from("client_documents").insert({
           user_id: userId,
           client_id: clientId,
           title: file.name,
@@ -478,6 +384,10 @@ export function ClientCreatePage() {
           mime_type: file.type || null,
           file_size: file.size,
         });
+        if (documentError) {
+          await supabase.storage.from("client-files").remove([path]);
+          throw new Error(`Dokumen ${file.name} gagal disimpan: ${documentError.message}`);
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: KEY });
@@ -577,10 +487,10 @@ export function ClientCreatePage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
-                    ✨ AI Smart Profile &amp; Timeline Generator
+                    ✨ Bantuan Isi Profil (Lokal)
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Ketik nama perusahaan, website, atau prompt singkat. AI akan mengisi profil, brand, timeline, dan kredensial secara otomatis!
+                    Isi nama atau URL untuk membantu mengisi field dasar. Tidak memanggil AI eksternal atau token Lovable.
                   </p>
                 </div>
               </div>
@@ -1049,6 +959,9 @@ export function ClientCreatePage() {
                       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-bold text-slate-800">
                         <Key className="size-3.5 text-slate-500" /> Akun Utama Klien (Master Email)
                       </h3>
+                      <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
+                        Password, recovery code, dan secret 2FA belum dapat disimpan dengan aman. Simpan hanya username/metadata di sini; jangan masukkan rahasia sampai Secure Vault terenkripsi tersedia.
+                      </p>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
@@ -1063,30 +976,9 @@ export function ClientCreatePage() {
                             className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900"
                           />
                         </div>
-                        <div>
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                            Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showMasterPassword ? "text" : "password"}
-                              value={masterPassword}
-                              onChange={(e) => setMasterPassword(e.target.value)}
-                              placeholder="••••••••"
-                              className="w-full rounded-md border border-slate-200 bg-white py-2 pl-3 pr-10 text-xs text-slate-900"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowMasterPassword(!showMasterPassword)}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                              {showMasterPassword ? (
-                                <EyeOff className="size-4" />
-                              ) : (
-                                <Eye className="size-4" />
-                              )}
-                            </button>
-                          </div>
+                        <div className="flex items-center rounded-md border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                          Kolom password dinonaktifkan sampai penyimpanan terenkripsi tersedia.
+                        </div>
                         </div>
                       </div>
                     </div>
@@ -1137,22 +1029,8 @@ export function ClientCreatePage() {
                                 className="w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs"
                               />
                             </div>
-                            <div className="w-full md:w-1/4">
-                              <label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
-                                Password
-                              </label>
-                              <input
-                                type="password"
-                                value={acc.password}
-                                onChange={(e) =>
-                                  setAccounts((rows) =>
-                                    rows.map((row, i) =>
-                                      i === index ? { ...row, password: e.target.value } : row,
-                                    ),
-                                  )
-                                }
-                                className="w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs"
-                              />
+                            <div className="w-full md:w-1/4 flex items-center text-[10px] text-amber-700">
+                              Password belum tersedia di Secure Vault dan tidak boleh dimasukkan di form ini.
                             </div>
                             <div className="w-full md:w-1/4">
                               <label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
@@ -1256,8 +1134,8 @@ export function ClientCreatePage() {
                       className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-none"
                     >
                       <option value="active">🟢 Active Partner</option>
-                      <option value="onhold">🔴 On Hold</option>
-                      <option value="lead">🟡 New Lead / Prospek</option>
+                      <option value="on-hold">🔴 On Hold</option>
+                      <option value="prospect">🟡 New Lead / Prospek</option>
                       <option value="completed">🔵 Completed / Selesai</option>
                     </select>
                   </div>
@@ -1273,7 +1151,7 @@ export function ClientCreatePage() {
                     >
                       <option value="enterprise">Enterprise (High Priority)</option>
                       <option value="standard">Standard</option>
-                      <option value="basic">Basic / Freelance Task</option>
+                      <option value="priority">Priority</option>
                     </select>
                   </div>
 

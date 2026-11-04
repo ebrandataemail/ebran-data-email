@@ -2,20 +2,11 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
-  AlertCircle,
   AlertTriangle,
   ArrowDownToDot,
-  ArrowLeft,
-  BarChart2,
   Bell,
-  Bold,
-  BrainCircuit,
   Briefcase,
-  Building,
-  Building2,
   Calendar,
-  CalendarClock,
-  CheckCircle2,
   CheckSquare,
   ChevronDown,
   ChevronLeft,
@@ -26,20 +17,15 @@ import {
   Copy,
   Download,
   DownloadCloud,
-  Edit3,
-  ExternalLink,
   Eye,
-  EyeOff,
   FileIcon,
   FileText,
   FileUp,
-  Flag,
   FolderOpen,
   History,
   Inbox,
   Info,
   Instagram,
-  Italic,
   Kanban,
   KanbanSquare,
   Key,
@@ -48,33 +34,20 @@ import {
   LayoutTemplate,
   Link as LinkIcon,
   List,
-  ListOrdered,
-  Mail,
-  MapPin,
   MessageSquareDashed,
-  Mic,
-  Palette,
   Paperclip,
-  Phone,
   Plus,
-  PlusCircle,
   Save,
   Search,
   Send,
-  ShieldAlert,
   ShieldCheck,
   Sparkles,
-  StickyNote,
   Tag,
-  Target,
   Trash2,
-  Underline,
   Upload,
-  UploadCloud,
   User,
   UserCheck,
   X,
-  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,92 +72,28 @@ export type WorkboardTask = {
   perluKonfirmasi: string;
 };
 
-const DUMMY_WORKBOARD_TASKS: WorkboardTask[] = [
-  {
-    id: "WB-V3",
-    judul: "Revisi Desain Spanduk Air Zam Zam — V3",
-    clientProyek: "PT. Maju Mundur Bersama · Spanduk Keberangkatan Umrah",
-    ringkasan: "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
-    spesifikasi: "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
-    checklist: [
-      { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
-      { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
-    ],
-    deadline: "2026-10-28T15:00",
-    deadlineDisplay: "Oct 28, 2026 · 15:00 WIB",
-    prioritas: "Enterprise",
-    prioritasBadge: "bg-purple-100 text-purple-700 border-purple-200",
-    pic: "DS",
-    perluKonfirmasi: "ukuran logo yang diinginkan client belum disebut.",
-  },
-  {
-    id: "WB-102",
-    judul: "Revisi Copywriting Brosur Umroh Promo Ramadhan 1448H",
-    clientProyek: "Sultan Haramain Gresik · Brosur Cetak A5",
-    ringkasan: "Penyesuaian legalitas Kemenag dan revisi paket bintang lima Makkah/Madinah.",
-    spesifikasi: "Brosur Lipat 3 · Art Paper 150gsm · Laminasi Doff",
-    checklist: [
-      { text: "Update nomor registrasi PPIU Kemenag No. 102/2024", note: "Legal", done: true },
-      { text: "Perjelas fasilitas hotel bintang lima & kereta cepat", note: "Direksi", done: false },
-    ],
-    deadline: "2026-11-04T12:00",
-    deadlineDisplay: "Nov 04, 2026 · 12:00 WIB",
-    prioritas: "Urgent",
-    prioritasBadge: "bg-rose-100 text-rose-700 border-rose-200",
-    pic: "AM",
-    perluKonfirmasi: "Nomor kontak CS Gresik belum diverifikasi oleh admin cabang.",
-  },
-  {
-    id: "WB-103",
-    judul: "Setup Landing Page Katalog Produk & Pemesanan Grosir",
-    clientProyek: "Sultan Haramain Gresik · Portal Online",
-    ringkasan: "Integrasi formulir pemesanan distributor dan webhook notifikasi WhatsApp tim CS.",
-    spesifikasi: "Next.js Frontend · TailwindCSS · PostgreSQL database",
-    checklist: [
-      { text: "Integrasikan form checkout grosir dengan API ekspedisi", note: "Dev", done: false },
-      { text: "Pasang badge sertifikasi Halal & BPOM di footer", note: "Legal", done: false },
-    ],
-    deadline: "2026-11-10T23:59",
-    deadlineDisplay: "Nov 10, 2026 · 23:59 WIB",
-    prioritas: "High",
-    prioritasBadge: "bg-amber-100 text-amber-700 border-amber-200",
-    pic: "DS",
-    perluKonfirmasi: "Kredensial API WhatsApp Gateway belum diterima dari tim IT.",
-  },
-  {
-    id: "WB-104",
-    judul: "Quality Check & Verifikasi Aset Kredensial Hosting cPanel",
-    clientProyek: "Sultan Haramain Gresik · Infrastruktur Digital",
-    ringkasan: "Audit sertifikat keamanan SSL, backup harian database, dan pembersihan file cache.",
-    spesifikasi: "Cloud Server Linux · cPanel & WHM · Multi-region backup",
-    checklist: [
-      { text: "Perbarui sertifikat SSL Let's Encrypt domain utama", note: "Sec", done: true },
-      { text: "Uji restore snapshot database cabang Gresik", note: "QC", done: true },
-    ],
-    deadline: "2026-11-02T15:00",
-    deadlineDisplay: "Nov 02, 2026 · 15:00 WIB",
-    prioritas: "Normal",
-    prioritasBadge: "bg-blue-100 text-blue-700 border-blue-200",
-    pic: "FM",
-    perluKonfirmasi: "",
-  },
-];
-
-type CustomAccountRow = {
-  id?: string;
-  platform: string;
-  username: string;
-  password: string;
-  showPassword?: boolean;
-  note: string;
-};
-
 export function ClientDetailWorkspace({
   client,
   onBack,
   onEdit,
 }: {
-  client: ClientData & { id: string };
+  client: ClientData & {
+    id: string;
+    brandProfile?: {
+      primary_color?: string;
+      secondary_color?: string;
+      tone_of_voice?: string | null;
+      company_overview?: string | null;
+      pain_points?: string | null;
+      agency_goals?: string | null;
+      do_rules?: string | null;
+      dont_rules?: string | null;
+      important_notes?: string | null;
+      vault_notes?: string | null;
+      tags?: string[];
+      service_priority?: string;
+    } | null;
+  };
   onBack: () => void;
   onEdit: () => void;
 }) {
@@ -198,54 +107,58 @@ export function ClientDetailWorkspace({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Timeline Form State
-  const [judul, setJudul] = useState("Revisi Desain Spanduk Air Zam Zam — V3");
-  const [clientProyek, setClientProyek] = useState(
-    `${client.name} · Spanduk Keberangkatan Umrah`,
-  );
-  const [ringkasan, setRingkasan] = useState(
-    "Client meminta dua perbaikan pada preview V3: ukuran logo dan kontras font.",
-  );
-  const [spesifikasi, setSpesifikasi] = useState(
-    "Landscape 3m × 1m · Flexi 340gsm · mata ayam 4 sudut",
-  );
-  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([
-    { text: "Perbesar logo klien di bagian atas", note: "WA 10:42", done: false },
-    { text: "Naikkan kontras font terhadap background", note: "Pin 2", done: false },
-  ]);
-  const [deadline, setDeadline] = useState("2026-10-28T15:00");
-  const [prioritas, setPrioritas] = useState("Enterprise");
-  const [pic, setPic] = useState("DS");
-  const [konfirmasi, setKonfirmasi] = useState("ukuran logo yang diinginkan client belum disebut.");
+  const [judul, setJudul] = useState("");
+  const [clientProyek, setClientProyek] = useState(client.name);
+  const [ringkasan, setRingkasan] = useState("");
+  const [spesifikasi, setSpesifikasi] = useState("");
+  const [checklist, setChecklist] = useState<Array<{ text: string; note?: string; done: boolean }>>([]);
+  const [deadline, setDeadline] = useState("");
+  const [prioritas, setPrioritas] = useState("Standard");
+  const [pic, setPic] = useState("");
+  const [konfirmasi, setKonfirmasi] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
 
   // Profile AI Builder & Interactive State
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [aiTab, setAITab] = useState<"upload" | "link" | "social" | "prompt">("upload");
-  const [catatanPentingText, setCatatanPentingText] = useState(
-    `Note untuk Tim Internal:\n• Kontrak kerja sama diperpanjang hingga Desember 2026.\n• Fokus Q4 adalah kampanye "Umrah Nyaman Bersama Keluarga".\n• Dilarang mengubah aset logo tanpa persetujuan Bpk. Dwi.`,
-  );
+  const [brandSourceUrl, setBrandSourceUrl] = useState("");
+  const [brandSourceSocial, setBrandSourceSocial] = useState("");
+  const [brandSourcePrompt, setBrandSourcePrompt] = useState("");
+  const [brandSourceFile, setBrandSourceFile] = useState<File | null>(null);
+  const [editingBrandProfile, setEditingBrandProfile] = useState(false);
+  const [brandProfileForm, setBrandProfileForm] = useState<DBRow>({});
 
   // Digital Assets & Kredensial Form State
   const [masterEmail, setMasterEmail] = useState("");
-  const [masterPassword, setMasterPassword] = useState("");
-  const [showMasterPassword, setShowMasterPassword] = useState(false);
-  const [recoveryPhone, setRecoveryPhone] = useState("");
-  const [recovery2fa, setRecovery2fa] = useState("");
   const [newAssetPlatform, setNewAssetPlatform] = useState("");
   const [newAssetUser, setNewAssetUser] = useState("");
-  const [newAssetPass, setNewAssetPass] = useState("");
   const [newAssetNote, setNewAssetNote] = useState("");
-  const [vaultNote, setVaultNote] = useState(
-    "Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif hosting/domain, atau struktur parent-child account...",
-  );
 
-  const queryKey = ["client-workspace-detail", client.id];
+  const queryKey = useMemo(() => ["client-workspace-detail", client.id], [client.id]);
+
+  useEffect(() => {
+    let active = true;
+    if (!client.logoPath) {
+      setLogoUrl("");
+      return () => { active = false; };
+    }
+    if (client.logoPath.startsWith("http")) {
+      setLogoUrl(client.logoPath);
+      return () => { active = false; };
+    }
+    void supabase.storage.from("client-files").createSignedUrl(client.logoPath, 3600)
+      .then(({ data, error }) => {
+        if (active) setLogoUrl(error ? "" : data?.signedUrl ?? "");
+      });
+    return () => { active = false; };
+  }, [client.logoPath]);
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const [eventsRes, assetsRes, docsRes, tasksRes] = await Promise.all([
+      const [eventsRes, assetsRes, docsRes, tasksRes, brandProfileRes, brandAssetsRes] = await Promise.all([
         supabase
           .from("client_timeline_events")
           .select("*")
@@ -266,7 +179,15 @@ export function ClientDetailWorkspace({
           .select("*")
           .eq("client_id", client.id)
           .order("created_at", { ascending: false }),
+        (supabase.from("client_brand_profiles" as any) as any)
+          .select("*")
+          .eq("client_id", client.id)
+          .maybeSingle(),
+        supabase.from("client_brand_assets").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
       ]);
+
+      const queryError = eventsRes.error || assetsRes.error || docsRes.error || tasksRes.error || brandProfileRes.error || brandAssetsRes.error;
+      if (queryError) throw new Error(queryError.message || "Gagal memuat workspace client.");
 
       const events: DBRow[] = eventsRes.data ?? [];
       const assets: DBRow[] = assetsRes.data ?? [];
@@ -280,12 +201,66 @@ export function ClientDetailWorkspace({
         assets,
         docs,
         tasks,
+        brandProfile: brandProfileRes.data ?? null,
+        brandAssets: brandAssetsRes.data ?? [],
         userId: authData.user?.id ?? "",
       };
     },
   });
 
+  useEffect(() => {
+    const tables = [
+      "clients",
+      "client_brand_profiles",
+      "client_brand_assets",
+      "client_tasks",
+      "client_documents",
+      "client_digital_assets",
+      "client_timeline_events",
+      "client_design_versions",
+      "client_design_comments",
+      "client_design_reviews",
+    ];
+    let active = true;
+    let channel = supabase.channel(`client-detail-live-${client.id}`);
+    for (const table of tables) {
+      channel = channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `client_id=eq.${client.id}` },
+        () => {
+          if (active) {
+            void qc.invalidateQueries({ queryKey });
+            void qc.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
+          }
+        },
+      );
+    }
+    channel.subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [client.id, qc, queryKey]);
+
   const dbData = query.data;
+
+  useEffect(() => {
+    const profile = dbData?.brandProfile ?? {};
+    setBrandProfileForm({
+      primary_color: profile.primary_color || "#C9A75D",
+      secondary_color: profile.secondary_color || "#003837",
+      tone_of_voice: profile.tone_of_voice || "",
+      company_overview: profile.company_overview || "",
+      pain_points: profile.pain_points || "",
+      agency_goals: profile.agency_goals || "",
+      do_rules: profile.do_rules || "",
+      dont_rules: profile.dont_rules || "",
+      important_notes: profile.important_notes || "",
+      vault_notes: profile.vault_notes || "",
+      tags: Array.isArray(profile.tags) ? profile.tags.join(", ") : "",
+      service_priority: profile.service_priority || "standard",
+    });
+  }, [dbData?.brandProfile, client.id]);
 
   // Initialize master email asset fields if present
   useEffect(() => {
@@ -295,30 +270,41 @@ export function ClientDetailWorkspace({
       );
       if (masterAsset) {
         setMasterEmail(masterAsset.username || "");
-        if (masterAsset.notes) {
-          const passMatch = masterAsset.notes.match(/Password:\s*([^|]+)/);
-          const recMatch = masterAsset.notes.match(/Recovery HP:\s*([^|]+)/);
-          const secretMatch = masterAsset.notes.match(/2FA Secret:\s*([^|]+)/);
-          if (passMatch) setMasterPassword(passMatch[1].trim());
-          if (recMatch) setRecoveryPhone(recMatch[1].trim());
-          if (secretMatch) setRecovery2fa(secretMatch[1].trim());
-        }
       }
     }
   }, [dbData]);
 
   // Filtered workboard tasks inside modal
-  const filteredWorkboardTasks = useMemo(() => {
+  const filteredWorkboardTasks = useMemo<WorkboardTask[]>(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return DUMMY_WORKBOARD_TASKS;
-    return DUMMY_WORKBOARD_TASKS.filter(
-      (t) =>
-        t.judul.toLowerCase().includes(q) ||
-        t.clientProyek.toLowerCase().includes(q) ||
-        t.pic.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q),
-    );
-  }, [searchQuery]);
+    return (dbData?.tasks ?? [])
+      .map((task: DBRow) => {
+        const priority = String(task.priority || "medium");
+        const deadline = task.due_date ? `${task.due_date}T00:00` : "";
+        return {
+          id: task.id,
+          judul: task.title,
+          clientProyek: client.name,
+          ringkasan: task.description || "",
+          spesifikasi: "",
+          checklist: [],
+          deadline,
+          deadlineDisplay: task.due_date
+            ? new Date(`${task.due_date}T00:00:00`).toLocaleDateString("id-ID")
+            : "Tanpa deadline",
+          prioritas: priority,
+          prioritasBadge: priority === "urgent" || priority === "high"
+            ? "bg-rose-100 text-rose-700 border-rose-200"
+            : "bg-slate-100 text-slate-700 border-slate-200",
+          pic: task.assignee || "",
+          perluKonfirmasi: "",
+        };
+      })
+      .filter((task: WorkboardTask) =>
+        !q || [task.judul, task.clientProyek, task.pic, task.id]
+          .some((value) => value.toLowerCase().includes(q)),
+      );
+  }, [dbData?.tasks, searchQuery, client.name]);
 
   // Apply a Workboard Task to form
   const applyWorkboardTask = (task: WorkboardTask) => {
@@ -380,6 +366,79 @@ export function ClientDetailWorkspace({
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleSaveBrandProfile = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Sesi login tidak ditemukan.");
+      const payload = {
+        user_id: authData.user.id,
+        client_id: client.id,
+        primary_color: String(brandProfileForm.primary_color || "#C9A75D"),
+        secondary_color: String(brandProfileForm.secondary_color || "#003837"),
+        tone_of_voice: String(brandProfileForm.tone_of_voice || "").trim() || null,
+        company_overview: String(brandProfileForm.company_overview || "").trim() || null,
+        pain_points: String(brandProfileForm.pain_points || "").trim() || null,
+        agency_goals: String(brandProfileForm.agency_goals || "").trim() || null,
+        do_rules: String(brandProfileForm.do_rules || "").trim() || null,
+        dont_rules: String(brandProfileForm.dont_rules || "").trim() || null,
+        important_notes: String(brandProfileForm.important_notes || "").trim() || null,
+        vault_notes: String(brandProfileForm.vault_notes || "").trim() || null,
+        tags: String(brandProfileForm.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean),
+        service_priority: ["standard", "priority", "enterprise"].includes(String(brandProfileForm.service_priority))
+          ? String(brandProfileForm.service_priority)
+          : "standard",
+      };
+      const { error } = await (supabase.from("client_brand_profiles" as any) as any)
+        .upsert(payload, { onConflict: "client_id" });
+      if (error) throw error;
+      setEditingBrandProfile(false);
+      await qc.invalidateQueries({ queryKey });
+      await qc.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
+      toast.success("Brand profile berhasil diperbarui dan disinkronkan.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal memperbarui brand profile.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSaveBrandSource = async () => {
+    setBusy(true);
+    let uploadedPath: string | null = null;
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Sesi login tidak ditemukan.");
+      const userId = authData.user.id;
+      let payload: DBRow;
+      if (aiTab === "upload") {
+        if (!brandSourceFile) throw new Error("Pilih file brand guideline terlebih dahulu.");
+        const safeName = brandSourceFile.name.replace(/[^\\w.-]/g, "-");
+        uploadedPath = userId + "/" + client.id + "/brand/" + crypto.randomUUID() + "-" + safeName;
+        const upload = await supabase.storage.from("client-files").upload(uploadedPath, brandSourceFile, { contentType: brandSourceFile.type, upsert: false });
+        if (upload.error) throw upload.error;
+        payload = { user_id: userId, client_id: client.id, asset_type: "guideline", name: brandSourceFile.name, file_path: uploadedPath, notes: "Uploaded brand source" };
+      } else if (aiTab === "link") {
+        if (!brandSourceUrl.trim()) throw new Error("Masukkan URL sumber brand.");
+        payload = { user_id: userId, client_id: client.id, asset_type: "other", name: "Website / Brand URL", value: brandSourceUrl.trim() };
+      } else if (aiTab === "social") {
+        if (!brandSourceSocial.trim()) throw new Error("Masukkan akun media sosial client.");
+        payload = { user_id: userId, client_id: client.id, asset_type: "other", name: "Social Media Profile", value: brandSourceSocial.trim() };
+      } else {
+        if (!brandSourcePrompt.trim()) throw new Error("Masukkan instruksi profil terlebih dahulu.");
+        payload = { user_id: userId, client_id: client.id, asset_type: "guideline", name: "Custom Profile Prompt", value: brandSourcePrompt.trim() };
+      }
+      const { error } = await supabase.from("client_brand_assets").insert(payload);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey });
+      setBrandSourceUrl(""); setBrandSourceSocial(""); setBrandSourcePrompt(""); setBrandSourceFile(null);
+      toast.success("Sumber profil berhasil disimpan ke database.");
+    } catch (error) {
+      if (uploadedPath) await supabase.storage.from("client-files").remove([uploadedPath]);
+      toast.error(error instanceof Error ? error.message : "Gagal menyimpan sumber profil.");
+    } finally { setBusy(false); }
+  };
   const handleTimelineSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!judul.trim()) {
@@ -391,6 +450,7 @@ export function ClientDetailWorkspace({
     try {
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id;
+      if (!userId) throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");
 
       const uploadedPaths: string[] = [];
       for (const file of attachedFiles) {
@@ -398,7 +458,8 @@ export function ClientDetailWorkspace({
           const safeName = file.name.replace(/[^\w.-]/g, "-");
           const path = `${userId}/${client.id}/timeline/${crypto.randomUUID()}-${safeName}`;
           const { error } = await supabase.storage.from("client-files").upload(path, file);
-          if (!error) uploadedPaths.push(path);
+          if (error) throw new Error(`Upload lampiran ${file.name} gagal: ${error.message}`);
+          uploadedPaths.push(path);
         }
       }
 
@@ -420,7 +481,10 @@ export function ClientDetailWorkspace({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (uploadedPaths.length) await supabase.storage.from("client-files").remove(uploadedPaths);
+        throw error;
+      }
 
       await qc.invalidateQueries({ queryKey });
       toast.success(`Brief "${judul}" berhasil ditambahkan ke Timeline!`);
@@ -459,6 +523,7 @@ export function ClientDetailWorkspace({
     try {
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id;
+      if (!userId) throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");
 
       const { error } = await supabase.from("client_digital_assets").insert({
         client_id: client.id,
@@ -467,9 +532,7 @@ export function ClientDetailWorkspace({
         asset_type: "other",
         platform: newAssetPlatform.trim() || null,
         username: newAssetUser.trim() || null,
-        notes: [newAssetPass ? `Password: ${newAssetPass}` : null, newAssetNote ? `Note: ${newAssetNote}` : null]
-          .filter(Boolean)
-          .join(" | "),
+        notes: newAssetNote.trim() || null,
       });
 
       if (error) throw error;
@@ -477,11 +540,10 @@ export function ClientDetailWorkspace({
       await qc.invalidateQueries({ queryKey });
       setNewAssetPlatform("");
       setNewAssetUser("");
-      setNewAssetPass("");
       setNewAssetNote("");
       toast.success("Aset digital baru berhasil ditambahkan!");
     } catch (err) {
-      toast.error("Gagal menambahkan aset digital.");
+      toast.error(err instanceof Error ? err.message : "Gagal menambahkan aset digital.");
     } finally {
       setBusy(false);
     }
@@ -717,14 +779,11 @@ export function ClientDetailWorkspace({
 
                 <div className="flex items-center space-x-4">
                   <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-                    {client.logoPath ? (
+                    {logoUrl ? (
                       <img
-                        src={`https://s7dviyflfx6iihwzteii2r.supabase.co/storage/v1/object/public/client-files/${client.logoPath}`}
+                        src={logoUrl}
                         alt={client.name}
                         className="size-full rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center rounded-full bg-gradient-to-br from-[#c9a75d] to-[#a67c27] text-center font-serif text-xs font-bold leading-none text-white">
@@ -808,6 +867,86 @@ export function ClientDetailWorkspace({
           {/* TAB CONTENT: PROFILE CLIENT */}
           {activeTab === "profile" && (
             <div className="space-y-5 animate-fade-in">
+              <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-sm font-bold text-slate-900">Brand Profile Tersimpan</h2>
+                    <button type="button" onClick={() => setEditingBrandProfile((value) => !value)} className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
+                      {editingBrandProfile ? "Tutup Edit" : "Edit Profile"}
+                    </button>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                      Prioritas {dbData?.brandProfile?.service_priority || "standard"}
+                    </span>
+                  </div>
+                  <div className="mb-4 flex items-center gap-3 text-[11px] text-slate-600">
+                    <span className="flex items-center gap-1.5"><i className="size-4 rounded border" style={{ backgroundColor: dbData?.brandProfile?.primary_color || "#C9A75D" }} /> Warna utama</span>
+                    <span className="flex items-center gap-1.5"><i className="size-4 rounded border" style={{ backgroundColor: dbData?.brandProfile?.secondary_color || "#003837" }} /> Warna sekunder</span>
+                    {dbData?.brandProfile?.tags?.map((tag: string) => <span key={tag} className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">{tag}</span>)}
+                  </div>
+                  {editingBrandProfile ? (
+                    <form onSubmit={handleSaveBrandProfile} className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        ["company_overview", "Overview"],
+                        ["tone_of_voice", "Tone of Voice"],
+                        ["pain_points", "Pain Points"],
+                        ["agency_goals", "Agency Goals"],
+                        ["do_rules", "DOs"],
+                        ["dont_rules", "DONTs"],
+                        ["important_notes", "Catatan Penting"],
+                        ["vault_notes", "Catatan Vault"],
+                      ].map(([key, label]) => (
+                        <label key={key} className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                          {label}
+                          <textarea rows={3} value={String(brandProfileForm[key] || "")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, [key]: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700" />
+                        </label>
+                      ))}
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Warna Utama
+                        <input type="color" value={String(brandProfileForm.primary_color || "#C9A75D")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, primary_color: event.target.value }))} className="h-9 w-full rounded border border-slate-200" />
+                      </label>
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Warna Sekunder
+                        <input type="color" value={String(brandProfileForm.secondary_color || "#003837")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, secondary_color: event.target.value }))} className="h-9 w-full rounded border border-slate-200" />
+                      </label>
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Tags (pisahkan koma)
+                        <input value={String(brandProfileForm.tags || "")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, tags: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700" />
+                      </label>
+                      <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
+                        Prioritas Layanan
+                        <select value={String(brandProfileForm.service_priority || "standard")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, service_priority: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700">
+                          <option value="standard">Standard</option>
+                          <option value="priority">Priority</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
+                      </label>
+                      <div className="flex items-end justify-end gap-2 sm:col-span-2">
+                        <button type="button" onClick={() => setEditingBrandProfile(false)} className="rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-600">Batal</button>
+                        <button type="submit" disabled={busy} className="rounded-md bg-[#003837] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{busy ? "Menyimpan..." : "Simpan Profile"}</button>
+                      </div>
+                    </form>
+                  ) : dbData?.brandProfile ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        ["Overview", dbData.brandProfile.company_overview],
+                        ["Tone of Voice", dbData.brandProfile.tone_of_voice],
+                        ["Pain Points", dbData.brandProfile.pain_points],
+                        ["Agency Goals", dbData.brandProfile.agency_goals],
+                        ["DOs", dbData.brandProfile.do_rules],
+                        ["DONTs", dbData.brandProfile.dont_rules],
+                        ["Catatan Penting", dbData.brandProfile.important_notes],
+                        ["Catatan Vault", dbData.brandProfile.vault_notes],
+                      ].filter((item) => item[1]).map(([label, value]) => (
+                        <div key={label} className="rounded-lg bg-slate-50 p-3">
+                          <h3 className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</h3>
+                          <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada brand profile. Klik Edit Profile untuk membuatnya.</p>
+                  )}
+                </section>
+
               {/* ✨ AI PROFILE BUILDER WIDGET ✨ */}
               <div className="relative mb-6 overflow-hidden rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-sm">
                 <div className="pointer-events-none absolute right-0 top-0 p-8 opacity-20">
@@ -821,10 +960,10 @@ export function ClientDetailWorkspace({
                     </div>
                     <div>
                       <h2 className="mb-1 text-sm font-bold leading-none text-slate-900">
-                        AI Profile Builder
+                        Sumber Data Profil
                       </h2>
                       <p className="text-[10px] text-slate-500">
-                        Auto-generate seluruh card profil klien dari berbagai sumber data.
+                        Simpan sumber brand dan brief ke database. Tidak ada pemanggilan AI eksternal atau token Lovable.
                       </p>
                     </div>
                   </div>
@@ -839,7 +978,7 @@ export function ClientDetailWorkspace({
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="size-3.5" /> Tampilkan AI Builder
+                        <ChevronDown className="size-3.5" /> Tampilkan Sumber Profil
                       </>
                     )}
                   </button>
@@ -907,18 +1046,14 @@ export function ClientDetailWorkspace({
                           Upload Brand Guideline / Company Profile / Brief
                         </h3>
                         <p className="text-[10px] text-slate-500">
-                          PDF, DOCX, PPTX, atau TXT. AI akan mengekstrak warna, font, dan profil secara otomatis.
+                          PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, WEBP · Maks. 20 MB.
                         </p>
                         <input
                           type="file"
                           id="ai-file-input"
-                          accept=".pdf,.docx,.pptx,.txt"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
                           className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files?.length) {
-                              toast.success(`File "${e.target.files[0].name}" siap dianalisis AI!`);
-                            }
-                          }}
+                          onChange={(e) => setBrandSourceFile(e.target.files?.[0] ?? null)}
                         />
                       </div>
                     )}
@@ -930,7 +1065,9 @@ export function ClientDetailWorkspace({
                         </label>
                         <input
                           type="url"
-                          placeholder="https://sultanharamaingresik.com"
+                          value={brandSourceUrl}
+                          onChange={(e) => setBrandSourceUrl(e.target.value)}
+                          placeholder="https://example.com"
                           className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -943,7 +1080,9 @@ export function ClientDetailWorkspace({
                         </label>
                         <input
                           type="text"
-                          placeholder="@sultanharamain_gresik"
+                          value={brandSourceSocial}
+                          onChange={(e) => setBrandSourceSocial(e.target.value)}
+                          placeholder="@username"
                           className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -952,11 +1091,13 @@ export function ClientDetailWorkspace({
                     {aiTab === "prompt" && (
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-slate-700">
-                          Instruksi Khusus untuk AI Profile Builder:
+                          Instruksi Khusus Profil Brand:
                         </label>
                         <textarea
                           rows={2}
-                          placeholder="Ringkaskan profil bisnis travel umrah, keunggulan hotel bintang 5 Makkah/Madinah, dan poin komunikasi utama..."
+                          value={brandSourcePrompt}
+                          onChange={(e) => setBrandSourcePrompt(e.target.value)}
+                          placeholder="Instruksi khusus tentang profil, tone, dan batasan brand..."
                           className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -965,341 +1106,39 @@ export function ClientDetailWorkspace({
                     <div className="mt-5 flex justify-end">
                       <button
                         type="button"
-                        onClick={() =>
-                          toast.success(
-                            "AI Agent sedang mengumpulkan dan menyusun data profil klien...",
-                          )
-                        }
-                        className="flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg"
+                        onClick={() => void handleSaveBrandSource()}
+                        disabled={busy}
+                        className="flex items-center gap-2 rounded-md bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50"
                       >
-                        <BrainCircuit className="size-4" /> Generate Profile Klien
+                        <Save className="size-4" />
+                        {busy ? "Menyimpan..." : "Simpan Sumber Profil"}
                       </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* 2-COLUMN GRID LAYOUT */}
-              <div className="mt-4 grid grid-cols-1 gap-5 items-start lg:grid-cols-2">
-                {/* GRID KIRI */}
-                <div className="space-y-5">
-                  {/* Card 1: Brand Identity */}
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 items-center justify-center rounded-md border border-purple-200 bg-purple-100 text-purple-600">
-                          <Palette className="size-3.5" />
-                        </div>
-                        <h2 className="text-sm font-bold leading-none text-slate-900">
-                          Brand Identity
-                        </h2>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => toast.success("Memproses AI Generation untuk Card ini...")}
-                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
-                        >
-                          <Sparkles className="size-3" /> AI
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toast.info("Mode Edit Brand Identity diaktifkan")}
-                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50"
-                        >
-                          <Edit3 className="size-3" /> Edit
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-5 p-4">
-                      <div>
-                        <h3 className="mb-2 text-xs font-semibold text-slate-700">
-                          Primary Color Palette
-                        </h3>
-                        <div className="flex gap-2">
-                          <div
-                            className="group flex cursor-pointer flex-col items-center gap-1"
-                            onClick={() => copyToClipboard("#C9A75D", "Warna Emas")}
-                          >
-                            <div className="size-10 rounded border border-slate-200 bg-[#C9A75D] shadow-sm transition-transform group-hover:scale-105"></div>
-                            <span className="font-mono text-[9px] uppercase text-slate-500">
-                              #C9A75D
-                            </span>
-                          </div>
-                          <div
-                            className="group flex cursor-pointer flex-col items-center gap-1"
-                            onClick={() => copyToClipboard("#003837", "Warna Hijau Gelap")}
-                          >
-                            <div className="size-10 rounded border border-slate-200 bg-[#003837] shadow-sm transition-transform group-hover:scale-105"></div>
-                            <span className="font-mono text-[9px] uppercase text-slate-500">
-                              #003837
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                          <Mic className="size-3.5 text-slate-400" /> Tone of Voice
-                        </h3>
-                        <div className="group relative rounded-lg border border-blue-200 bg-blue-50 p-3">
-                          <button
-                            className="absolute right-2 top-2 text-blue-400 opacity-0 transition group-hover:opacity-100 hover:text-blue-600"
-                            onClick={() =>
-                              copyToClipboard(
-                                "Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui. Sering gunakan sapaan Sahabat Haramain.",
-                                "Tone of Voice",
-                              )
-                            }
-                          >
-                            <Copy className="size-3.5" />
-                          </button>
-                          <p className="text-[11px] font-medium leading-relaxed text-blue-800">
-                            &quot;Gunakan bahasa formal namun hangat, religius tanpa kesan menggurui.
-                            Sering gunakan sapaan{" "}
-                            <strong className="font-bold">Sahabat Haramain</strong>.&quot;
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Company Overview */}
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 items-center justify-center rounded-md border border-blue-200 bg-blue-100 text-blue-600">
-                          <Info className="size-3.5" />
-                        </div>
-                        <h2 className="text-sm font-bold leading-none text-slate-900">
-                          About Us &amp; Agency Objectives
-                        </h2>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => toast.success("AI menganalisa dan menyusun Company Overview...")}
-                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
-                        >
-                          <Sparkles className="size-3" /> AI
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toast.info("Mode Edit diaktifkan")}
-                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50"
-                        >
-                          <Edit3 className="size-3" /> Edit
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-4 p-4">
-                      <div>
-                        <h3 className="mb-1 text-xs font-bold text-slate-800">Company Overview</h3>
-                        <p className="text-[11px] leading-relaxed text-slate-600">
-                          {client.companyProfile ||
-                            client.description ||
-                            "Sultan Barokah Haramain Cabang Gresik adalah biro perjalanan resmi penyedia layanan Umrah, Haji Khusus, serta distributor tunggal Air Zam Zam..."}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
-                          <h4 className="mb-1 flex items-center gap-1 text-[10px] font-bold text-orange-800">
-                            <Target className="size-3" /> Pain Points Klien
-                          </h4>
-                          <ul className="list-inside list-disc space-y-1 text-[10px] text-orange-700">
-                            <li>Desain promosi lama kaku.</li>
-                            <li>Pesan komunikasi belum terstandardisasi.</li>
-                          </ul>
-                        </div>
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                          <h4 className="mb-1 flex items-center gap-1 text-[10px] font-bold text-emerald-800">
-                            <Briefcase className="size-3" /> Tugas Kita
-                          </h4>
-                          <ul className="list-inside list-disc space-y-1 text-[10px] text-emerald-700">
-                            <li>Rebranding aset digital premium.</li>
-                            <li>Standardisasi konten social media.</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 3: Catatan Penting */}
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 items-center justify-center rounded-md border border-amber-200 bg-amber-100 text-amber-600">
-                          <StickyNote className="size-3.5" />
-                        </div>
-                        <h2 className="text-sm font-bold leading-none text-slate-900">
-                          Catatan Penting
-                        </h2>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => toast.success("AI merangkum percakapan menjadi catatan...")}
-                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
-                        >
-                          <Sparkles className="size-3" /> AI Rangkum
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toast.success("Catatan berhasil disimpan!")}
-                          className="flex items-center gap-1 rounded bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700 transition hover:bg-blue-200"
-                        >
-                          <Edit3 className="size-3" /> Save
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition-colors focus-within:border-amber-400">
-                        <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50 p-1.5">
-                          <button
-                            type="button"
-                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
-                            title="Bold"
-                          >
-                            <Bold className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
-                            title="Italic"
-                          >
-                            <Italic className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
-                            title="Underline"
-                          >
-                            <Underline className="size-3.5" />
-                          </button>
-                          <div className="mx-1 h-4 w-px bg-slate-300"></div>
-                          <button
-                            type="button"
-                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
-                            title="Bullet List"
-                          >
-                            <List className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded p-1.5 text-slate-600 transition-colors hover:bg-slate-200"
-                            title="Numbered List"
-                          >
-                            <ListOrdered className="size-3.5" />
-                          </button>
-                        </div>
-                        <textarea
-                          rows={5}
-                          value={catatanPentingText}
-                          onChange={(e) => setCatatanPentingText(e.target.value)}
-                          className="w-full resize-none p-3 text-xs leading-relaxed text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
+              <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold text-slate-900">Sumber Profil Tersimpan</h2>
+                  <span className="text-[10px] text-slate-500">{dbData?.brandAssets?.length ?? 0} sumber</span>
                 </div>
-
-                {/* GRID KANAN */}
-                <div className="space-y-5">
-                  {/* Card 4: System Guardrails */}
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 items-center justify-center rounded-md border border-rose-200 bg-rose-100 text-rose-600">
-                          <ShieldAlert className="size-3.5" />
+                {dbData?.brandAssets?.length ? (
+                  <div className="space-y-2">
+                    {dbData.brandAssets.map((source: DBRow) => (
+                      <div key={source.id} className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-800">{source.name}</p>
+                          <p className="mt-1 break-all text-[11px] text-slate-600">{source.value || (source.file_path ? "File privat tersimpan di client-files" : source.notes || "Metadata tersimpan")}</p>
                         </div>
-                        <h2 className="text-sm font-bold leading-none text-slate-900">
-                          System Guardrails
-                        </h2>
+                        <span className="rounded-full bg-white px-2 py-1 text-[9px] font-semibold uppercase text-slate-500">{source.asset_type}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => toast.success("AI menganalisa Rules baru...")}
-                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
-                        >
-                          <Sparkles className="size-3" /> AI
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toast.info("Mode Edit diaktifkan")}
-                          className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50"
-                        >
-                          <Edit3 className="size-3" /> Edit
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50/50 p-2.5">
-                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                          <div>
-                            <h4 className="text-[11px] font-bold text-emerald-800">
-                              DO&apos;s (Wajib Dilakukan)
-                            </h4>
-                            <ul className="mt-1 list-inside list-disc space-y-1 text-[10px] text-emerald-700">
-                              <li>Selalu sertakan logo &quot;Izin Kemenag&quot;.</li>
-                              <li>Gunakan dokumentasi keberangkatan jamaah asli.</li>
-                            </ul>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50/50 p-2.5">
-                          <XCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
-                          <div>
-                            <h4 className="text-[11px] font-bold text-rose-800">
-                              DON&apos;Ts (Pantangan)
-                            </h4>
-                            <ul className="mt-1 list-inside list-disc space-y-1 text-[10px] text-rose-700">
-                              <li>Jangan pernah menggunakan font Comic Sans.</li>
-                              <li>Dilarang mengubah rasio logo tanpa izin.</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Card 5: Directory & Performance */}
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 items-center justify-center rounded-md border border-teal-200 bg-teal-100 text-teal-600">
-                          <BarChart2 className="size-3.5" />
-                        </div>
-                        <h2 className="text-sm font-bold leading-none text-slate-900">
-                          Directory &amp; Performance
-                        </h2>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => toast.success("AI mengupdate data performa digital...")}
-                          className="flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700 transition hover:bg-emerald-200"
-                        >
-                          <Sparkles className="size-3" /> AI Auto-Sync
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg border border-slate-200 p-3 text-center">
-                          <Instagram className="mx-auto mb-1 size-4 text-pink-600" />
-                          <div className="text-sm font-bold text-slate-900">12.4K</div>
-                          <div className="text-[9px] uppercase text-slate-500">Followers IG</div>
-                        </div>
-                        <div className="rounded-lg border border-slate-200 p-3 text-center">
-                          <BarChart2 className="mx-auto mb-1 size-4 text-emerald-600" />
-                          <div className="text-sm font-bold text-slate-900">5.2K</div>
-                          <div className="text-[9px] uppercase text-slate-500">Traffic Web</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                ) : (
+                  <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada sumber profil. Tambahkan URL, akun sosial, prompt, atau file guideline melalui panel di atas.</p>
+                )}
+              </section>
             </div>
           )}
 
@@ -1646,7 +1485,9 @@ export function ClientDetailWorkspace({
                   </div>
 
                   <div className="space-y-2.5">
-                    {DUMMY_WORKBOARD_TASKS.slice(0, 3).map((task) => (
+                    {filteredWorkboardTasks.length === 0 ? (
+                      <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada task tersimpan untuk client ini.</p>
+                    ) : filteredWorkboardTasks.slice(0, 3).map((task) => (
                       <div
                         key={task.id}
                         className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 transition hover:border-emerald-200 hover:bg-white"
@@ -1722,42 +1563,10 @@ export function ClientDetailWorkspace({
                         </div>
                       ))
                     ) : (
-                      <>
-                        <div className="group relative flex gap-3">
-                          <div className="absolute left-[11px] top-6 -z-0 h-full w-px bg-slate-200"></div>
-                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-blue-100 shadow-sm">
-                            <Calendar className="size-3 text-blue-600" />
-                          </div>
-                          <div className="flex-1 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
-                            <h4 className="text-xs font-bold leading-tight text-slate-800">
-                              Meeting Presentasi Konsep
-                            </h4>
-                            <p className="mb-2 mt-0.5 text-[10px] text-slate-500">Oleh: Ammar (AM)</p>
-                            <div className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                              <Clock className="size-3 text-slate-400" /> Besok, 14:00 WIB
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="group relative flex gap-3">
-                          <div className="z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-rose-100 shadow-sm">
-                            <Flag className="size-3 text-rose-600" />
-                          </div>
-                          <div className="flex-1 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
-                            <h4 className="text-xs font-bold leading-tight text-slate-800">
-                              Batas Akhir Revisi Label Kemasan
-                            </h4>
-                            <p className="mb-2 mt-0.5 text-[10px] text-slate-500">Oleh: Dimas (Desain)</p>
-                            <div className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
-                              <AlertCircle className="size-3" /> 25 Okt 2026
-                            </div>
-                          </div>
-                        </div>
-                      </>
+                      <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500">Belum ada agenda atau aktivitas tersimpan.</p>
                     )}
                   </div>
                 </div>
-
                 <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
                   <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-blue-900">
                     <Info className="size-4 text-blue-600" /> Integrasi /workboard &amp; Timeline
@@ -1781,7 +1590,7 @@ export function ClientDetailWorkspace({
                   Daftar Aset Digital &amp; Kredensial Klien
                 </h2>
                 <p className="mb-5 text-xs leading-relaxed text-slate-500">
-                  Simpan informasi kredensial yang diserahkan klien (Email utama, Social Media, Website/CMS, Kunci 2FA, dll). Data ini terenkripsi dan dapat diatur hak aksesnya (Parent-Child account).
+                  Simpan metadata aset digital seperti platform, URL, dan username. Password serta secret 2FA dinonaktifkan sampai Secure Vault terenkripsi tersedia.
                 </p>
 
                 <div className="space-y-5">
@@ -1804,54 +1613,9 @@ export function ClientDetailWorkspace({
                           className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
                         />
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                          Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showMasterPassword ? "text" : "password"}
-                            value={masterPassword}
-                            onChange={(e) => setMasterPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-3 pr-10 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowMasterPassword(!showMasterPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                          >
-                            {showMasterPassword ? (
-                              <EyeOff className="size-4" />
-                            ) : (
-                              <Eye className="size-4" />
-                            )}
-                          </button>
-                        </div>
+                      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
+                        Password, recovery code, dan secret 2FA belum dapat disimpan dengan aman. Fitur kredensial rahasia dinonaktifkan sampai Secure Vault terenkripsi tersedia.
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                          No. HP Pemulihan (Recovery)
-                        </label>
-                        <input
-                          type="text"
-                          value={recoveryPhone}
-                          onChange={(e) => setRecoveryPhone(e.target.value)}
-                          placeholder="0812-xxxx-xxxx"
-                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold text-slate-700">
-                          Kode Pemulihan / 2FA Secret Key
-                        </label>
-                        <input
-                          type="text"
-                          value={recovery2fa}
-                          onChange={(e) => setRecovery2fa(e.target.value)}
-                          placeholder="Teks base32 rahasia / 8-digit backup codes"
-                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
-                        />
                       </div>
                     </div>
                   </div>
@@ -1929,17 +1693,8 @@ export function ClientDetailWorkspace({
                             className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                            Password
-                          </label>
-                          <input
-                            type="password"
-                            value={newAssetPass}
-                            onChange={(e) => setNewAssetPass(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs"
-                          />
+                        <div className="flex items-center rounded border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[10px] text-amber-800">
+                          Secret tidak disimpan sebelum Secure Vault tersedia.
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
