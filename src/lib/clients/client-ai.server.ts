@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
 import { PERSONA, runObject } from "@/lib/assistant/assistant.server";
-import { AiError } from "@/lib/ai/lovable.server";
+import { AiError } from "@/lib/ai/provider.server";
 import {
   isSafePublicUrl,
   normalizeWebUrl,

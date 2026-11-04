@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { toAiError } from "@/lib/ai/lovable.server";
+import { toAiError } from "@/lib/ai/provider.server";
 import type { ClientAiCard, ClientAiMode, SocialPlatform } from "./client-ai-shared";
 import {
   buildClientProfile,
