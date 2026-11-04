@@ -71,6 +71,7 @@ const emptyDraft = (clientId: string, status = "things-to-do"): TaskDraft => ({
 type CreateInput = {
   client_id: string;
   title: string;
+  task_type?: string;
   description?: string;
   status: string;
   priority: string;
@@ -80,6 +81,7 @@ type CreateInput = {
 type UpdatePatch = Partial<{
   client_id: string;
   title: string;
+  task_type: string;
   description: string | null;
   status: string;
   priority: string;
