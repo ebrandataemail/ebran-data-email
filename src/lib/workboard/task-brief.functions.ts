@@ -4,7 +4,7 @@ import type { FilePart, ModelMessage, TextPart } from "ai";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runObject } from "@/lib/assistant/assistant.server";
-import { toAiError } from "@/lib/ai/lovable.server";
+import { toAiError } from "@/lib/ai/provider.server";
 import { redactSecrets } from "@/lib/clients/client-ai-shared";
 
 const SECTION_KEYS = [

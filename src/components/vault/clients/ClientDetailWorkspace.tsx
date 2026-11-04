@@ -1616,7 +1616,6 @@ export function ClientDetailWorkspace({
                       <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
                         Password, recovery code, dan secret 2FA belum dapat disimpan dengan aman. Fitur kredensial rahasia dinonaktifkan sampai Secure Vault terenkripsi tersedia.
                       </div>
-                      </div>
                     </div>
                   </div>
 
@@ -1727,8 +1726,8 @@ export function ClientDetailWorkspace({
                     </label>
                     <textarea
                       rows={2}
-                      value={vaultNote}
-                      onChange={(e) => setVaultNote(e.target.value)}
+                      value={String(brandProfileForm.vault_notes || "")}
+                      onChange={(e) => setBrandProfileForm((current) => ({ ...current, vault_notes: e.target.value }))}
                       placeholder="Catatan instruksi khusus terkait login, prosedur OTP, peringatan masa aktif (expired date) hosting/domain, atau struktur parent-child account..."
                       className="w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-rose-500 focus:outline-none"
                     />

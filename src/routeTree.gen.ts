@@ -21,10 +21,10 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as AuthenticatedWorkboardRouteImport } from './routes/_authenticated/workboard'
+import { Route as BriefShareTokenRouteImport } from './routes/brief-share.$token'
 import { Route as AuthenticatedClientsIndexRouteImport } from './routes/_authenticated/clients.index'
 import { Route as AuthenticatedClientsNewRouteImport } from './routes/_authenticated/clients.new'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai/chat'
-import { Route as BriefShareRouteImport } from './routes/brief-share.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -86,6 +86,11 @@ const AuthenticatedWorkboardRoute = AuthenticatedWorkboardRouteImport.update({
   path: '/workboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const BriefShareTokenRoute = BriefShareTokenRouteImport.update({
+  id: '/brief-share/$token',
+  path: '/brief-share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedClientsIndexRoute =
   AuthenticatedClientsIndexRouteImport.update({
     id: '/',
@@ -102,11 +107,6 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
   path: '/api/ai/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BriefShareRoute = BriefShareRouteImport.update({
-  id: '/brief-share/$token',
-  path: '/brief-share/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -120,9 +120,9 @@ export interface FileRoutesByFullPath {
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
+  '/brief-share/$token': typeof BriefShareTokenRoute
   '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
-  '/brief-share/$token': typeof BriefShareRoute
   '/clients/': typeof AuthenticatedClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -136,9 +136,9 @@ export interface FileRoutesByTo {
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
+  '/brief-share/$token': typeof BriefShareTokenRoute
   '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
-  '/brief-share/$token': typeof BriefShareRoute
   '/clients': typeof AuthenticatedClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -155,9 +155,9 @@ export interface FileRoutesById {
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/_authenticated/workboard': typeof AuthenticatedWorkboardRoute
+  '/brief-share/$token': typeof BriefShareTokenRoute
   '/_authenticated/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
-  '/brief-share/$token': typeof BriefShareRoute
   '/_authenticated/clients/': typeof AuthenticatedClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -174,9 +174,9 @@ export interface FileRouteTypes {
     | '/social'
     | '/vault'
     | '/workboard'
+    | '/brief-share/$token'
     | '/clients/new'
     | '/api/ai/chat'
-    | '/brief-share/$token'
     | '/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -190,9 +190,9 @@ export interface FileRouteTypes {
     | '/social'
     | '/vault'
     | '/workboard'
+    | '/brief-share/$token'
     | '/clients/new'
     | '/api/ai/chat'
-    | '/brief-share/$token'
     | '/clients'
   id:
     | '__root__'
@@ -208,9 +208,9 @@ export interface FileRouteTypes {
     | '/_authenticated/social'
     | '/_authenticated/vault'
     | '/_authenticated/workboard'
+    | '/brief-share/$token'
     | '/_authenticated/clients/new'
     | '/api/ai/chat'
-    | '/brief-share/$token'
     | '/_authenticated/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -218,8 +218,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BriefShareTokenRoute: typeof BriefShareTokenRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
-  BriefShareRoute: typeof BriefShareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -308,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/brief-share/$token': {
+      id: '/brief-share/$token'
+      path: '/brief-share/$token'
+      fullPath: '/brief-share/$token'
+      preLoaderRoute: typeof BriefShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/clients/': {
       id: '/_authenticated/clients/'
       path: '/'
@@ -327,13 +334,6 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/chat'
       fullPath: '/api/ai/chat'
       preLoaderRoute: typeof ApiAiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/brief-share/$token': {
-      id: '/brief-share/$token'
-      path: '/brief-share/$token'
-      fullPath: '/brief-share/$token'
-      preLoaderRoute: typeof BriefShareRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -383,8 +383,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  BriefShareTokenRoute: BriefShareTokenRoute,
   ApiAiChatRoute: ApiAiChatRoute,
-  BriefShareRoute: BriefShareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
