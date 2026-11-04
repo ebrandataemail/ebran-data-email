@@ -16,6 +16,7 @@ type InboxMessage = {
 export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: string; email: string }) {
   const [busy, setBusy] = useState<"connect" | "latest" | "disconnect" | null>(null);
   const [connected, setConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connected" | "reauthorize_required">("disconnected");
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null);
   const [message, setMessage] = useState<InboxMessage | null>(null);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
@@ -33,10 +34,12 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
     try {
       const data = await invoke("status");
       setConnected(Boolean(data.connected));
+      setConnectionStatus(data.status === "reauthorize_required" ? "reauthorize_required" : data.connected ? "connected" : "disconnected");
       setConnectedEmail(data.googleEmail || null);
       setCheckedAt(data.lastCheckedAt || null);
     } catch {
       setConnected(false);
+      setConnectionStatus("disconnected");
     }
   };
 
@@ -59,11 +62,13 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
     try {
       const data = await invoke("latest");
       setConnected(true);
+      setConnectionStatus("connected");
       setConnectedEmail(data.connectedEmail || email);
       setMessage(data.message || null);
       setCheckedAt(new Date().toISOString());
       if (!data.message) toast.info("Inbox tidak memiliki email masuk.");
     } catch (error) {
+      await checkConnection();
       toast.error("Gagal mengecek inbox", { description: error instanceof Error ? error.message : "Terjadi kesalahan." });
     } finally {
       setBusy(null);
@@ -75,6 +80,7 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
     try {
       await invoke("disconnect");
       setConnected(false);
+      setConnectionStatus("disconnected");
       setConnectedEmail(null);
       setMessage(null);
       toast.success("Koneksi Gmail diputus.");
@@ -98,7 +104,9 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
             <h4 className="text-sm font-semibold">Gmail Inbox Monitor</h4>
             <p className="text-xs text-muted-foreground">Cek email terbaru dan kode verifikasi tanpa membuka banyak akun.</p>
             <div className="mt-1 flex items-center gap-2">
-              <Badge variant={connected ? "success" : "muted"}>{connected ? "Gmail terhubung" : "Belum terhubung"}</Badge>
+              <Badge variant={connected ? "success" : "muted"}>
+                {connected ? "Gmail terhubung" : connectionStatus === "reauthorize_required" ? "Perlu hubungkan ulang" : "Belum terhubung"}
+              </Badge>
               {connectedEmail && <span className="text-xs text-muted-foreground">{connectedEmail}</span>}
             </div>
           </div>
