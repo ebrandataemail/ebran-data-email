@@ -90,7 +90,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
       const { data: auth, error: authError } = await supabase.auth.getUser();
       if (authError || !auth.user) throw authError || new Error("Sesi login tidak ditemukan");
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const path = `${auth.user.id}/tasks/${task.id}/${crypto.randomUUID()}-${safe}`;
+      const path = `${auth.user.id}/${task.client_id}/tasks/${task.id}/${crypto.randomUUID()}-${safe}`;
       const { error: uploadError } = await supabase.storage.from("client-files").upload(path, file, { contentType: file.type, upsert: false });
       if (uploadError) throw uploadError;
       const { data, error } = await (supabase.from("task_deliverables" as any) as any).insert({
