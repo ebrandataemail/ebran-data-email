@@ -56,6 +56,7 @@ export type WorkboardDocument = {
 export type WorkboardDesignVersion = {
   id: string;
   client_id: string;
+  task_id: string | null;
   title: string;
   version_label: string;
   file_path: string;
@@ -132,7 +133,7 @@ export function useWorkboardData() {
         .limit(100),
       (supabase.from("client_design_versions" as any) as any)
         .select(
-          "id,client_id,title,version_label,file_path,file_name,mime_type,status,created_at,reviewed_at",
+          "id,client_id,task_id,title,version_label,file_path,file_name,mime_type,status,created_at,reviewed_at",
         )
         .order("created_at", { ascending: false }),
       (supabase.from("client_design_comments" as any) as any)
