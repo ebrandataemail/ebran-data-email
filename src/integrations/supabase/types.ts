@@ -324,6 +324,7 @@ export type Database = {
           mime_type: string | null
           reviewed_at: string | null
           status: string
+          task_id: string | null
           title: string
           user_id: string
           version_label: string
@@ -337,6 +338,7 @@ export type Database = {
           mime_type?: string | null
           reviewed_at?: string | null
           status?: string
+          task_id?: string | null
           title: string
           user_id?: string
           version_label?: string
@@ -350,6 +352,7 @@ export type Database = {
           mime_type?: string | null
           reviewed_at?: string | null
           status?: string
+          task_id?: string | null
           title?: string
           user_id?: string
           version_label?: string
@@ -360,6 +363,13 @@ export type Database = {
             columns: ["client_id", "user_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "client_design_versions_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
             referencedColumns: ["id", "user_id"]
           },
         ]
@@ -526,6 +536,7 @@ export type Database = {
           priority: string
           sort_order: number
           status: string
+          task_type: string
           title: string
           updated_at: string
           user_id: string
@@ -540,6 +551,7 @@ export type Database = {
           priority?: string
           sort_order?: number
           status?: string
+          task_type?: string
           title: string
           updated_at?: string
           user_id?: string
@@ -554,6 +566,7 @@ export type Database = {
           priority?: string
           sort_order?: number
           status?: string
+          task_type?: string
           title?: string
           updated_at?: string
           user_id?: string
@@ -1168,6 +1181,47 @@ export type Database = {
           },
         ]
       }
+      task_activities: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          task_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          task_id: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          task_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activities_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       task_brief_acceptance_criteria: {
         Row: {
           created_at: string
@@ -1686,6 +1740,209 @@ export type Database = {
           },
           {
             foreignKeyName: "task_briefs_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          deliverable_id: string | null
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          deliverable_id?: string | null
+          id?: string
+          task_id: string
+          user_id?: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          deliverable_id?: string | null
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_deliverable_owner_fkey"
+            columns: ["deliverable_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_deliverables"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_comments_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_deliverable_versions: {
+        Row: {
+          change_note: string | null
+          created_at: string
+          deliverable_id: string
+          id: string
+          snapshot: Json
+          task_id: string
+          title: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          change_note?: string | null
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          snapshot?: Json
+          task_id: string
+          title: string
+          user_id?: string
+          version_number: number
+        }
+        Update: {
+          change_note?: string | null
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          snapshot?: Json
+          task_id?: string
+          title?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_deliverable_versions_deliverable_owner_fkey"
+            columns: ["deliverable_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_deliverables"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_deliverable_versions_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_deliverables: {
+        Row: {
+          content: string | null
+          created_at: string
+          deliverable_type: string
+          description: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string
+          metadata: Json
+          mime_type: string | null
+          sort_order: number
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          deliverable_type?: string
+          description?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          sort_order?: number
+          status?: string
+          task_id: string
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          deliverable_type?: string
+          description?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          sort_order?: number
+          status?: string
+          task_id?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_deliverables_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      task_reviews: {
+        Row: {
+          created_at: string
+          decision: string
+          deliverable_id: string | null
+          id: string
+          note: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          deliverable_id?: string | null
+          id?: string
+          note?: string | null
+          task_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          deliverable_id?: string | null
+          id?: string
+          note?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_reviews_deliverable_owner_fkey"
+            columns: ["deliverable_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "task_deliverables"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_reviews_task_owner_fkey"
             columns: ["task_id", "user_id"]
             isOneToOne: false
             referencedRelation: "client_tasks"
