@@ -94,10 +94,10 @@ Deno.serve(async (req) => {
       const state = url.searchParams.get("state") || "";
       if (!state) return redirect("https://ebran-data-email.lovable.app/account?gmail=oauth_error");
       const stateHash = await sha256(state);
-      const { data: pending, error: stateError } = await admin.schema("vault_private").from("gmail_oauth_states")
+      const { data: pending, error: stateError } = await admin.from("gmail_oauth_states")
         .select("*").eq("state_hash", stateHash).gt("expires_at", new Date().toISOString()).maybeSingle();
       if (stateError || !pending) return redirect("https://ebran-data-email.lovable.app/account?gmail=state_expired");
-      await admin.schema("vault_private").from("gmail_oauth_states").delete().eq("state_hash", stateHash);
+      await admin.from("gmail_oauth_states").delete().eq("state_hash", stateHash);
       if (url.searchParams.get("error")) return redirect(pending.redirect_after + "&gmail=denied");
       const code = url.searchParams.get("code");
       if (!code) return redirect(pending.redirect_after + "&gmail=oauth_error");
@@ -119,12 +119,12 @@ Deno.serve(async (req) => {
       let refreshCipher = "";
       if (tokens.refresh_token) refreshCipher = await encrypt(tokens.refresh_token);
       else {
-        const { data: previous } = await admin.schema("vault_private").from("gmail_mailbox_connections")
+        const { data: previous } = await admin.from("gmail_mailbox_connections")
           .select("refresh_token_ciphertext").eq("email_account_id", account.id).eq("user_id", account.user_id).maybeSingle();
         if (!previous?.refresh_token_ciphertext) return redirect(pending.redirect_after + "&gmail=reauthorize_required");
         refreshCipher = previous.refresh_token_ciphertext;
       }
-      const { error: saveError } = await admin.schema("vault_private").from("gmail_mailbox_connections").upsert({
+      const { error: saveError } = await admin.from("gmail_mailbox_connections").upsert({
         user_id: account.user_id, email_account_id: account.id, google_email: profile.email,
         google_subject: profile.sub || null, refresh_token_ciphertext: refreshCipher,
         scopes: String(tokens.scope || scope).split(" "), status: "connected", updated_at: new Date().toISOString(),
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
       if (!account) return json({ error: "Akun email tidak ditemukan atau bukan milik Anda." }, 404);
       const state = b64(crypto.getRandomValues(new Uint8Array(32))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
       const redirectAfter = "https://ebran-data-email.lovable.app/account";
-      const { error } = await admin.schema("vault_private").from("gmail_oauth_states").insert({
+      const { error } = await admin.from("gmail_oauth_states").insert({
         state_hash: await sha256(state), user_id: user.id, email_account_id: account.id,
         redirect_after: redirectAfter, expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
       });
@@ -160,12 +160,22 @@ Deno.serve(async (req) => {
       return json({ authorizationUrl: authUrl.toString() });
     }
 
+    if (action === "status") {
+      const accountId = String(body.emailAccountId || "");
+      const { data: account } = await admin.from("email_accounts").select("id")
+        .eq("id", accountId).eq("user_id", user.id).maybeSingle();
+      if (!account) return json({ error: "Akun email tidak ditemukan." }, 404);
+      const { data: connection } = await admin.from("gmail_mailbox_connections")
+        .select("google_email,status,last_checked_at").eq("email_account_id", accountId).eq("user_id", user.id).maybeSingle();
+      return json({ connected: connection?.status === "connected", googleEmail: connection?.google_email || null, lastCheckedAt: connection?.last_checked_at || null });
+    }
+
     if (action === "latest") {
       const accountId = String(body.emailAccountId || "");
       const { data: account } = await admin.from("email_accounts").select("id,email,user_id")
         .eq("id", accountId).eq("user_id", user.id).maybeSingle();
       if (!account) return json({ error: "Akun email tidak ditemukan." }, 404);
-      const { data: connection } = await admin.schema("vault_private").from("gmail_mailbox_connections")
+      const { data: connection } = await admin.from("gmail_mailbox_connections")
         .select("google_email,refresh_token_ciphertext,status").eq("email_account_id", accountId).eq("user_id", user.id).maybeSingle();
       if (!connection || connection.status !== "connected") return json({ error: "Gmail belum terhubung." }, 409);
       const accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
@@ -184,7 +194,7 @@ Deno.serve(async (req) => {
       const getHeader = (name: string) => headers.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value || "";
       const text = [message.snippet || "", findText(message.payload)].join("\n");
       const code = detectCode(text);
-      await admin.schema("vault_private").from("gmail_mailbox_connections")
+      await admin.from("gmail_mailbox_connections")
         .update({ last_checked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("email_account_id", accountId).eq("user_id", user.id);
       return json({
@@ -203,7 +213,7 @@ Deno.serve(async (req) => {
       const { data: account } = await admin.from("email_accounts").select("id")
         .eq("id", accountId).eq("user_id", user.id).maybeSingle();
       if (!account) return json({ error: "Akun email tidak ditemukan." }, 404);
-      await admin.schema("vault_private").from("gmail_mailbox_connections").delete()
+      await admin.from("gmail_mailbox_connections").delete()
         .eq("email_account_id", accountId).eq("user_id", user.id);
       return json({ ok: true });
     }
