@@ -313,7 +313,7 @@ export function AccountVaultCard({
         </div>
       </div>
 
-      {!isEditing && <GmailInboxMonitor emailAccountId={account.id} email={account.email} />}
+      {!isEditing && expanded && <GmailInboxMonitor emailAccountId={account.id} email={account.email} />}
 
       {/* Expandable Vault Detail Tabs */}
       {expanded && (
