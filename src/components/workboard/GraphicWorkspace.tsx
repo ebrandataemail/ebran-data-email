@@ -65,7 +65,7 @@ export function GraphicWorkspace({
   const clientDocs = documents.filter((item) => item.client_id === client?.id);
   const clientActivities = activities.filter((item) => item.client_id === client?.id).slice(0, 3);
   const versions = useMemo(
-    () => designVersions.filter((item) => selectedTask ? item.client_id === client?.id && (item.task_id === selectedTask.id || !item.task_id) : item.client_id === client?.id),
+    () => designVersions.filter((item) => item.client_id === client?.id && (selectedTask ? item.task_id === selectedTask.id : true)),
     [designVersions, client?.id],
   );
   const [selectedVersionId, setSelectedVersionId] = useState("");
