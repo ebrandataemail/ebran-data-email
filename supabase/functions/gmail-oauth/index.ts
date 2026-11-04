@@ -167,7 +167,12 @@ Deno.serve(async (req) => {
       if (!account) return json({ error: "Akun email tidak ditemukan." }, 404);
       const { data: connection } = await admin.from("gmail_mailbox_connections")
         .select("google_email,status,last_checked_at").eq("email_account_id", accountId).eq("user_id", user.id).maybeSingle();
-      return json({ connected: connection?.status === "connected", googleEmail: connection?.google_email || null, lastCheckedAt: connection?.last_checked_at || null });
+      return json({
+        connected: connection?.status === "connected",
+        status: connection?.status || "disconnected",
+        googleEmail: connection?.google_email || null,
+        lastCheckedAt: connection?.last_checked_at || null,
+      });
     }
 
     if (action === "latest") {
@@ -178,7 +183,15 @@ Deno.serve(async (req) => {
       const { data: connection } = await admin.from("gmail_mailbox_connections")
         .select("google_email,refresh_token_ciphertext,status").eq("email_account_id", accountId).eq("user_id", user.id).maybeSingle();
       if (!connection || connection.status !== "connected") return json({ error: "Gmail belum terhubung." }, 409);
-      const accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
+      let accessToken: string;
+      try {
+        accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
+      } catch {
+        await admin.from("gmail_mailbox_connections")
+          .update({ status: "reauthorize_required", updated_at: new Date().toISOString() })
+          .eq("email_account_id", accountId).eq("user_id", user.id);
+        return json({ error: "Sesi Gmail kedaluwarsa atau dicabut. Hubungkan ulang akun Gmail ini." }, 409);
+      }
       const listResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1&labelIds=INBOX", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
