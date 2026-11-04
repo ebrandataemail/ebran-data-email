@@ -503,6 +503,7 @@ export function GraphicWorkspace({
         ) : (
           <TaskDeliverableWorkspace task={selectedTask} />
         )}
+        {(!selectedTask || selectedTask.task_type === "design") && (
         <div className="flex flex-col gap-3">
           <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
             <h4 className="text-[11px] font-semibold text-wb-ink">Approval &amp; Revisi</h4>
@@ -634,6 +635,8 @@ export function GraphicWorkspace({
             </form>
           </div>
         </div>
+
+        )}
       </div>
     </section>
   );
