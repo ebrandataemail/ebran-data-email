@@ -1616,7 +1616,6 @@ export function ClientDetailWorkspace({
                       <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
                         Password, recovery code, dan secret 2FA belum dapat disimpan dengan aman. Fitur kredensial rahasia dinonaktifkan sampai Secure Vault terenkripsi tersedia.
                       </div>
-                      </div>
                     </div>
                   </div>
 
