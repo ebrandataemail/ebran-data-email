@@ -46,6 +46,7 @@ import { errorMessage } from "../use-ai";
 import { AssetAttachments } from "../AssetAttachments";
 import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, type VaultAccount } from "./use-accounts";
 import { cn } from "@/lib/utils";
+import { GmailInboxMonitor } from "./GmailInboxMonitor";
 
 export function AccountVaultCard({
   account,
@@ -311,6 +312,8 @@ export function AccountVaultCard({
           {!isEditing && riskBadges}
         </div>
       </div>
+
+      {!isEditing && <GmailInboxMonitor emailAccountId={account.id} email={account.email} />}
 
       {/* Expandable Vault Detail Tabs */}
       {expanded && (
