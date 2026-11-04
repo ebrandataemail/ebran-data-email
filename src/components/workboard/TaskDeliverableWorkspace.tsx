@@ -44,7 +44,20 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
   const [commentDraft, setCommentDraft] = useState("");
   const [reviewNote, setReviewNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [filePreviewUrl, setFilePreviewUrl] = useState("");
   const selected = items.find((item) => item.id === selectedId) || items[0];
+  useEffect(() => {
+    let active = true;
+    setFilePreviewUrl("");
+    if (selected?.file_path) {
+      void supabase.storage.from("client-files").createSignedUrl(selected.file_path, 3600).then(({ data, error }) => {
+        if (!active) return;
+        if (error || !data?.signedUrl) return;
+        setFilePreviewUrl(data.signedUrl);
+      });
+    }
+    return () => { active = false; };
+  }, [selected?.id, selected?.file_path]);
   const load = useCallback(async () => {
     if (task.id.startsWith("demo-task-")) { setItems([]); setVersions([]); setReviews([]); setComments([]); return; }
     const [a,b,c,d] = await Promise.all([
@@ -88,7 +101,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
     finally { setBusy(false); }
   }
   async function uploadFile(file?: File) {
-    if (!file) return; if (task.id.startsWith("demo-task-")) { toast.error("Data contoh belum tersimpan. Buat task baru untuk mengunggah file."); return; }
+    if (!file) return; if (file.size > 50 * 1024 * 1024) { toast.error("Ukuran file maksimal 50 MB"); return; } if (task.id.startsWith("demo-task-")) { toast.error("Data contoh belum tersimpan. Buat task baru untuk mengunggah file."); return; }
     setBusy(true);
     try {
       const { data: auth, error: authError } = await supabase.auth.getUser();
@@ -150,7 +163,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
               <select value={kind} onChange={(e)=>setKind(e.target.value)} className="h-9 rounded-md border border-border bg-card px-2 text-xs"><option value="document">Dokumen / Draft</option><option value="url">URL / Preview</option><option value="calendar">Calendar / Jadwal</option><option value="report">Laporan</option><option value="code">Code / Release</option><option value="dataset">Dataset</option><option value="other">Lainnya</option></select>
               <input value={url} onChange={(e)=>setUrl(e.target.value)} placeholder="URL preview (opsional)" className="h-9 rounded-md border border-border bg-card px-2 text-xs sm:col-span-2"/>
               <textarea value={description} onChange={(e)=>setDescription(e.target.value)} rows={2} placeholder="Deskripsi, tujuan, kanal, milestone, atau catatan..." className="rounded-md border border-border bg-card p-2 text-xs sm:col-span-2"/>
-              <textarea value={content} onChange={(e)=>setContent(e.target.value)} rows={4} placeholder="Isi draft, findings, KPI, changelog, script, atau detail hasil..." className="rounded-md border border-border bg-card p-2 text-xs sm:col-span-2"/>
+              <textarea value={content} onChange={(e)=>setContent(e.target.value)} rows={4} placeholder={`Isi ${config.examples[0]}, findings, KPI, changelog, script, atau detail hasil...`} className="rounded-md border border-border bg-card p-2 text-xs sm:col-span-2"/>
               {editingId && <input value={changeNote} onChange={(e)=>setChangeNote(e.target.value)} placeholder="Catatan perubahan versi..." className="h-9 rounded-md border border-border bg-card px-2 text-xs sm:col-span-2"/>}
             </div>
             <div className="mt-2 flex justify-end"><button disabled={busy || !title.trim()} className="inline-flex items-center gap-1 rounded-md bg-wb-ink px-3 py-2 text-[10px] font-semibold text-white disabled:opacity-50"><Plus className="size-3.5"/> {editingId ? "Simpan versi baru" : "Simpan deliverable"}</button></div>
@@ -168,7 +181,13 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
             {selected.description && <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">{selected.description}</p>}
             {selected.content && <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs text-wb-ink">{selected.content}</pre>}
             {selected.url && <a href={selected.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-wb-blue-strong"><ExternalLink className="size-3"/> Buka preview</a>}
-            {selected.file_path && <button type="button" onClick={()=>void openFile(selected.file_path!)} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-wb-blue-strong"><FileText className="size-3"/> Buka {selected.file_name || "file"}</button>}
+            {selected.file_path && <div className="mt-3 space-y-2">
+              {filePreviewUrl && selected.mime_type?.startsWith("image/") && <img src={filePreviewUrl} alt={selected.file_name || selected.title} className="max-h-[420px] w-full rounded-md bg-muted object-contain"/>}
+              {filePreviewUrl && selected.mime_type === "application/pdf" && <iframe title={selected.file_name || selected.title} src={filePreviewUrl} className="h-[420px] w-full rounded-md border border-border bg-white"/>}
+              {filePreviewUrl && selected.mime_type?.startsWith("video/") && <video controls src={filePreviewUrl} className="max-h-[420px] w-full rounded-md bg-black"/>}
+              {filePreviewUrl && selected.mime_type?.startsWith("audio/") && <audio controls src={filePreviewUrl} className="w-full"/>}
+              <button type="button" onClick={()=>void openFile(selected.file_path!)} className="inline-flex items-center gap-1 text-xs font-semibold text-wb-blue-strong"><FileText className="size-3"/> Buka / unduh {selected.file_name || "file"}</button>
+            </div>}
             <div className="mt-4 grid gap-2 sm:grid-cols-3"><button type="button" disabled={busy} onClick={()=>void changeStatus("in_review")} className="rounded-md border border-border px-2 py-2 text-[10px] font-semibold">Kirim review</button><button type="button" disabled={busy} onClick={()=>void changeStatus("approved")} className="rounded-md bg-wb-green-strong px-2 py-2 text-[10px] font-semibold text-white">Approve</button><button type="button" disabled={busy} onClick={()=>void changeStatus("revision")} className="rounded-md border border-border px-2 py-2 text-[10px] font-semibold">Minta revisi</button></div>
             <textarea value={reviewNote} onChange={(e)=>setReviewNote(e.target.value)} rows={2} placeholder="Catatan review / alasan revisi..." className="mt-2 w-full rounded-md border border-border bg-card p-2 text-xs"/>
           </div>}
