@@ -240,7 +240,7 @@ export function ClientCreatePage() {
       }
 
       // 2. Save Client Record
-      const fullCompanyProfile = `Overview:\n${companyOverview || description}\n\nPain Points:\n${painPoints}\n\nTugas Kita:\n${agencyGoals}\n\nTone of Voice:\n${toneOfVoice}\n\nDOs:\n${dosRules}\n\nDONTs:\n${dontsRules}`;
+      const fullCompanyProfile = `Overview:\n${companyOverview}\n\nPain Points:\n${painPoints}\n\nTugas Kita:\n${agencyGoals}\n\nTone of Voice:\n${toneOfVoice}\n\nDOs:\n${dosRules}\n\nDONTs:\n${dontsRules}`;
 
       const savedClient = await saveClient({
         data: {
@@ -332,7 +332,7 @@ export function ClientCreatePage() {
               metadata: { project_id: project.id, milestone: "target" },
             }
           : null,
-      ].filter(Boolean);
+      ].filter((row): row is NonNullable<typeof row> => row !== null);
 
       if (timelineRows.length) {
         const { error: timelineError } = await supabase.from("client_timeline_events").insert(timelineRows);

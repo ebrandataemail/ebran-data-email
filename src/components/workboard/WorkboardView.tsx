@@ -14,7 +14,7 @@ import { AppSidebar } from "@/components/vault/AppSidebar";
 import { GraphicWorkspace } from "./GraphicWorkspace";
 import { TaskBoard } from "./TaskBoard";
 import { AiSecretaryPanel, CalendarPanel, WorkListPanel } from "./BottomPanels";
-import { useWorkboardData } from "./useWorkboardData";
+import { useWorkboardData, type WorkboardTask } from "./useWorkboardData";
 
 export function WorkboardView() {
   return (
