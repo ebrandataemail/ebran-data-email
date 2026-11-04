@@ -30,6 +30,7 @@ import type {
 } from "./useWorkboardData";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskBriefWorkspace } from "./TaskBriefWorkspace";
+import { TaskDeliverableWorkspace } from "./TaskDeliverableWorkspace";
 
 type PinDraft = { x: number; y: number } | null;
 
@@ -64,7 +65,7 @@ export function GraphicWorkspace({
   const clientDocs = documents.filter((item) => item.client_id === client?.id);
   const clientActivities = activities.filter((item) => item.client_id === client?.id).slice(0, 3);
   const versions = useMemo(
-    () => designVersions.filter((item) => item.client_id === client?.id),
+    () => designVersions.filter((item) => selectedTask ? item.client_id === client?.id && (item.task_id === selectedTask.id || !item.task_id) : item.client_id === client?.id),
     [designVersions, client?.id],
   );
   const [selectedVersionId, setSelectedVersionId] = useState("");
@@ -145,6 +146,7 @@ export function GraphicWorkspace({
       const { data, error } = await (supabase.from("client_design_versions" as any) as any)
         .insert({
           client_id: client.id,
+          task_id: selectedTask?.id ?? null,
           title: file.name,
           version_label: nextLabel,
           file_path: uploadedPath,
@@ -369,6 +371,7 @@ export function GraphicWorkspace({
           </div>
         </div>
 
+        {(!selectedTask || selectedTask.task_type === "design") ? (
         <div className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 shadow-soft">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[12px] font-bold text-wb-ink">
@@ -496,6 +499,10 @@ export function GraphicWorkspace({
           </div>
         </div>
 
+
+        ) : (
+          <TaskDeliverableWorkspace task={selectedTask} />
+        )}
         <div className="flex flex-col gap-3">
           <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
             <h4 className="text-[11px] font-semibold text-wb-ink">Approval &amp; Revisi</h4>
