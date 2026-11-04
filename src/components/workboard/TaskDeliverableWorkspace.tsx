@@ -45,6 +45,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
   const [busy, setBusy] = useState(false);
   const selected = items.find((item) => item.id === selectedId) || items[0];
   const load = useCallback(async () => {
+    if (task.id.startsWith("demo-task-")) { setItems([]); setVersions([]); setReviews([]); setComments([]); return; }
     const [a,b,c,d] = await Promise.all([
       (supabase.from("task_deliverables" as any) as any).select("*").eq("task_id", task.id).order("updated_at", { ascending: false }),
       (supabase.from("task_deliverable_versions" as any) as any).select("*").eq("task_id", task.id).order("created_at", { ascending: false }),
@@ -67,7 +68,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
     if (error) throw error;
   };
   async function createDeliverable(event: React.FormEvent) {
-    event.preventDefault(); if (!title.trim()) return;
+    event.preventDefault(); if (task.id.startsWith("demo-task-")) { toast.error("Data contoh belum tersimpan. Buat task baru untuk menyimpan deliverable."); return; } if (!title.trim()) return;
     setBusy(true);
     try {
       const { data, error } = await (supabase.from("task_deliverables" as any) as any).insert({
@@ -83,7 +84,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
     finally { setBusy(false); }
   }
   async function uploadFile(file?: File) {
-    if (!file) return;
+    if (!file) return; if (task.id.startsWith("demo-task-")) { toast.error("Data contoh belum tersimpan. Buat task baru untuk mengunggah file."); return; }
     setBusy(true);
     try {
       const { data: auth, error: authError } = await supabase.auth.getUser();
@@ -102,7 +103,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
     finally { setBusy(false); }
   }
   async function changeStatus(status: string) {
-    if (!selected) return; setBusy(true);
+    if (!selected || task.id.startsWith("demo-task-")) return; setBusy(true);
     try {
       const { data, error } = await (supabase.from("task_deliverables" as any) as any).update({ status, updated_at: new Date().toISOString() }).eq("id", selected.id).select("*").single();
       if (error) throw error; await saveVersion(data as Deliverable, changeNote || `Status diubah menjadi ${status}`);
@@ -112,7 +113,7 @@ export function TaskDeliverableWorkspace({ task }: { task: WorkboardTask }) {
     finally { setBusy(false); }
   }
   async function sendComment(event: React.FormEvent) {
-    event.preventDefault(); if (!commentDraft.trim()) return; setBusy(true);
+    event.preventDefault(); if (task.id.startsWith("demo-task-")) return; if (!commentDraft.trim()) return; setBusy(true);
     const { error } = await (supabase.from("task_comments" as any) as any).insert({ task_id: task.id, deliverable_id: selected?.id || null, comment: commentDraft.trim() });
     setBusy(false); if (error) { toast.error(error.message); return; } setCommentDraft(""); await load();
   }
