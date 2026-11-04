@@ -979,7 +979,6 @@ export function ClientCreatePage() {
                         <div className="flex items-center rounded-md border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
                           Kolom password dinonaktifkan sampai penyimpanan terenkripsi tersedia.
                         </div>
-                        </div>
                       </div>
                     </div>
 
