@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export async function copyText(value: string, label = "Nilai") {
   try {
     await navigator.clipboard.writeText(value);
-    toast.success(`${label} disalin`, { description: "Tersimpan di clipboard selama 30 detik." });
+    toast.success(`${label} disalin`);
   } catch {
     toast.error("Gagal menyalin ke clipboard");
   }

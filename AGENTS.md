@@ -23,3 +23,5 @@
 - Password-risk facts (length, pattern, keyed fingerprint for reuse) are computed at write time and stored, so audits and the UI never need to decrypt.
 - CSV import is a pure normalizer (`src/lib/vault/normalize.ts`, tested) shared by the browser preview and the server; import upserts by (user, email) so re-importing a sheet syncs instead of duplicating.
 - All AI cues (sparkles, AI badges, AI buttons) use the `ai*` tokens and `ai` / `ai-outline` / `ai-ghost` button variants defined in `src/styles.css`, never ad-hoc colors.
+- Account navigation uses the shared access-safety URL validator on write, read and rendering; HTTP/HTTPS without embedded credentials prevents executable links and credential-bearing addresses, including historic rows.
+- Revealed vault credentials use useTransientSecret with a 20-second lifetime and blur/visibility cleanup; reveal responses are private/no-store to prevent persistent exposure and response caching.

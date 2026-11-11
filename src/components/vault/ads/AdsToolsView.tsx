@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { safeAccountUrl } from "@/lib/vault/access-safety";
+import { useTransientSecret } from "@/lib/vault/use-transient-secret";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -242,17 +244,16 @@ function AdsAssetCard({
 }) {
   const Icon = PLATFORM_ICONS[asset.platform] ?? CodeXml;
   const revealFn = useServerFn(adsRevealAsset);
-  const [revealed, setRevealed] = useState<string | null>(null);
+  const { secret: revealed, clear, request } = useTransientSecret<string>(asset.id);
   const [busy, setBusy] = useState(false);
   const reveal = async () => {
     if (revealed !== null) {
-      setRevealed(null);
+      clear();
       return;
     }
     setBusy(true);
     try {
-      const r = await revealFn({ data: { id: asset.id } });
-      setRevealed(r.value);
+      await request(async () => (await revealFn({ data: { id: asset.id } })).value);
     } catch (error) {
       toast.error("Gagal membuka kredensial", { description: errorMessage(error) });
     } finally {
@@ -300,9 +301,9 @@ function AdsAssetCard({
               <span className="font-mono">{asset.accountIdentifier}</span>
             </p>
           )}
-          {asset.websiteUrl && (
+          {safeAccountUrl(asset.websiteUrl) && (
             <a
-              href={asset.websiteUrl}
+              href={safeAccountUrl(asset.websiteUrl) ?? undefined}
               target="_blank"
               rel="noreferrer"
               className="block truncate text-primary hover:underline"
