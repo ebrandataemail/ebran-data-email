@@ -57,7 +57,7 @@ export async function importCsv(db: Db, userId: string, csv: string) {
     .upsert(rows, { onConflict: "user_id,email" })
     .select("id, email");
   if (saveError) {
-    console.error("[vault import] accounts", saveError);
+    console.error("[vault import] accounts");
     throw new Error("Gagal menyimpan akun email.");
   }
   const idByEmail = new Map((saved ?? []).map((r) => [r.email, r.id]));
@@ -76,7 +76,7 @@ export async function importCsv(db: Db, userId: string, csv: string) {
       .from("lovable_projects")
       .upsert(projectRows, { onConflict: "account_id,name" });
     if (projectError) {
-      console.error("[vault import] projects", projectError);
+      console.error("[vault import] projects");
       throw new Error("Akun tersimpan, tetapi proyek Lovable gagal disimpan.");
     }
   }
@@ -99,7 +99,7 @@ const LIST_COLUMNS =
 export async function listAccounts(db: Db) {
   const { data, error } = await db.from("email_accounts").select(LIST_COLUMNS).order("email");
   if (error) {
-    console.error("[vault list]", error);
+    console.error("[vault list]");
     throw new Error("Gagal memuat daftar email.");
   }
   const reuse = new Map<string, number>();
@@ -225,7 +225,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
     if (projectRows.length > 0) {
       const { error: projErr } = await db.from("lovable_projects").upsert(projectRows);
       if (projErr) {
-        console.error("[vault save] projects", projErr);
+        console.error("[vault save] projects");
         throw new Error("Gagal menyimpan data proyek.");
       }
     } else if (input.id) {

@@ -4,7 +4,14 @@ import { AppSidebar } from "@/components/vault/AppSidebar";
 import { AiChatPageContent } from "@/components/vault/AiChat";
 
 export const Route = createFileRoute("/_authenticated/ai")({
-  head: () => ({ meta: [{ title: "Tanya AI · Ebran Aset Digital" }] }),
+  head: () => ({ meta: [
+    { title: "Tanya AI · Ebran Aset Digital" },
+    { name: "description", content: "Percakapan AI dengan konteks aset yang disaring dari rahasia." },
+    { property: "og:title", content: "Tanya AI · Ebran Aset Digital" },
+    { property: "og:description", content: "Percakapan AI dengan konteks aset yang disaring dari rahasia." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (search: Record<string, unknown>): { assetId?: string } =>
     typeof search["assetId"] === "string" && search["assetId"].length <= 100
       ? { assetId: search["assetId"] }

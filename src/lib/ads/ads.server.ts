@@ -48,7 +48,7 @@ export async function listAdsAssets(db: Db): Promise<AdsAsset[]> {
     )
     .order("created_at", { ascending: false });
   if (error) {
-    console.error("[ads assets list]", error);
+    console.error("[ads assets list]");
     throw new Error("Gagal memuat aset Ads & Marketing.");
   }
   return (data ?? []).map((row) => {
@@ -100,7 +100,7 @@ export async function saveAdsAsset(db: Db, userId: string, input: AdsAssetInput)
       .select("id")
       .maybeSingle();
     if (error || !data) {
-      console.error("[ads assets update]", error);
+      console.error("[ads assets update]");
       throw new Error("Aset iklan tidak ditemukan atau gagal diperbarui.");
     }
     return { id: data.id };
@@ -114,7 +114,7 @@ export async function saveAdsAsset(db: Db, userId: string, input: AdsAssetInput)
   };
   const { data, error } = await db.from("ads_assets").insert(insertPayload).select("id").single();
   if (error || !data) {
-    console.error("[ads assets insert]", error);
+    console.error("[ads assets insert]");
     throw new Error("Gagal menyimpan aset Ads & Marketing.");
   }
   return { id: data.id };

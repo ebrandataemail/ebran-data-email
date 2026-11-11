@@ -5,7 +5,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/brief-share/$token")({
-  head: () => ({ meta: [{ title: "Client Brief · Ebran Data Email" }] }),
+  head: () => ({ meta: [
+    { title: "Client Brief · Ebran Data Email" },
+    { name: "description", content: "Brief pekerjaan dan tanggapan client melalui tautan berbagi." },
+    { property: "og:title", content: "Client Brief · Ebran Data Email" },
+    { property: "og:description", content: "Brief pekerjaan dan tanggapan client melalui tautan berbagi." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SharedBriefPage,
 });
 

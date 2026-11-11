@@ -53,7 +53,7 @@ export async function listDevAssets(db: Db): Promise<DevAsset[]> {
     )
     .order("created_at", { ascending: false });
   if (error) {
-    console.error("[developer assets list]", error);
+    console.error("[developer assets list]");
     throw new Error("Gagal memuat aset developer.");
   }
   return (data ?? []).map((row) => {
@@ -110,7 +110,7 @@ export async function saveDevAsset(db: Db, userId: string, input: DevAssetInput)
       .select("id")
       .maybeSingle();
     if (error || !data) {
-      console.error("[developer assets update]", error);
+      console.error("[developer assets update]");
       throw new Error("Aset tidak ditemukan atau gagal diperbarui.");
     }
     return { id: data.id };
@@ -130,7 +130,7 @@ export async function saveDevAsset(db: Db, userId: string, input: DevAssetInput)
     .select("id")
     .single();
   if (error || !data) {
-    console.error("[developer assets insert]", error);
+    console.error("[developer assets insert]");
     throw new Error(
       error?.code === "23505"
         ? "Aset dengan data tersebut sudah ada."
