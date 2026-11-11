@@ -14,6 +14,7 @@ import { AppSidebar } from "@/components/vault/AppSidebar";
 import { GraphicWorkspace } from "./GraphicWorkspace";
 import { TaskBoard } from "./TaskBoard";
 import { AiSecretaryPanel, CalendarPanel, WorkListPanel } from "./BottomPanels";
+import { AlertCenter } from "./AlertCenter";
 import { useWorkboardData, type WorkboardTask } from "./useWorkboardData";
 
 export function WorkboardView() {
@@ -118,6 +119,7 @@ export function WorkboardContent() {
           </div>
         ))}
       </section>
+      <AlertCenter tasks={tasks} clients={clients} onTasksChanged={refresh} />
       {error && (
         <div
           role="alert"
