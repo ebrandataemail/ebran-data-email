@@ -824,6 +824,91 @@ export type Database = {
           },
         ]
       }
+      gmail_mailbox_connections: {
+        Row: {
+          connected_at: string
+          email_account_id: string
+          google_email: string
+          google_subject: string | null
+          id: string
+          last_checked_at: string | null
+          refresh_token_ciphertext: string
+          scopes: string[]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          email_account_id: string
+          google_email: string
+          google_subject?: string | null
+          id?: string
+          last_checked_at?: string | null
+          refresh_token_ciphertext: string
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          email_account_id?: string
+          google_email?: string
+          google_subject?: string | null
+          id?: string
+          last_checked_at?: string | null
+          refresh_token_ciphertext?: string
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmail_mailbox_connections_email_account_id_fkey"
+            columns: ["email_account_id"]
+            isOneToOne: true
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmail_oauth_states: {
+        Row: {
+          created_at: string
+          email_account_id: string
+          expires_at: string
+          redirect_after: string
+          state_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_account_id: string
+          expires_at: string
+          redirect_after: string
+          state_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_account_id?: string
+          expires_at?: string
+          redirect_after?: string
+          state_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmail_oauth_states_email_account_id_fkey"
+            columns: ["email_account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lovable_projects: {
         Row: {
           account_id: string
