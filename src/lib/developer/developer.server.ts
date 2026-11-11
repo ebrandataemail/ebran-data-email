@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { decryptSecret, encryptSecret } from "../vault/crypto.server";
 
+import { safeAccountUrl } from "../vault/access-safety";
+
 type Db = SupabaseClient<Database>;
 
 import type { DevAssetEnvironment, DevAssetStatus, DevAssetType } from "./developer.types";
@@ -66,7 +68,7 @@ export async function listDevAssets(db: Db): Promise<DevAsset[]> {
       name: row.name,
       description: row.description,
       provider: row.provider,
-      websiteUrl: row.website_url,
+      websiteUrl: safeAccountUrl(row.website_url),
       username: row.username,
       environment: row.environment as DevAssetEnvironment,
       status: row.status as DevAssetStatus,
@@ -98,7 +100,7 @@ export async function saveDevAsset(db: Db, userId: string, input: DevAssetInput)
     metadata: (input.metadata ?? {}) as Json,
   };
 
-  if (input.value?.trim()) payload.value_enc = await encryptSecret(input.value);
+  if (input.value) payload.value_enc = await encryptSecret(input.value);
 
   if (input.id) {
     const { data, error } = await db
@@ -114,7 +116,7 @@ export async function saveDevAsset(db: Db, userId: string, input: DevAssetInput)
     return { id: data.id };
   }
 
-  const secret = input.value?.trim();
+  const secret = input.value;
   if (!secret) throw new Error("Nilai rahasia wajib diisi untuk aset baru.");
   const insertPayload: Database["public"]["Tables"]["developer_assets"]["Insert"] = {
     ...payload,

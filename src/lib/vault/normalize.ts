@@ -1,5 +1,7 @@
 // Pure CSV → normalized email-vault records. Shared by the server importer and tests.
 
+import { safeAccountUrl } from "./access-safety";
+
 export type LovableStatus = "unknown" | "empty" | "has_project" | "not_registered";
 
 export type NormalizedProject = { name: string; url: string | null; note: string | null };
@@ -73,7 +75,7 @@ export function providerOf(email: string) {
   return domain === "gmail.com" ? "gmail" : domain;
 }
 
-const isUrl = (v: string) => /^https?:\/\//i.test(v);
+const isUrl = (v: string) => safeAccountUrl(v) !== null;
 
 function titleFromUrl(url: string) {
   try {

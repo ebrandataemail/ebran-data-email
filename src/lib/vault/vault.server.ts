@@ -5,6 +5,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { decryptSecret, encryptSecret, passwordFingerprint } from "./crypto.server";
 import { normalizeCsv, passwordStrengthFacts, providerOf, type LovableStatus } from "./normalize";
 
+import { safeAccountUrl } from "./access-safety";
+
 type Db = SupabaseClient<Database>;
 
 async function passwordColumns(password: string | null, email: string) {
@@ -65,7 +67,7 @@ export async function importCsv(db: Db, userId: string, csv: string) {
       user_id: userId,
       account_id: idByEmail.get(a.email)!,
       name: p.name,
-      url: p.url,
+      url: safeAccountUrl(p.url),
       note: p.note,
     })),
   );
@@ -124,7 +126,7 @@ export async function listAccounts(db: Db) {
     projects: (r.lovable_projects ?? []).map((p) => ({
       id: p.id,
       name: p.name,
-      url: p.url,
+      url: safeAccountUrl(p.url),
       note: p.note,
     })),
   }));
@@ -216,7 +218,7 @@ export async function saveAccount(db: Db, userId: string, input: AccountInput) {
       user_id: userId,
       account_id: accountId!,
       name: p.name,
-      url: p.url,
+      url: safeAccountUrl(p.url),
       note: p.note,
     }));
 

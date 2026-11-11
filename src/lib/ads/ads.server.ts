@@ -1,6 +1,8 @@
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { encryptSecret, decryptSecret } from "../vault/crypto.server";
+import { safeAccountUrl } from "../vault/access-safety";
+
 type Db = SupabaseClient<Database>;
 export type AdsPlatform = "meta" | "google" | "tiktok" | "youtube" | "other";
 export type AdsAssetType = AdsPlatform;
@@ -60,7 +62,7 @@ export async function listAdsAssets(db: Db): Promise<AdsAsset[]> {
       platform: row.platform as AdsPlatform,
       name: row.name,
       accountIdentifier: row.account_identifier,
-      websiteUrl: row.website_url,
+      websiteUrl: safeAccountUrl(row.website_url),
       environment: row.environment as AdsEnvironment,
       status: row.status as AdsStatus,
       expiresAt: row.expires_at,

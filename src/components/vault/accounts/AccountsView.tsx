@@ -50,6 +50,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { safeAccountUrl } from "@/lib/vault/access-safety";
+import { useTransientSecret } from "@/lib/vault/use-transient-secret";
 import { vaultDeleteAccount, vaultRevealPassword } from "@/lib/vault/vault.functions";
 import { cn } from "@/lib/utils";
 import { AppSidebar, SidebarContents } from "../AppSidebar";
@@ -90,10 +92,10 @@ function matchesFilter(a: VaultAccount, f: Filter) {
 
 function PasswordCell({ account }: { account: VaultAccount }) {
   const revealFn = useServerFn(vaultRevealPassword);
-  const [shown, setShown] = useState<{
+  const { secret: shown, clear, request } = useTransientSecret<{
     password: string | null;
     altPassword: string | null;
-  } | null>(null);
+  }>(account.id);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -112,15 +114,12 @@ function PasswordCell({ account }: { account: VaultAccount }) {
   };
 
   const toggle = async () => {
-    if (shown) return setShown(null);
-    const res = await fetchSecret();
-    if (!res) return;
-    setShown(res);
-    setTimeout(() => setShown(null), 20_000);
+    if (shown) return clear();
+    await request(fetchSecret);
   };
 
   const copy = async () => {
-    const res = shown ?? (await fetchSecret());
+    const res = shown ?? (await request(fetchSecret, false));
     if (!res?.password) return;
     try {
       await navigator.clipboard.writeText(res.password);
@@ -464,9 +463,9 @@ export function AccountsView() {
                           <ul className="space-y-1">
                             {a.projects.map((p) => (
                               <li key={p.id} className="text-[13px]">
-                                {p.url ? (
+                                {safeAccountUrl(p.url) ? (
                                   <a
-                                    href={p.url}
+                                    href={safeAccountUrl(p.url) ?? undefined}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"

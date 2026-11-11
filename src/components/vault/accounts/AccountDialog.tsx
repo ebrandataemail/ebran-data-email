@@ -54,7 +54,7 @@ export function AccountDialog({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setPassword(""); return; }
     setEmail(account?.email ?? "");
     setPassword("");
     setStatus(account?.lovableStatus ?? "unknown");
@@ -81,6 +81,7 @@ export function AccountDialog({
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
       await queryClient.invalidateQueries({ queryKey: ["workspace", "projects-clients"] });
       toast.success(account ? "Akun diperbarui" : "Akun ditambahkan");
+      setPassword("");
       onOpenChange(false);
     } catch (err) {
       toast.error("Gagal menyimpan", { description: errorMessage(err) });
@@ -114,8 +115,8 @@ export function AccountDialog({
             </Label>
             <Input
               id="acc-pw"
-              type="text"
-              autoComplete="off"
+              type="password"
+              autoComplete="new-password"
               className="font-mono"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
