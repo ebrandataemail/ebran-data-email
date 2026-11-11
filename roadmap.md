@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Review password storage, owner access, and login-link handling; fix risks and add regression tests
+- [x] Review password storage, owner access, and login-link handling; block unsafe links, mask inputs, expire reveals, disable reveal caching, redact database errors, and add regression tests
 
 - [x] Login, AI features, saved AI chat
 - [x] Email vault tables (email_accounts, lovable_projects) with encrypted passwords
