@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRightLeft,
   CalendarDays,
@@ -30,6 +30,13 @@ import {
   isLate,
   urgencyOf,
 } from "./status";
+import { OFFSET_PRESETS } from "./reminders";
+import {
+  DEFAULT_OFFSETS,
+  clearTaskSchedule,
+  loadTaskSchedule,
+  saveTaskSchedule,
+} from "./taskSchedule";
 import type { WorkboardClient, WorkboardProject, WorkboardTask } from "./useWorkboardData";
 
 /** Group tasks by deadline (ascending); tasks without deadline go last. */
@@ -56,6 +63,12 @@ type TaskDraft = {
   priority: string;
   due_date: string;
   assignee: string;
+  /** "HH:MM" exact deadline time (optional). */
+  due_time: string;
+  /** Minutes before the deadline at which an alarm should ring. */
+  reminder_offsets: number[];
+  /** True when the saved task already had an exact time (so clearing the field removes it). */
+  had_time: boolean;
 };
 const emptyDraft = (clientId: string, status = "things-to-do"): TaskDraft => ({
   client_id: clientId,
@@ -66,6 +79,9 @@ const emptyDraft = (clientId: string, status = "things-to-do"): TaskDraft => ({
   priority: "medium",
   due_date: "",
   assignee: "",
+  due_time: "",
+  reminder_offsets: [...DEFAULT_OFFSETS],
+  had_time: false,
 });
 
 type CreateInput = {
@@ -194,6 +210,8 @@ export function TaskBoard({
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<TaskDraft>(emptyDraft(clients[0]?.id ?? ""));
   const [saving, setSaving] = useState(false);
+  const editingRef = useRef<string | null>(null);
+  editingRef.current = editing;
   const q = query.trim().toLowerCase();
   const clientById = new Map(clients.map((c) => [c.id, c]));
   const filtered = tasks.filter(
@@ -220,7 +238,26 @@ export function TaskBoard({
       priority: task.priority,
       due_date: task.due_date ?? "",
       assignee: task.assignee ?? "",
+      due_time: "",
+      reminder_offsets: [...DEFAULT_OFFSETS],
+      had_time: false,
     });
+    // Fill in the saved exact time and pending alarms once they arrive (never overwrite typing).
+    void loadTaskSchedule(task.id, task.due_date)
+      .then((schedule) => {
+        if (editingRef.current !== task.id || !schedule.hasTime) return;
+        setDraft((d) =>
+          d.due_time
+            ? d
+            : {
+                ...d,
+                due_time: schedule.time,
+                reminder_offsets: schedule.offsets,
+                had_time: true,
+              },
+        );
+      })
+      .catch(() => undefined);
   };
   const close = () => {
     if (!saving) setEditing(null);
@@ -245,6 +282,10 @@ export function TaskBoard({
       toast.error("Nama task wajib diisi.");
       return;
     }
+    if (draft.due_time && !draft.due_date) {
+      toast.error("Isi tanggal deadline untuk memakai jam.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -257,12 +298,29 @@ export function TaskBoard({
         due_date: draft.due_date || null,
         assignee: draft.assignee.trim() || null,
       };
+      let taskId: string | null = editing && editing !== "new" ? editing : null;
       if (editing === "new") {
-        await onCreate(payload);
+        const created = (await onCreate(payload)) as { id?: string } | null | undefined;
+        taskId = created?.id ?? null;
         toast.success("Task berhasil ditambahkan.");
       } else if (editing) {
         await onUpdate(editing, payload);
         toast.success("Task berhasil diperbarui.");
+      }
+      // Exact time + alarms are saved after the task itself.
+      if (taskId) {
+        try {
+          if (draft.due_date && draft.due_time) {
+            await saveTaskSchedule(taskId, draft.due_date, draft.due_time, draft.reminder_offsets);
+          } else if (draft.had_time) {
+            await clearTaskSchedule(taskId);
+          }
+        } catch (err) {
+          toast.error(
+            "Task tersimpan, tetapi jadwal/pengingat gagal: " +
+              (err instanceof Error ? err.message : "kesalahan tidak dikenal"),
+          );
+        }
       }
       setEditing(null);
     } catch (err) {
@@ -623,6 +681,56 @@ export function TaskBoard({
                   className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm"
                 />
               </label>
+              <label className="space-y-1 text-xs font-semibold text-wb-ink">
+                Jam deadline (opsional)
+                <input
+                  type="time"
+                  value={draft.due_time}
+                  disabled={!draft.due_date}
+                  onChange={(e) => setDraft((d) => ({ ...d, due_time: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-border bg-card px-2 text-sm disabled:opacity-50"
+                />
+              </label>
+              {draft.due_date && draft.due_time && (
+                <fieldset className="sm:col-span-2">
+                  <legend className="mb-1 text-xs font-semibold text-wb-ink">Bunyikan alarm</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {OFFSET_PRESETS.map((p) => {
+                      const on = draft.reminder_offsets.includes(p.minutes);
+                      return (
+                        <label
+                          key={p.minutes}
+                          className={cn(
+                            "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                            on
+                              ? "border-wb-ink bg-wb-ink text-white"
+                              : "border-border bg-card text-wb-ink hover:bg-muted",
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={on}
+                            onChange={() =>
+                              setDraft((d) => ({
+                                ...d,
+                                reminder_offsets: on
+                                  ? d.reminder_offsets.filter((m) => m !== p.minutes)
+                                  : [...d.reminder_offsets, p.minutes],
+                              }))
+                            }
+                          />
+                          {p.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-[10px] font-normal text-muted-foreground">
+                    Alarm berbunyi selama Workboard terbuka di browser. Waktu mengikuti zona waktu
+                    perangkat. Kosongkan jam untuk menghapus jadwal alarm.
+                  </p>
+                </fieldset>
+              )}
               {editing === "new" && (
                 <div className="sm:col-span-2 rounded-lg border border-wb-blue-strong/20 bg-wb-blue/10 p-3 text-[10px] leading-relaxed text-wb-ink">
                   <b>Langkah berikutnya: Client Brief &amp; Scope.</b> Setelah task disimpan, Graphic Workspace akan otomatis membuka task ini. Lengkapi 12 bagian brief, deliverables, acceptance criteria, estimasi, dan aturan revisi di sana.
