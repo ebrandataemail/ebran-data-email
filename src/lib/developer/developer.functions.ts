@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
+import { accountUrlInput, passwordInput } from "../vault/access-safety";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   deleteDevAsset,
@@ -35,20 +37,13 @@ export const devSaveAsset = createServerFn({ method: "POST" })
   .validator((input: DevAssetInput) => {
     const name = clean(input?.name, 120);
     if (!name) throw new Error("Nama aset wajib diisi.");
-    if (!input?.id && !clean(input?.value, 20_000)) throw new Error("Nilai rahasia wajib diisi.");
+    if (!input?.id && !passwordInput(input?.value)) throw new Error("Nilai rahasia wajib diisi.");
     if (!DEV_ASSET_TYPES.includes(input.type)) throw new Error("Jenis aset tidak valid.");
     const environment = input.environment ?? "production";
     const status = input.status ?? "active";
     if (!DEV_ASSET_ENVIRONMENTS.includes(environment)) throw new Error("Environment tidak valid.");
     if (!DEV_ASSET_STATUSES.includes(status)) throw new Error("Status aset tidak valid.");
-    const websiteUrl = clean(input.websiteUrl, 500);
-    if (websiteUrl) {
-      try {
-        new URL(websiteUrl);
-      } catch {
-        throw new Error("URL website harus menggunakan format URL lengkap.");
-      }
-    }
+    const websiteUrl = accountUrlInput(input.websiteUrl);
     const expiresAt = clean(input.expiresAt, 10);
     if (expiresAt && !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt))
       throw new Error("Tanggal kedaluwarsa tidak valid.");
@@ -60,7 +55,7 @@ export const devSaveAsset = createServerFn({ method: "POST" })
       id: optionalUuid(input.id),
       type: input.type,
       name,
-      value: clean(input.value, 20_000) || null,
+      value: passwordInput(input.value),
       provider: clean(input.provider, 120) || null,
       websiteUrl: websiteUrl || null,
       username: clean(input.username, 200) || null,
@@ -77,7 +72,10 @@ export const devSaveAsset = createServerFn({ method: "POST" })
 export const devRevealAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { id: string }) => ({ id: requiredUuid(input?.id) }))
-  .handler(async ({ data, context }) => revealDevAsset(context.supabase, data.id));
+  .handler(async ({ data, context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    return revealDevAsset(context.supabase, data.id);
+  });
 
 export const devDeleteAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

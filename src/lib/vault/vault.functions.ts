@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
+import { accountUrlInput, passwordInput } from "./access-safety";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runVaultAudit } from "@/lib/assistant/assistant.server";
@@ -35,7 +37,10 @@ export const vaultImportCsv = createServerFn({ method: "POST" })
 export const vaultRevealPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
-  .handler(async ({ data, context }) => revealPassword(context.supabase, data.id));
+  .handler(async ({ data, context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    return revealPassword(context.supabase, data.id);
+  });
 
 export const vaultSaveAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -59,7 +64,7 @@ export const vaultSaveAccount = createServerFn({ method: "POST" })
       return {
         id,
         email: email ?? "",
-        password: optionalText(input?.password, 200),
+        password: passwordInput(input?.password, 200),
         lovableStatus,
         usageTag: optionalText(input?.usageTag, 80),
         note: optionalText(input?.note, 1000),
@@ -72,7 +77,7 @@ export const vaultSaveAccount = createServerFn({ method: "POST" })
         projects: input?.projects?.map((p) => ({
           id: p.id ? uuid(p.id) : null,
           name: String(p.name || "Proyek Tanpa Nama").slice(0, 100),
-          url: optionalText(p.url, 500),
+          url: accountUrlInput(p.url),
           note: optionalText(p.note, 1000),
         })),
       };

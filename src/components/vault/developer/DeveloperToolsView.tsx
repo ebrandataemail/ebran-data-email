@@ -1,3 +1,5 @@
+import { safeAccountUrl } from "@/lib/vault/access-safety";
+import { useTransientSecret } from "@/lib/vault/use-transient-secret";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -330,20 +332,19 @@ function DevAssetCard({
   onDelete: () => void;
 }) {
   const Icon = TYPE_ICONS[asset.type] || CodeXml;
-  const [revealedValue, setRevealedValue] = useState<string | null>(null);
+  const { secret: revealedValue, clear, request } = useTransientSecret<string>(asset.id);
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const revealFn = useServerFn(devRevealAsset);
 
   const toggleReveal = async () => {
     if (revealedValue !== null) {
-      setRevealedValue(null);
+      clear();
       return;
     }
     setBusy(true);
     try {
-      const result = await revealFn({ data: { id: asset.id } });
-      setRevealedValue(result.value);
+      await request(async () => (await revealFn({ data: { id: asset.id } })).value);
     } catch (error) {
       toast.error("Gagal membuka nilai", { description: errorMessage(error) });
     } finally {
@@ -475,10 +476,10 @@ function DevAssetCard({
                     {asset.provider || "—"}
                   </FieldRow>
                   <FieldRow icon={<CodeXml />} label="Website / Dashboard">
-                    {asset.websiteUrl ? (
+                    {safeAccountUrl(asset.websiteUrl) ? (
                       <a
                         className="break-all text-primary hover:underline"
-                        href={asset.websiteUrl}
+                        href={safeAccountUrl(asset.websiteUrl) ?? undefined}
                         target="_blank"
                         rel="noreferrer"
                       >

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -46,6 +46,7 @@ import { errorMessage } from "../use-ai";
 import { AssetAttachments } from "../AssetAttachments";
 import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, type VaultAccount } from "./use-accounts";
 import { cn } from "@/lib/utils";
+import { safeAccountUrl } from "@/lib/vault/access-safety";
 import { GmailInboxMonitor } from "./GmailInboxMonitor";
 
 export function AccountVaultCard({
@@ -69,6 +70,7 @@ export function AccountVaultCard({
   // Form states
   const [email, setEmail] = useState(account.email);
   const [password, setPassword] = useState("");
+  useEffect(() => { if (!isEditing) setPassword(""); }, [isEditing]);
   const [status, setStatus] = useState(account.lovableStatus);
   const [usageTag, setUsageTag] = useState(account.usageTag ?? "");
   const [note, setNote] = useState(account.note ?? "");
@@ -461,8 +463,8 @@ export function AccountVaultCard({
                     <FieldRow icon={<KeyRound />} label={isEditing ? "Ganti Password" : "Password"}>
                       {isEditing ? (
                         <Input
-                          type="text"
-                          autoComplete="off"
+                          type="password"
+                          autoComplete="new-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Kosongkan jika tidak diganti"
@@ -567,10 +569,10 @@ export function AccountVaultCard({
                                   <Trash2 className="size-3.5" />
                                 </Button>
                               ) : (
-                                p.url && (
+                                safeAccountUrl(p.url) && (
                                   <Button variant="outline" size="sm" asChild>
                                     <a
-                                      href={p.url}
+                                      href={safeAccountUrl(p.url) ?? undefined}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="gap-1.5 text-xs"

@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
+import { accountUrlInput, passwordInput } from "../vault/access-safety";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   deleteAdsAsset,
@@ -34,7 +36,7 @@ export const adsSaveAsset = createServerFn({ method: "POST" })
       ? (input?.status ?? "active")
       : null;
     const value = typeof input?.value === "string" ? input.value : "";
-    const websiteUrl = text(input?.websiteUrl, 500);
+    const websiteUrl = accountUrlInput(input?.websiteUrl);
     if (!name) throw new Error("Nama aset wajib diisi.");
     if (!platform) throw new Error("Platform iklan tidak valid.");
     if (!input?.id && !value.length) throw new Error("Kredensial wajib diisi untuk aset baru.");
@@ -77,7 +79,10 @@ export const adsRevealAsset = createServerFn({ method: "POST" })
     if (!id) throw new Error("ID aset tidak valid.");
     return { id };
   })
-  .handler(async ({ data, context }) => revealAdsAsset(context.supabase, data.id));
+  .handler(async ({ data, context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    return revealAdsAsset(context.supabase, data.id);
+  });
 export const adsDeleteAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { id: string }) => {

@@ -1,6 +1,8 @@
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { encryptSecret, decryptSecret } from "../vault/crypto.server";
+import { safeAccountUrl } from "../vault/access-safety";
+
 type Db = SupabaseClient<Database>;
 export type AdsPlatform = "meta" | "google" | "tiktok" | "youtube" | "other";
 export type AdsAssetType = AdsPlatform;
@@ -46,7 +48,7 @@ export async function listAdsAssets(db: Db): Promise<AdsAsset[]> {
     )
     .order("created_at", { ascending: false });
   if (error) {
-    console.error("[ads assets list]", error);
+    console.error("[ads assets list]");
     throw new Error("Gagal memuat aset Ads & Marketing.");
   }
   return (data ?? []).map((row) => {
@@ -60,7 +62,7 @@ export async function listAdsAssets(db: Db): Promise<AdsAsset[]> {
       platform: row.platform as AdsPlatform,
       name: row.name,
       accountIdentifier: row.account_identifier,
-      websiteUrl: row.website_url,
+      websiteUrl: safeAccountUrl(row.website_url),
       environment: row.environment as AdsEnvironment,
       status: row.status as AdsStatus,
       expiresAt: row.expires_at,
@@ -98,7 +100,7 @@ export async function saveAdsAsset(db: Db, userId: string, input: AdsAssetInput)
       .select("id")
       .maybeSingle();
     if (error || !data) {
-      console.error("[ads assets update]", error);
+      console.error("[ads assets update]");
       throw new Error("Aset iklan tidak ditemukan atau gagal diperbarui.");
     }
     return { id: data.id };
@@ -112,7 +114,7 @@ export async function saveAdsAsset(db: Db, userId: string, input: AdsAssetInput)
   };
   const { data, error } = await db.from("ads_assets").insert(insertPayload).select("id").single();
   if (error || !data) {
-    console.error("[ads assets insert]", error);
+    console.error("[ads assets insert]");
     throw new Error("Gagal menyimpan aset Ads & Marketing.");
   }
   return { id: data.id };
