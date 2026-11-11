@@ -10,15 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
+// Default landing page after sign-in.
+const DEFAULT_REDIRECT = "/workboard";
+
 function safeRedirect(value: unknown): string {
-  if (typeof value !== "string") return "/vault";
+  if (typeof value !== "string") return DEFAULT_REDIRECT;
   try {
     const url = new URL(value, "http://local");
-    if (url.origin !== "http://local") return "/vault";
+    if (url.origin !== "http://local") return DEFAULT_REDIRECT;
     const path = `${url.pathname}${url.search}${url.hash}`;
-    return path.startsWith("/auth") || path === "/" ? "/vault" : path;
+    return path.startsWith("/auth") || path === "/" ? DEFAULT_REDIRECT : path;
   } catch {
-    return "/vault";
+    return DEFAULT_REDIRECT;
   }
 }
 
@@ -54,7 +57,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
-  // Already signed in → go straight to the vault.
+  // Already signed in → go straight to the workboard.
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: redirect, replace: true });
@@ -73,7 +76,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/vault` },
+          options: { emailRedirectTo: `${window.location.origin}${DEFAULT_REDIRECT}` },
         });
         if (error) throw error;
         if (data.session) navigate({ to: redirect, replace: true });

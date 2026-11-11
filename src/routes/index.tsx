@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// The vault itself lives behind sign-in at /vault; the root just forwards there.
+// Homepage: the root forwards to /workboard (behind sign-in, so logged-out users hit /auth first).
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
-    throw redirect({ to: "/vault" });
+    throw redirect({ to: "/workboard" });
   },
   head: () => ({
     meta: [
