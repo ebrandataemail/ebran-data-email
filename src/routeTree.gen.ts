@@ -21,6 +21,7 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSocialRouteImport } from './routes/_authenticated/social'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as AuthenticatedWorkboardRouteImport } from './routes/_authenticated/workboard'
+import { Route as AuthenticatedWorkboardSettingsRouteImport } from './routes/_authenticated/workboard-settings'
 import { Route as BriefShareTokenRouteImport } from './routes/brief-share.$token'
 import { Route as AuthenticatedClientsIndexRouteImport } from './routes/_authenticated/clients.index'
 import { Route as AuthenticatedClientsNewRouteImport } from './routes/_authenticated/clients.new'
@@ -86,6 +87,11 @@ const AuthenticatedWorkboardRoute = AuthenticatedWorkboardRouteImport.update({
   path: '/workboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWorkboardSettingsRoute = AuthenticatedWorkboardSettingsRouteImport.update({
+  id: '/workboard-settings',
+  path: '/workboard-settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const BriefShareTokenRoute = BriefShareTokenRouteImport.update({
   id: '/brief-share/$token',
   path: '/brief-share/$token',
@@ -120,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
+  '/workboard-settings': typeof AuthenticatedWorkboardSettingsRoute
+  '/workboard-settings': typeof AuthenticatedWorkboardSettingsRoute
   '/brief-share/$token': typeof BriefShareTokenRoute
   '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -174,6 +182,7 @@ export interface FileRouteTypes {
     | '/social'
     | '/vault'
     | '/workboard'
+    | '/workboard-settings'
     | '/brief-share/$token'
     | '/clients/new'
     | '/api/ai/chat'
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/social'
     | '/_authenticated/vault'
     | '/_authenticated/workboard'
+    | '/_authenticated/workboard-settings'
     | '/brief-share/$token'
     | '/_authenticated/clients/new'
     | '/api/ai/chat'
@@ -308,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workboard-settings': {
+      id: '/_authenticated/workboard-settings'
+      path: '/workboard-settings'
+      fullPath: '/workboard-settings'
+      preLoaderRoute: typeof AuthenticatedWorkboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/brief-share/$token': {
       id: '/brief-share/$token'
       path: '/brief-share/$token'
@@ -362,6 +379,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSocialRoute: typeof AuthenticatedSocialRoute
   AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
   AuthenticatedWorkboardRoute: typeof AuthenticatedWorkboardRoute
+  AuthenticatedWorkboardSettingsRoute: typeof AuthenticatedWorkboardSettingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -374,6 +392,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSocialRoute: AuthenticatedSocialRoute,
   AuthenticatedVaultRoute: AuthenticatedVaultRoute,
   AuthenticatedWorkboardRoute: AuthenticatedWorkboardRoute,
+  AuthenticatedWorkboardSettingsRoute: AuthenticatedWorkboardSettingsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
