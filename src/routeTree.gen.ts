@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
@@ -44,6 +45,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedAccountsRoute = AuthenticatedAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accounts': typeof AuthenticatedAccountsRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/accounts'
+    | '/account'
     | '/ads'
     | '/ai'
     | '/clients'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/accounts'
+    | '/_authenticated/account'
     | '/_authenticated/ads'
     | '/_authenticated/ai'
     | '/_authenticated/clients'
@@ -260,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/accounts'
       preLoaderRoute: typeof AuthenticatedAccountsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ads': {
@@ -371,6 +389,7 @@ const AuthenticatedClientsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
@@ -384,6 +403,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
