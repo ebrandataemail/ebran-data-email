@@ -16,7 +16,8 @@ create table if not exists public.account_linked_assets (
   note text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint account_linked_assets_owner_parent_fk unique (id, user_id, email_account_id)
 );
 create index if not exists account_linked_assets_parent_category_idx on public.account_linked_assets (email_account_id, category, updated_at desc);
 create index if not exists account_linked_assets_user_idx on public.account_linked_assets (user_id);
