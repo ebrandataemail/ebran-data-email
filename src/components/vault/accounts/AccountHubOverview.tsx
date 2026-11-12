@@ -67,13 +67,14 @@ function CategoryCard({
   );
 }
 
-export function AccountHubOverview({ emailCount }: { emailCount: number }) {
+export function AccountHubOverview({ emailAccounts }: { emailAccounts: { id: string; email: string; provider: string }[] }) {
+  const emailRecent = emailAccounts.slice(0, 4).map((account) => ({ id: account.id, name: account.email, detail: account.provider }));
   const social = useAssetSummary("social", "social_accounts", "id,display_name,platform", "display_name", "platform");
   const developer = useAssetSummary("developer", "developer_assets", "id,name,provider", "name", "provider");
   const ads = useAssetSummary("ads", "ads_assets", "id,name,platform", "name", "platform");
 
   const cards = [
-    { key: "email", title: "Email (Core)", description: "Gmail dan akun email utama beserta proyek terkait.", count: emailCount, recent: [], href: "/accounts" as const, icon: Mail, statusLabel: "Password tersimpan terenkripsi" },
+    { key: "email", title: "Email (Core)", description: "Gmail dan akun email utama beserta proyek terkait.", count: emailAccounts.length, recent: emailRecent, href: "/accounts" as const, icon: Mail, statusLabel: "Password tersimpan terenkripsi" },
     { key: "social", title: "Social Media", description: "Instagram, TikTok, YouTube, Facebook, X, LinkedIn, dan lainnya.", count: social.data?.count ?? 0, recent: social.data?.recent ?? [], href: "/social" as const, icon: AtSign, statusLabel: "Manual maupun koneksi API" },
     { key: "developer", title: "Developer & Tools", description: "GitHub, Supabase, Vercel, hosting, domain, API, AI, dan tools.", count: developer.data?.count ?? 0, recent: developer.data?.recent ?? [], href: "/developer-tools" as const, icon: CodeXml, statusLabel: "Credential terenkripsi" },
     { key: "ads", title: "Ads & Marketing", description: "Akun iklan, platform marketing, dan akses API.", count: ads.data?.count ?? 0, recent: ads.data?.recent ?? [], href: "/ads" as const, icon: Megaphone, statusLabel: "Credential terenkripsi" },
