@@ -281,3 +281,76 @@ export function vaultFacts(accounts: VaultAccount[]) {
     },
   };
 }
+
+
+export const LINKED_ASSET_CATEGORIES = ["social", "developer", "ads", "finance", "contact", "entertainment", "ai_automation", "custom"] as const;
+export type LinkedAssetCategory = (typeof LINKED_ASSET_CATEGORIES)[number];
+export type LinkedAssetInput = {
+  id: string | null;
+  emailAccountId: string;
+  category: LinkedAssetCategory;
+  provider: string;
+  displayName: string;
+  username: string | null;
+  loginEmail: string | null;
+  phone: string | null;
+  websiteUrl: string | null;
+  loginUrl: string | null;
+  password: string | null;
+  secret: string | null;
+  status: "manual" | "connected" | "needs_attention" | "disabled";
+  note: string | null;
+};
+
+export async function listLinkedAssets(db: Db, userId: string, emailAccountId: string) {
+  const { data: parent, error: parentError } = await db.from("email_accounts").select("id").eq("id", emailAccountId).eq("user_id", userId).maybeSingle();
+  if (parentError || !parent) throw new Error("Akun induk tidak ditemukan atau tidak memiliki akses.");
+  const { data, error } = await (db as any).from("account_linked_assets")
+    .select("id,email_account_id,category,provider,display_name,username,login_email,phone,website_url,login_url,status,note,created_at,updated_at,password_enc,secret_enc")
+    .eq("email_account_id", emailAccountId).eq("user_id", userId).order("updated_at", { ascending: false });
+  if (error) throw new Error("Gagal memuat akun terkait.");
+  return (data ?? []).map((row: any) => ({
+    id: row.id, emailAccountId: row.email_account_id, category: row.category,
+    provider: row.provider, displayName: row.display_name, username: row.username,
+    loginEmail: row.login_email, phone: row.phone, websiteUrl: row.website_url,
+    loginUrl: safeAccountUrl(row.login_url), status: row.status, note: row.note,
+    hasPassword: !!row.password_enc, hasSecret: !!row.secret_enc,
+    createdAt: row.created_at, updatedAt: row.updated_at,
+  }));
+}
+
+export async function saveLinkedAsset(db: Db, userId: string, input: LinkedAssetInput) {
+  const { data: parent, error: parentError } = await db.from("email_accounts").select("id").eq("id", input.emailAccountId).eq("user_id", userId).maybeSingle();
+  if (parentError || !parent) throw new Error("Akun induk tidak ditemukan atau tidak memiliki akses.");
+  const row: Record<string, unknown> = {
+    user_id: userId, email_account_id: input.emailAccountId, category: input.category,
+    provider: input.provider, display_name: input.displayName, username: input.username,
+    login_email: input.loginEmail, phone: input.phone, website_url: safeAccountUrl(input.websiteUrl),
+    login_url: safeAccountUrl(input.loginUrl), status: input.status, note: input.note,
+  };
+  if (input.password) row.password_enc = await encryptSecret(input.password);
+  if (input.secret) row.secret_enc = await encryptSecret(input.secret);
+  if (input.id) {
+    const { error } = await (db as any).from("account_linked_assets").update(row).eq("id", input.id).eq("user_id", userId).eq("email_account_id", input.emailAccountId);
+    if (error) throw new Error("Gagal memperbarui akun terkait.");
+    return { id: input.id };
+  }
+  const { data, error } = await (db as any).from("account_linked_assets").insert(row).select("id").single();
+  if (error) throw new Error("Gagal menambahkan akun terkait.");
+  return { id: data.id };
+}
+
+export async function revealLinkedAssetSecrets(db: Db, userId: string, id: string) {
+  const { data, error } = await (db as any).from("account_linked_assets").select("password_enc,secret_enc").eq("id", id).eq("user_id", userId).maybeSingle();
+  if (error || !data) throw new Error("Akun terkait tidak ditemukan.");
+  return {
+    password: data.password_enc ? await decryptSecret(data.password_enc) : null,
+    secret: data.secret_enc ? await decryptSecret(data.secret_enc) : null,
+  };
+}
+
+export async function deleteLinkedAsset(db: Db, userId: string, id: string) {
+  const { error } = await (db as any).from("account_linked_assets").delete().eq("id", id).eq("user_id", userId);
+  if (error) throw new Error("Gagal menghapus akun terkait.");
+  return { ok: true };
+}
