@@ -8,6 +8,9 @@
  * Ebran Aset Digital — design system.
  * Light, enterprise-grade. Ink-navy primary, gold for every AI cue.
  * All colors MUST use oklch format.
+ *
+ * Elevasi: L0 canvas (bg-canvas) → L1 card (rounded-xl border shadow-soft)
+ * → L2 isi card tanpa kotak (divide-y). Jangan menumpuk kotak di dalam kotak.
  */
 
 @theme inline {
@@ -22,6 +25,7 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
+  --color-canvas: var(--canvas);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -99,6 +103,7 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
+  --canvas: oklch(0.972 0.005 250);
   --foreground: oklch(0.21 0.025 258);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.025 258);
