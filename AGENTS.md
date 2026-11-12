@@ -25,3 +25,5 @@
 - All AI cues (sparkles, AI badges, AI buttons) use the `ai*` tokens and `ai` / `ai-outline` / `ai-ghost` button variants defined in `src/styles.css`, never ad-hoc colors.
 - Account navigation uses the shared access-safety URL validator on write, read and rendering; HTTP/HTTPS without embedded credentials prevents executable links and credential-bearing addresses, including historic rows.
 - Revealed vault credentials use useTransientSecret with a 20-second lifetime and blur/visibility cleanup; reveal responses are private/no-store to prevent persistent exposure and response caching.
+- AppSidebar owns the shared mobile navigation and closes its drawer on navigation; page headers must not add separate mobile menus, so every authenticated view has the same navigation.
+- Workspace layouts use zero-minimum grid tracks and local table/tab scrolling; multi-column panels expand only when the available content width supports them, so mobile and tablet pages stay contained.

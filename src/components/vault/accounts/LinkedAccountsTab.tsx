@@ -48,7 +48,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
   const [shown, setShown] = useState<{ id: string; password: string | null; secret: string | null } | null>(null);
 
   const query = useQuery({ queryKey: KEY(emailAccountId), queryFn: () => listFn({ data: { emailAccountId } }), staleTime: 20_000 });
-  const rows = query.data ?? [];
+  const rows: LinkedAsset[] = query.data ?? [];
   const filtered = useMemo(() => rows.filter((row) => row.category === category), [rows, category]);
 
   useEffect(() => {
@@ -155,7 +155,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
                  </div>
                  {row.loginUrl && <a href={row.loginUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{row.loginUrl}</a>}
                  {row.note && <p className="pt-1 text-sm text-muted-foreground">{row.note}</p>}
-                 {shown?.id === row.id && <div className="mt-2 rounded-md bg-muted p-2 font-mono text-xs break-all">{shown.password && <div>Password: {shown.password}</div>}{shown.secret && <div>Secret: {shown.secret}</div>}{!shown.password && !shown.secret && "Tidak ada kredensial tersimpan."}<p className="mt-1 font-sans text-muted-foreground">Otomatis disembunyikan setelah 30 detik.</p></div>}
+                 {shown && shown.id === row.id && <div className="mt-2 rounded-md bg-muted p-2 font-mono text-xs break-all">{shown.password && <div>Password: {shown.password}</div>}{shown.secret && <div>Secret: {shown.secret}</div>}{!shown.password && !shown.secret && "Tidak ada kredensial tersimpan."}<p className="mt-1 font-sans text-muted-foreground">Otomatis disembunyikan setelah 30 detik.</p></div>}
                </div>
                <div className="flex items-center gap-1">
                  {(row.hasPassword || row.hasSecret) && <Button size="icon-sm" variant="outline" aria-label="Tampilkan kredensial" onClick={() => reveal(row)}>{shown?.id === row.id ? <EyeOff /> : <Eye />}</Button>}

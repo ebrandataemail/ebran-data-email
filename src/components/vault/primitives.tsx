@@ -73,8 +73,8 @@ export function SecretValue({
 }) {
   const [shown, setShown] = useState(false);
   return (
-    <div className="flex items-center gap-1">
-      <span className={cn("font-mono text-sm tracking-tight text-foreground", className)}>
+    <div className="flex min-w-0 max-w-full items-center gap-1">
+      <span className={cn("min-w-0 break-all font-mono text-sm text-foreground", className)}>
         {shown ? value : `${prefix}${mask}`}
       </span>
       <RevealButton shown={shown} onToggle={() => setShown((s) => !s)} />
@@ -95,7 +95,7 @@ export function FieldRow({
   children: ReactNode;
 }) {
   return (
-    <div className="group grid grid-cols-1 gap-1.5 px-5 py-3.5 transition-colors hover:bg-subtle sm:grid-cols-[220px_1fr] sm:items-center sm:gap-6">
+    <div className="group grid min-w-0 grid-cols-1 gap-1.5 px-4 py-3.5 transition-colors hover:bg-subtle sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)] sm:items-center sm:gap-6 sm:px-5">
       <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
         {icon && (
           <span className="flex size-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground [&_svg]:size-3.5">
@@ -107,7 +107,7 @@ export function FieldRow({
           {hint && <span className="text-xs text-muted-foreground/80">{hint}</span>}
         </div>
       </div>
-      <div className="flex min-h-7 flex-wrap items-center gap-2 text-sm font-medium text-foreground">
+      <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-2 break-all text-sm font-medium text-foreground">
         {children}
       </div>
     </div>
@@ -134,8 +134,8 @@ export function Panel({
         className,
       )}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-        <div>
+      <header className="grid gap-3 border-b border-border px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
         </div>
@@ -169,7 +169,7 @@ export function QuickChip({
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-lg border border-border bg-background py-1 pl-2.5 pr-1 shadow-soft transition-colors hover:border-border-strong",
+        "flex min-w-0 max-w-full flex-wrap items-center gap-2 rounded-lg border border-border bg-background py-1 pl-2.5 pr-1 shadow-soft transition-colors hover:border-border-strong",
         className,
       )}
     >

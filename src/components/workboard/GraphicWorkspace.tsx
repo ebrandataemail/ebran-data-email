@@ -250,7 +250,7 @@ export function GraphicWorkspace({
 
       {selectedTask && (
         <section id="graphic-task-detail" className="border-b border-border bg-wb-blue/10 p-4 sm:p-5" aria-live="polite">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-wb-blue-strong px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-brand-contrast">Task terpilih</span>
@@ -260,7 +260,7 @@ export function GraphicWorkspace({
               <p className="mt-1 text-xs text-muted-foreground">{clients.find((item) => item.id === selectedTask.client_id)?.name ?? "Client tidak ditemukan"}</p>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-wb-ink">{selectedTask.description || "Belum ada deskripsi task."}</p>
             </div>
-            <dl className="grid min-w-[220px] grid-cols-2 gap-2 text-xs sm:min-w-[280px]">
+            <dl className="grid min-w-0 grid-cols-2 gap-2 text-xs sm:w-64">
               <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Status</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.status}</dd></div>
               <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Prioritas</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.priority}</dd></div>
               <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Deadline</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.due_date ? new Date(selectedTask.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Belum ditentukan"}</dd></div>
@@ -270,8 +270,8 @@ export function GraphicWorkspace({
         </section>
       )}
 
-      <div className="grid gap-3 p-3 lg:grid-cols-[minmax(200px,0.95fr)_minmax(0,1.85fr)_minmax(200px,0.85fr)]">
-        <div className="space-y-3">
+      <div className="grid min-w-0 gap-3 p-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.85fr)_minmax(0,0.85fr)]">
+        <div className="min-w-0 space-y-3">
           <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
             <h3 className="text-[13px] font-bold leading-snug text-wb-ink">
               {client?.legal_name || client?.name || "Pilih client"} — Project &amp; Account
