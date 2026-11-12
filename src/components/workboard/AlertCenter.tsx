@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, BellRing, Clock, Plus, X } from "lucide-react";
+import { Bell, BellRing, Clock, Plus, X, Copy, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DAY_MS, isClosed } from "./status";
@@ -42,6 +42,41 @@ export function AlertCenter({ tasks, clients, onTasksChanged }: Props) {
   // undefined = dialog closed, null = open without a preselected task
   const [dialogTaskId, setDialogTaskId] = useState<string | null | undefined>(undefined);
   const [showAll, setShowAll] = useState(false);
+  const [ntfyTopic, setNtfyTopic] = useState<string | null>(null);
+  const [ntfyEnabled, setNtfyEnabled] = useState(true);
+  const [ntfyLoading, setNtfyLoading] = useState(false);
+
+  const setupNtfy = async () => {
+    setNtfyLoading(true);
+    try {
+      const { data, error } = await (await import("@/integrations/supabase/client")).supabase.rpc("get_or_create_my_ntfy_topic" as any);
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row?.topic) throw new Error("Topic ntfy tidak berhasil disiapkan.");
+      setNtfyTopic(row.topic);
+      setNtfyEnabled(row.enabled !== false);
+      toast.success("Topic notifikasi HP siap", { description: "Belum ada pesan yang dikirim. Salin topic lalu subscribe melalui aplikasi ntfy." });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyiapkan ntfy.");
+    } finally {
+      setNtfyLoading(false);
+    }
+  };
+
+  const toggleNtfy = async () => {
+    const next = !ntfyEnabled;
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error } = await (supabase.rpc as any)("set_my_ntfy_enabled", { p_enabled: next });
+    if (error) return void toast.error(error.message || "Gagal mengubah pengaturan ntfy.");
+    setNtfyEnabled(next);
+    toast.success(next ? "Pengiriman ntfy diaktifkan" : "Pengiriman ntfy dijeda");
+  };
+
+  const copyNtfyTopic = async () => {
+    if (!ntfyTopic) return;
+    try { await navigator.clipboard.writeText(ntfyTopic); toast.success("Topic disalin"); }
+    catch { toast.error("Tidak dapat menyalin topic. Salin teks secara manual."); }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -168,6 +203,17 @@ export function AlertCenter({ tasks, clients, onTasksChanged }: Props) {
             <Plus className="size-3.5" /> Buat pengingat
           </button>
         </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-wb-blue-strong/10 text-wb-blue-strong"><Smartphone className="size-4" /></span>
+            <div><p className="text-xs font-bold text-wb-ink">Alarm HP saat tab tertutup</p><p className="text-[10px] text-muted-foreground">Pengiriman server-side melalui ntfy · Cron setiap menit</p></div>
+          </div>
+          {!ntfyTopic ? <button type="button" onClick={() => void setupNtfy()} disabled={ntfyLoading} className="h-9 rounded-lg bg-wb-ink px-3 text-xs font-semibold text-white disabled:opacity-50">{ntfyLoading ? "Menyiapkan…" : "Siapkan notifikasi HP"}</button> : <div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-success-soft px-2 py-1 text-[10px] font-semibold text-success-foreground">Topic siap</span><button type="button" onClick={() => void toggleNtfy()} className="h-8 rounded-md border border-border px-2 text-[10px] font-semibold">{ntfyEnabled ? "Jeda pengiriman" : "Aktifkan pengiriman"}</button></div>}
+        </div>
+        {ntfyTopic && <div className="mt-3 space-y-2"><p className="text-[10px] text-muted-foreground">Topic privat milik akun ini. Jangan bagikan ke orang lain.</p><div className="flex flex-wrap items-center gap-2"><code className="min-w-0 flex-1 break-all rounded-md border border-border bg-card px-2 py-2 text-[11px]">{ntfyTopic}</code><button type="button" onClick={() => void copyNtfyTopic()} className="inline-flex h-9 items-center gap-1 rounded-md border border-border px-2 text-xs font-semibold"><Copy className="size-3.5" /> Salin</button></div><p className="text-[10px] text-muted-foreground">Di HP: instal aplikasi ntfy, pilih Subscribe, lalu masukkan topic di atas. Pesan hanya dikirim setelah topic dibuat, pengiriman aktif, dan jadwal alarm tiba.</p><a href="https://ntfy.sh" target="_blank" rel="noreferrer" className="inline-flex text-[10px] font-semibold text-wb-blue-strong hover:underline">Buka ntfy ↗</a></div>}
       </div>
 
       {unavailable && (
@@ -566,7 +612,7 @@ function ReminderDialog({
             </p>
           )}
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Waktu mengikuti zona waktu perangkat. Alarm berbunyi selama Workboard terbuka di browser.
+            Waktu mengikuti zona waktu perangkat. Alarm ntfy diproses server, sehingga tetap berjalan saat tab atau browser ditutup setelah topic diaktifkan dan HP berlangganan.
           </p>
         </div>
 
