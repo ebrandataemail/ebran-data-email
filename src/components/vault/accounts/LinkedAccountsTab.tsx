@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Eye, EyeOff, LoaderCircle, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
@@ -67,7 +67,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
   const closeForm = () => { setAdding(false); setEditing(null); setDraft(EMPTY); };
   const patch = (key: keyof Draft, value: string) => setDraft((old) => ({ ...old, [key]: value }));
 
-  const submit = async (event: React.FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true);
     try {
       await saveFn({ data: {
@@ -128,7 +128,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
                 <div className="space-y-1.5"><Label>Nomor telepon</Label><Input value={draft.phone} onChange={(e) => patch("phone", e.target.value)} /></div>
                 <div className="space-y-1.5"><Label>Website</Label><Input value={draft.websiteUrl} onChange={(e) => patch("websiteUrl", e.target.value)} placeholder="https://..." /></div>
                 <div className="space-y-1.5"><Label>URL Login</Label><Input value={draft.loginUrl} onChange={(e) => patch("loginUrl", e.target.value)} placeholder="https://..." /></div>
-                <div className="space-y-1.5"><Label>Status</Label><Select value={draft.status} onValueChange={(value) => patch("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="manual">Dicatat manual</SelectItem><SelectItem value="connected">Terhubung / terverifikasi</SelectItem><SelectItem value="needs_attention">Perlu perhatian</SelectItem><SelectItem value="disabled">Nonaktif</SelectItem></SelectContent></Select></div>
+                <div className="space-y-1.5"><Label>Status</Label><Select value={draft.status} onValueChange={(value) => patch("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="manual">Dicatat manual</SelectItem><SelectItem value="connected">Ditandai terhubung</SelectItem><SelectItem value="needs_attention">Perlu perhatian</SelectItem><SelectItem value="disabled">Nonaktif</SelectItem></SelectContent></Select></div>
                 <div className="space-y-1.5"><Label>Password {editing ? "(kosongkan jika tidak diganti)" : ""}</Label><Input type="password" autoComplete="new-password" value={draft.password} onChange={(e) => patch("password", e.target.value)} /></div>
                 <div className="space-y-1.5"><Label>API Key / Token / Secret {editing ? "(kosongkan jika tidak diganti)" : ""}</Label><Input type="password" autoComplete="new-password" value={draft.secret} onChange={(e) => patch("secret", e.target.value)} /></div>
               </div>
@@ -144,7 +144,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
            filtered.map((row) => <div key={row.id} className="rounded-xl border bg-card p-4">
              <div className="flex flex-wrap items-start justify-between gap-3">
                <div className="min-w-0 space-y-1">
-                 <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{row.displayName}</span><Badge variant={row.status === "connected" ? "success" : row.status === "needs_attention" ? "warning" : "muted"}>{row.status === "connected" ? "Terhubung" : row.status === "needs_attention" ? "Perlu perhatian" : row.status === "disabled" ? "Nonaktif" : "Manual"}</Badge><Badge variant="outline">{row.provider}</Badge></div>
+                 <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{row.displayName}</span><Badge variant={row.status === "connected" ? "success" : row.status === "needs_attention" ? "warning" : "muted"}>{row.status === "connected" ? "Ditandai terhubung" : row.status === "needs_attention" ? "Perlu perhatian" : row.status === "disabled" ? "Nonaktif" : "Manual"}</Badge><Badge variant="outline">{row.provider}</Badge></div>
                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                    {row.username && <span>@{row.username}</span>}{row.loginEmail && <span>{row.loginEmail}</span>}{row.phone && <span>{row.phone}</span>}
                  </div>
