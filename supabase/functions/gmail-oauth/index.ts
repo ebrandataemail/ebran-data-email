@@ -47,7 +47,7 @@ const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET") || "";
 const redirectUri = Deno.env.get("GOOGLE_REDIRECT_URI") || `${supabaseUrl}/functions/v1/gmail-oauth`;
 const scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email openid";
 const accountUrl = (status?: string) => {
-  const target = new URL("/account", appOrigin || supabaseUrl);
+  const target = new URL("/accounts", appOrigin || supabaseUrl);
   if (status) target.searchParams.set("gmail", status);
   return target.toString();
 };
