@@ -41,7 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { vaultSaveAccount } from "@/lib/vault/vault.functions";
 import { workspaceList } from "@/lib/projects/projects.functions";
-import { CopyButton, FieldRow, Panel, QuickChip, StatusDot } from "../primitives";
+import { CopyButton, FieldRow, Panel, QuickChip } from "../primitives";
 import { errorMessage } from "../use-ai";
 import { AssetAttachments } from "../AssetAttachments";
 import { ACCOUNTS_KEY, type VaultAccount } from "./use-accounts";
