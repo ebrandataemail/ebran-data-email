@@ -60,7 +60,6 @@ import { CopyButton } from "../primitives";
 import { errorMessage } from "../use-ai";
 import { AccountDialog } from "./AccountDialog";
 import { AccountVaultCard } from "./AccountVaultCard";
-import { AccountHubOverview } from "./AccountHubOverview";
 import { ImportDialog } from "./ImportDialog";
 import {
   ACCOUNTS_KEY,
@@ -290,7 +289,6 @@ export function AccountsView() {
         </header>
 
         <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          <AccountHubOverview emailAccounts={accounts} />
           <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
             {/* Toolbar: Search, Filters, View Switcher */}
             <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
