@@ -68,7 +68,7 @@ export async function saveTaskSchedule(
       task_id: taskId,
       offset_minutes: minutes,
       remind_at: new Date(due.getTime() - minutes * 60_000).toISOString(),
-      channel: "in_app",
+      channel: "ntfy",
     }))
     .filter((row) => new Date(row.remind_at).getTime() > nowMs);
   if (rows.length) {
