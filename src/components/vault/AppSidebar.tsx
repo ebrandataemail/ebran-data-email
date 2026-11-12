@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
@@ -13,11 +14,15 @@ import {
   Sparkles,
   Settings2,
   Users,
+  Menu,
+  Search,
 } from "lucide-react";
 
 import appMark from "@/assets/app-mark.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { triggerAssetCommandPalette } from "@/lib/vault/palette-trigger";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { categories, tags } from "@/data/asset";
@@ -121,15 +126,15 @@ const categoryRoutes: Partial<Record<string, NavTarget>> = {
   social: "/social",
 };
 
-export function SidebarContents() {
+export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}) {
   const { data: accounts } = useAccounts();
   const { data: devAssets } = useDevAssets();
   const { data: adsAssets } = useAdsAssets();
 
   return (
-    <div className="flex h-full flex-col bg-sidebar">
+    <div className="flex h-full min-h-0 flex-col bg-sidebar">
       {/* Header */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
+      <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4">
         <img src={appMark} alt="" width={32} height={32} className="size-8 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
           <span className="truncate text-sm font-semibold text-foreground">Ebran Aset Digital</span>
@@ -140,7 +145,9 @@ export function SidebarContents() {
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-2 py-5">
+      <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-2 py-5" onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest("a[href]")) onNavigate?.();
+      }}>
         <div className="px-1">
           <NavItem icon={<Sparkles />} label="Tanya AI" to="/ai" />
         </div>
@@ -215,7 +222,7 @@ function UserFooter() {
   };
 
   return (
-    <div className="border-t border-sidebar-border p-3">
+    <div className="shrink-0 border-t border-sidebar-border p-3">
       <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent">
         <div className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground ring-1 ring-border">
           {initials}
@@ -241,9 +248,31 @@ function UserFooter() {
 }
 
 export function AppSidebar() {
+  const [open, setOpen] = useState(false);
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-sidebar-border lg:block">
-      <SidebarContents />
-    </aside>
+    <>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-sidebar-border lg:block">
+        <SidebarContents />
+      </aside>
+      <div className="mobile-app-navigation sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background px-4 lg:hidden">
+        <Button variant="ghost" size="icon" aria-label="Buka navigasi" onClick={() => setOpen(true)}>
+          <Menu />
+        </Button>
+        <Link to="/workboard" className="flex min-w-0 items-center gap-2">
+          <img src={appMark} alt="" width={28} height={28} className="size-7 shrink-0" />
+          <span className="truncate text-sm font-semibold">Ebran Aset Digital</span>
+        </Link>
+        <Button variant="ghost" size="icon" aria-label="Cari aset" onClick={triggerAssetCommandPalette}>
+          <Search />
+        </Button>
+      </div>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="left" className="w-72 max-w-[calc(100vw-2rem)] p-0">
+          <SheetTitle className="sr-only">Navigasi Ebran Aset Digital</SheetTitle>
+          <SheetDescription className="sr-only">Halaman akun, client, proyek, dan papan kerja.</SheetDescription>
+          <SidebarContents onNavigate={() => setOpen(false)} />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
