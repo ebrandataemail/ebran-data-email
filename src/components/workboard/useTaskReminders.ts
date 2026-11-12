@@ -23,7 +23,7 @@ function pushNotification(title: string, body: string, tag: string) {
  * - loads reminders + exact deadlines (due_at) from Supabase and keeps them in sync (realtime)
  * - every 30s (and when the tab becomes visible) fires reminders that are due:
  *   in-app toast + browser notification, then marks them as "fired"
- * - works only while the Workboard is open; server-side delivery is a later phase.
+ * - ntfy reminders are claimed and delivered by the server-side Supabase Cron worker, even when the tab is closed.
  */
 export function useTaskReminders(
   tasks: WorkboardTask[],
@@ -103,6 +103,7 @@ export function useTaskReminders(
     const due = reminders.filter(
       (r) =>
         r.status === "pending" &&
+        r.channel !== "ntfy" &&
         new Date(r.snoozed_until ?? r.remind_at).getTime() <= now &&
         !firing.current.has(r.id),
     );
@@ -196,7 +197,7 @@ export function useTaskReminders(
           task_id: input.taskId,
           offset_minutes: minutes,
           remind_at: new Date(due.getTime() - minutes * 60_000).toISOString(),
-          channel: "in_app",
+          channel: "ntfy",
         }))
         .filter((row) => new Date(row.remind_at).getTime() > nowMs);
       if (rows.length) {
