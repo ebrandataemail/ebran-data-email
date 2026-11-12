@@ -260,7 +260,7 @@ export function AccountsView() {
                   Email (Core)
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Akun email & proyek Lovable yang terhubung.
+                  Pusat akun email, sosial media, developer tools, dan aset digital lainnya.
                 </p>
               </div>
             </div>
@@ -290,7 +290,7 @@ export function AccountsView() {
         </header>
 
         <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          <AccountHubOverview emailCount={accounts.length} />
+          <AccountHubOverview emailAccounts={accounts} />
           <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
             {/* Toolbar: Search, Filters, View Switcher */}
             <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
