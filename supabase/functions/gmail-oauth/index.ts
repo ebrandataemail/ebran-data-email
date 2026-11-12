@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
       else {
         const { data: previous } = await admin.from("gmail_mailbox_connections")
           .select("refresh_token_ciphertext").eq("email_account_id", account.id).eq("user_id", account.user_id).maybeSingle();
-        if (!previous?.refresh_token_ciphertext) return redirect(withGmailStatus(returnTo, "reauthorize_required"));
+        if (!previous?.refresh_token_ciphertext) return redirect(withGmailStatus(returnTo, "reauth_required"));
         refreshCipher = previous.refresh_token_ciphertext;
       }
       const { error: saveError } = await admin.from("gmail_mailbox_connections").upsert({
