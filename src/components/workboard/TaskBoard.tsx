@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -384,26 +385,26 @@ export function TaskBoard({
 
   return (
     <section className="rounded-xl border border-border bg-card p-4 shadow-soft sm:p-5">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="mb-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="min-w-0">
           <h2 className="text-base font-extrabold tracking-tight text-wb-ink">Task Board</h2>
           <p className="text-xs text-muted-foreground">
             Timeline task per deadline · tersimpan otomatis ke Supabase
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-wb-ink">
             {filtered.length} task
           </span>
-          <button
+          <Button
             type="button"
             onClick={() => openNew()}
             disabled={!clients.length || loading}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-wb-ink px-4 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="h-10 gap-1.5 text-xs"
           >
             <Plus className="size-4" />
             Task baru
-          </button>
+          </Button>
         </div>
       </div>
       {loading ? (
@@ -417,10 +418,10 @@ export function TaskBoard({
             return (
               <div
                 key={col.id}
-                className="min-h-40 rounded-xl border border-border bg-muted/50 p-4"
+                className="min-h-40 min-w-0 rounded-xl border border-border bg-muted/50 p-3 sm:p-4"
               >
-                <div className="mb-4 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className={cn("size-2.5 rounded-full", col.dot)} />
                     <h3 className="text-xs font-bold uppercase tracking-wider text-wb-ink">
                       {col.title}

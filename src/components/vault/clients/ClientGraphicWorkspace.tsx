@@ -143,9 +143,9 @@ export function ClientGraphicWorkspace({ client }: { client: ClientData & { id: 
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
-      <header className="flex items-center justify-between border-b bg-white px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-blue-600 text-[10px] font-bold text-white">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-background px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-wb-blue-strong text-[10px] font-bold text-brand-contrast">
             GW
           </span>
           <h2 className="text-sm font-bold text-slate-900">Graphic Workspace</h2>
@@ -178,7 +178,7 @@ export function ClientGraphicWorkspace({ client }: { client: ClientData & { id: 
           Gagal memuat workspace desain: {(query.error as Error).message}
         </div>
       ) : (
-        <div className="grid gap-3 p-3 xl:grid-cols-[minmax(190px,0.9fr)_minmax(360px,1.8fr)_minmax(240px,1fr)]">
+        <div className="grid min-w-0 gap-3 p-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.8fr)_minmax(0,1fr)]">
           <div className="space-y-3">
             <Card className="rounded-lg shadow-none">
               <CardContent className="space-y-2 p-3">
