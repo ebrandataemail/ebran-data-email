@@ -637,10 +637,10 @@ export function ClientDetailWorkspace({
       {/* Modal Impor dari Workboard */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-background shadow-card transition-all">
             {/* Modal Header */}
-            <div className="flex items-center justify-between bg-[#003837] px-6 py-4 text-white">
-              <div className="flex items-center gap-2.5">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-primary px-4 py-4 text-primary-foreground sm:px-6">
+              <div className="flex min-w-0 items-center gap-2.5">
                 <div className="flex size-8 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/20 text-emerald-300">
                   <KanbanSquare className="size-4" />
                 </div>
@@ -674,7 +674,7 @@ export function ClientDetailWorkspace({
                   className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
-              <span className="self-end text-[11px] text-slate-500 sm:self-center">
+              <span className="min-w-0 break-all self-end text-[11px] text-muted-foreground sm:self-center">
                 Tersambung ke repositori:{" "}
                 <strong className="font-semibold text-emerald-700">
                   /workboard/{client.name.toLowerCase().replace(/\s+/g, "-")}
@@ -742,7 +742,7 @@ export function ClientDetailWorkspace({
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs">
+            <div className="grid gap-3 border-t border-border bg-subtle px-4 py-3 text-xs sm:grid-cols-[minmax(0,1fr)_auto] sm:px-6">
               <p className="text-[11px] text-slate-500">
                 Tip: Mengimpor task otomatis mengisi judul, assignee, deadline, dan deskripsi.
               </p>
@@ -767,7 +767,7 @@ export function ClientDetailWorkspace({
             <div className="pointer-events-none absolute right-0 top-0 h-full w-64 bg-gradient-to-l from-slate-50 to-transparent opacity-50"></div>
 
             <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-              <div className="flex items-start space-x-3">
+              <div className="flex min-w-0 items-start gap-3">
                 <button
                   type="button"
                   onClick={onBack}
@@ -777,7 +777,7 @@ export function ClientDetailWorkspace({
                   <ChevronLeft className="size-4" />
                 </button>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                   <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1 shadow-sm">
                     {logoUrl ? (
                       <img
