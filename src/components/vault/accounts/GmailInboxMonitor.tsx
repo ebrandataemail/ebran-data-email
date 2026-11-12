@@ -16,7 +16,7 @@ type InboxMessage = {
 export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: string; email: string }) {
   const [busy, setBusy] = useState<"connect" | "latest" | "disconnect" | null>(null);
   const [connected, setConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connected" | "reauthorize_required">("disconnected");
+  const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connected" | "reauth_required">("disconnected");
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null);
   const [message, setMessage] = useState<InboxMessage | null>(null);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
     try {
       const data = await invoke("status");
       setConnected(Boolean(data.connected));
-      setConnectionStatus(data.status === "reauthorize_required" ? "reauthorize_required" : data.connected ? "connected" : "disconnected");
+      setConnectionStatus(data.status === "reauth_required" ? "reauth_required" : data.connected ? "connected" : "disconnected");
       setConnectedEmail(data.googleEmail || null);
       setCheckedAt(data.lastCheckedAt || null);
     } catch {
@@ -105,7 +105,7 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
             <p className="text-xs text-muted-foreground">Cek email terbaru dan kode verifikasi tanpa membuka banyak akun.</p>
             <div className="mt-1 flex items-center gap-2">
               <Badge variant={connected ? "success" : "muted"}>
-                {connected ? "Gmail terhubung" : connectionStatus === "reauthorize_required" ? "Perlu hubungkan ulang" : "Belum terhubung"}
+                {connected ? "Gmail terhubung" : connectionStatus === "reauth_required" ? "Perlu hubungkan ulang" : "Belum terhubung"}
               </Badge>
               {connectedEmail && <span className="text-xs text-muted-foreground">{connectedEmail}</span>}
             </div>
