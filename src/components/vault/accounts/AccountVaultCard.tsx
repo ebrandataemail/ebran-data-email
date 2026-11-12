@@ -44,7 +44,7 @@ import { workspaceList } from "@/lib/projects/projects.functions";
 import { CopyButton, FieldRow, Panel, QuickChip, StatusDot } from "../primitives";
 import { errorMessage } from "../use-ai";
 import { AssetAttachments } from "../AssetAttachments";
-import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, type VaultAccount } from "./use-accounts";
+import { ACCOUNTS_KEY, type VaultAccount } from "./use-accounts";
 import { cn } from "@/lib/utils";
 import { safeAccountUrl } from "@/lib/vault/access-safety";
 import { GmailInboxMonitor } from "./GmailInboxMonitor";
@@ -72,10 +72,8 @@ export function AccountVaultCard({
   const [email, setEmail] = useState(account.email);
   const [password, setPassword] = useState("");
   useEffect(() => { if (!isEditing) setPassword(""); }, [isEditing]);
-  const [status, setStatus] = useState(account.lovableStatus);
   const [usageTag, setUsageTag] = useState(account.usageTag ?? "");
   const [note, setNote] = useState(account.note ?? "");
-  const [projects, setProjects] = useState(account.projects);
   const [projectId, setProjectId] = useState(account.projectId ?? "none");
 
   const workspaceFn = useServerFn(workspaceList);
@@ -118,10 +116,8 @@ export function AccountVaultCard({
     setIsEditing(false);
     setEmail(account.email);
     setPassword("");
-    setStatus(account.lovableStatus);
     setUsageTag(account.usageTag ?? "");
     setNote(account.note ?? "");
-    setProjects(account.projects);
     setProjectId(account.projectId ?? "none");
   };
 
@@ -133,16 +129,10 @@ export function AccountVaultCard({
           id: account.id,
           email,
           password: password || null,
-          lovableStatus: status,
+          lovableStatus: account.lovableStatus,
           usageTag,
           note,
           projectId: projectId === "none" ? null : projectId,
-          projects: projects.map((p) => ({
-            id: p.id.startsWith("new-") ? null : p.id,
-            name: p.name,
-            url: p.url,
-            note: p.note,
-          })),
         },
       });
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
@@ -155,18 +145,7 @@ export function AccountVaultCard({
     }
   };
 
-  const updateProject = (id: string, patch: Partial<(typeof projects)[number]>) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-  };
 
-  const addProject = () => {
-    const id = `new-${Date.now()}`;
-    setProjects((prev) => [...prev, { id, name: "", url: "", note: "" }]);
-  };
-
-  const removeProject = (id: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-  };
 
   return (
     <div
@@ -200,10 +179,6 @@ export function AccountVaultCard({
                   </Badge>
                 ) : (
                   <>
-                    <Badge variant={STATUS_VARIANT[account.lovableStatus]} className="gap-1.5">
-                      <StatusDot className="size-1.5" />
-                      {STATUS_LABEL[account.lovableStatus]}
-                    </Badge>
                     {account.provider !== "gmail" && (
                       <Badge variant="muted" className="capitalize">
                         {account.provider}
@@ -215,8 +190,6 @@ export function AccountVaultCard({
               </div>
 
               <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                <span>{account.projects.length} proyek Lovable</span>
-                <span>·</span>
                 <span>Diperbarui {formatDate(account.updatedAt)}</span>
               </div>
             </div>
@@ -300,12 +273,6 @@ export function AccountVaultCard({
 
           <QuickChip icon={<KeyRound />} label="Password">
             {passwordCell}
-          </QuickChip>
-
-          <QuickChip icon={<Folder />} label="Proyek">
-            <span className="text-xs font-medium text-foreground">
-              {account.projects.length} Proyek
-            </span>
           </QuickChip>
 
           <QuickChip icon={<Paperclip />} label="Attachments">
@@ -418,31 +385,6 @@ export function AccountVaultCard({
                             </Badge>
                           )}
                         </div>
-                      )}
-                    </FieldRow>
-
-                    <FieldRow icon={<Sparkles />} label="Status Lovable">
-                      {isEditing ? (
-                        <Select
-                          value={status}
-                          onValueChange={(v) => setStatus(v as VaultAccount["lovableStatus"])}
-                        >
-                          <SelectTrigger className="h-8 text-sm w-48">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(STATUS_LABEL).map(([k, label]) => (
-                              <SelectItem key={k} value={k}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant={STATUS_VARIANT[account.lovableStatus]} className="gap-1.5">
-                          <StatusDot className="size-1.5" />
-                          {STATUS_LABEL[account.lovableStatus]}
-                        </Badge>
                       )}
                     </FieldRow>
 
