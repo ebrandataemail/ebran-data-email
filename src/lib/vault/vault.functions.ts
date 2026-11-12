@@ -5,7 +5,7 @@ import { accountUrlInput, passwordInput } from "./access-safety";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runVaultAudit } from "@/lib/assistant/assistant.server";
 import { cleanEmail, type LovableStatus } from "./normalize";
-import { importCsv, listAccounts, revealPassword, saveAccount, vaultFacts } from "./vault.server";
+import { importCsv, listAccounts, revealPassword, saveAccount, vaultFacts, listLinkedAssets, saveLinkedAsset, revealLinkedAssetSecrets, deleteLinkedAsset, LINKED_ASSET_CATEGORIES, type LinkedAssetCategory } from "./vault.server";
 
 const STATUSES: LovableStatus[] = ["unknown", "empty", "has_project", "not_registered"];
 const MAX_CSV_CHARS = 2_000_000;
@@ -101,3 +101,53 @@ export const vaultAudit = createServerFn({ method: "POST" })
     if (!accounts.length) throw new Error("Vault masih kosong. Impor data dulu.");
     return runVaultAudit(vaultFacts(accounts));
   });
+
+
+const linkedStatus = ["manual", "connected", "needs_attention", "disabled"] as const;
+const linkedInput = (input: any) => {
+  const category = String(input?.category ?? "");
+  if (!LINKED_ASSET_CATEGORIES.includes(category as LinkedAssetCategory)) throw new Error("Kategori akun tidak valid.");
+  const status = linkedStatus.includes(input?.status) ? input.status : "manual";
+  const provider = optionalText(input?.provider, 100);
+  const displayName = optionalText(input?.displayName, 120);
+  if (!provider || !displayName) throw new Error("Nama layanan dan nama akun wajib diisi.");
+  return {
+    id: input?.id ? uuid(input.id) : null,
+    emailAccountId: uuid(input?.emailAccountId),
+    category: category as LinkedAssetCategory,
+    provider,
+    displayName,
+    username: optionalText(input?.username, 160),
+    loginEmail: optionalText(input?.loginEmail, 254),
+    phone: optionalText(input?.phone, 40),
+    websiteUrl: accountUrlInput(input?.websiteUrl),
+    loginUrl: accountUrlInput(input?.loginUrl),
+    password: passwordInput(input?.password, 500),
+    secret: passwordInput(input?.secret, 4000),
+    status,
+    note: optionalText(input?.note, 3000),
+  };
+};
+
+export const vaultListLinkedAssets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { emailAccountId: string }) => ({ emailAccountId: uuid(input?.emailAccountId) }))
+  .handler(async ({ data, context }) => listLinkedAssets(context.supabase, context.userId, data.emailAccountId));
+
+export const vaultSaveLinkedAsset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(linkedInput)
+  .handler(async ({ data, context }) => saveLinkedAsset(context.supabase, context.userId, data));
+
+export const vaultRevealLinkedAssetSecrets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
+  .handler(async ({ data, context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    return revealLinkedAssetSecrets(context.supabase, context.userId, data.id);
+  });
+
+export const vaultDeleteLinkedAsset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { id: string }) => ({ id: uuid(input?.id) }))
+  .handler(async ({ data, context }) => deleteLinkedAsset(context.supabase, context.userId, data.id));
