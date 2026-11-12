@@ -1,8 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+const appUrl = Deno.env.get("APP_URL") || "";
+const appOrigin = appUrl ? new URL(appUrl).origin : "";
 const cors = {
-  "Access-Control-Allow-Origin": "https://ebran-data-email.lovable.app",
+  ...(appOrigin ? { "Access-Control-Allow-Origin": appOrigin } : {}),
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
@@ -44,6 +46,16 @@ const clientId = Deno.env.get("GOOGLE_CLIENT_ID") || "";
 const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET") || "";
 const redirectUri = Deno.env.get("GOOGLE_REDIRECT_URI") || `${supabaseUrl}/functions/v1/gmail-oauth`;
 const scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email openid";
+const accountUrl = (status?: string) => {
+  const target = new URL("/account", appOrigin || supabaseUrl);
+  if (status) target.searchParams.set("gmail", status);
+  return target.toString();
+};
+const withGmailStatus = (base: string, status: string) => {
+  const target = new URL(base);
+  target.searchParams.set("gmail", status);
+  return target.toString();
+};
 
 async function requireUser(req: Request) {
   const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
@@ -92,21 +104,28 @@ Deno.serve(async (req) => {
   try {
     if (isCallback) {
       const state = url.searchParams.get("state") || "";
-      if (!state) return redirect("https://ebran-data-email.lovable.app/account?gmail=oauth_error");
+      if (!state) return redirect(accountUrl("oauth_error"));
       const stateHash = await sha256(state);
       const { data: pending, error: stateError } = await admin.from("gmail_oauth_states")
         .select("*").eq("state_hash", stateHash).gt("expires_at", new Date().toISOString()).maybeSingle();
-      if (stateError || !pending) return redirect("https://ebran-data-email.lovable.app/account?gmail=state_expired");
+      if (stateError || !pending) return redirect(accountUrl("state_expired"));
+      let returnTo = accountUrl();
+      try {
+        const savedReturnTo = new URL(pending.redirect_after);
+        if (appOrigin && savedReturnTo.origin === appOrigin) returnTo = savedReturnTo.toString();
+      } catch {
+        // Ignore malformed or legacy redirect destinations.
+      }
       await admin.from("gmail_oauth_states").delete().eq("state_hash", stateHash);
-      if (url.searchParams.get("error")) return redirect(pending.redirect_after + "&gmail=denied");
+      if (url.searchParams.get("error")) return redirect(withGmailStatus(returnTo, "denied"));
       const code = url.searchParams.get("code");
-      if (!code) return redirect(pending.redirect_after + "&gmail=oauth_error");
+      if (!code) return redirect(withGmailStatus(returnTo, "oauth_error"));
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
       });
       const tokens = await tokenResponse.json();
-      if (!tokenResponse.ok || !tokens.access_token) return redirect(pending.redirect_after + "&gmail=token_error");
+      if (!tokenResponse.ok || !tokens.access_token) return redirect(withGmailStatus(returnTo, "token_error"));
       const profileResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
@@ -114,14 +133,14 @@ Deno.serve(async (req) => {
       const { data: account } = await admin.from("email_accounts").select("id,email,user_id")
         .eq("id", pending.email_account_id).eq("user_id", pending.user_id).maybeSingle();
       if (!account || String(account.email).toLowerCase() !== String(profile.email || "").toLowerCase()) {
-        return redirect(pending.redirect_after + "&gmail=email_mismatch");
+        return redirect(withGmailStatus(returnTo, "email_mismatch"));
       }
       let refreshCipher = "";
       if (tokens.refresh_token) refreshCipher = await encrypt(tokens.refresh_token);
       else {
         const { data: previous } = await admin.from("gmail_mailbox_connections")
           .select("refresh_token_ciphertext").eq("email_account_id", account.id).eq("user_id", account.user_id).maybeSingle();
-        if (!previous?.refresh_token_ciphertext) return redirect(pending.redirect_after + "&gmail=reauthorize_required");
+        if (!previous?.refresh_token_ciphertext) return redirect(withGmailStatus(returnTo, "reauthorize_required"));
         refreshCipher = previous.refresh_token_ciphertext;
       }
       const { error: saveError } = await admin.from("gmail_mailbox_connections").upsert({
@@ -129,8 +148,8 @@ Deno.serve(async (req) => {
         google_subject: profile.sub || null, refresh_token_ciphertext: refreshCipher,
         scopes: String(tokens.scope || scope).split(" "), status: "connected", updated_at: new Date().toISOString(),
       }, { onConflict: "email_account_id" });
-      if (saveError) return redirect(pending.redirect_after + "&gmail=save_error");
-      return redirect(pending.redirect_after + "&gmail=connected");
+      if (saveError) return redirect(withGmailStatus(returnTo, "save_error"));
+      return redirect(withGmailStatus(returnTo, "connected"));
     }
 
     if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -139,13 +158,14 @@ Deno.serve(async (req) => {
     const action = String(body.action || "");
 
     if (action === "connect") {
+      if (!appOrigin) return json({ error: "APP_URL belum dikonfigurasi ke domain aplikasi produksi." }, 503);
       if (!clientId || !clientSecret) return json({ error: "Google OAuth belum dikonfigurasi." }, 503);
       const accountId = String(body.emailAccountId || "");
       const { data: account } = await admin.from("email_accounts").select("id,email,user_id,provider")
         .eq("id", accountId).eq("user_id", user.id).maybeSingle();
       if (!account) return json({ error: "Akun email tidak ditemukan atau bukan milik Anda." }, 404);
       const state = b64(crypto.getRandomValues(new Uint8Array(32))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-      const redirectAfter = "https://ebran-data-email.lovable.app/account";
+      const redirectAfter = accountUrl();
       const { error } = await admin.from("gmail_oauth_states").insert({
         state_hash: await sha256(state), user_id: user.id, email_account_id: account.id,
         redirect_after: redirectAfter, expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
@@ -188,7 +208,7 @@ Deno.serve(async (req) => {
         accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
       } catch {
         await admin.from("gmail_mailbox_connections")
-          .update({ status: "reauthorize_required", updated_at: new Date().toISOString() })
+          .update({ status: "reauth_required", updated_at: new Date().toISOString() })
           .eq("email_account_id", accountId).eq("user_id", user.id);
         return json({ error: "Sesi Gmail kedaluwarsa atau dicabut. Hubungkan ulang akun Gmail ini." }, 409);
       }
