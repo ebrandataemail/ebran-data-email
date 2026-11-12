@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
       const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
       authUrl.search = new URLSearchParams({
         client_id: clientId, redirect_uri: redirectUri, response_type: "code",
-        scope, access_type: "offline", prompt: "consent", include_granted_scopes: "true",
+        scope, access_type: "offline", prompt: "select_account consent", include_granted_scopes: "true",
         state, login_hint: account.email,
       }).toString();
       return json({ authorizationUrl: authUrl.toString() });
