@@ -294,6 +294,10 @@ export type LinkedAssetInput = {
   username: string | null;
   loginEmail: string | null;
   phone: string | null;
+  ownerName: string | null;
+  accountReference: string | null;
+  recoveryContact: string | null;
+  securityMethod: string | null;
   websiteUrl: string | null;
   loginUrl: string | null;
   password: string | null;
@@ -306,13 +310,13 @@ export async function listLinkedAssets(db: Db, userId: string, emailAccountId: s
   const { data: parent, error: parentError } = await db.from("email_accounts").select("id").eq("id", emailAccountId).eq("user_id", userId).maybeSingle();
   if (parentError || !parent) throw new Error("Akun induk tidak ditemukan atau tidak memiliki akses.");
   const { data, error } = await (db as any).from("account_linked_assets")
-    .select("id,email_account_id,category,provider,display_name,username,login_email,phone,website_url,login_url,status,note,created_at,updated_at,password_enc,secret_enc")
+    .select("id,email_account_id,category,provider,display_name,username,login_email,phone,owner_name,account_reference,recovery_contact,security_method,website_url,login_url,status,note,created_at,updated_at,password_enc,secret_enc")
     .eq("email_account_id", emailAccountId).eq("user_id", userId).order("updated_at", { ascending: false });
   if (error) throw new Error("Gagal memuat akun terkait.");
   return (data ?? []).map((row: any) => ({
     id: row.id, emailAccountId: row.email_account_id, category: row.category,
     provider: row.provider, displayName: row.display_name, username: row.username,
-    loginEmail: row.login_email, phone: row.phone, websiteUrl: row.website_url,
+    loginEmail: row.login_email, phone: row.phone, ownerName: row.owner_name, accountReference: row.account_reference, recoveryContact: row.recovery_contact, securityMethod: row.security_method, websiteUrl: row.website_url,
     loginUrl: safeAccountUrl(row.login_url), status: row.status, note: row.note,
     hasPassword: !!row.password_enc, hasSecret: !!row.secret_enc,
     createdAt: row.created_at, updatedAt: row.updated_at,
@@ -325,7 +329,7 @@ export async function saveLinkedAsset(db: Db, userId: string, input: LinkedAsset
   const row: Record<string, unknown> = {
     user_id: userId, email_account_id: input.emailAccountId, category: input.category,
     provider: input.provider, display_name: input.displayName, username: input.username,
-    login_email: input.loginEmail, phone: input.phone, website_url: safeAccountUrl(input.websiteUrl),
+    login_email: input.loginEmail, phone: input.phone, owner_name: input.ownerName, account_reference: input.accountReference, recovery_contact: input.recoveryContact, security_method: input.securityMethod, website_url: safeAccountUrl(input.websiteUrl),
     login_url: safeAccountUrl(input.loginUrl), status: input.status, note: input.note,
   };
   if (input.password) row.password_enc = await encryptSecret(input.password);
