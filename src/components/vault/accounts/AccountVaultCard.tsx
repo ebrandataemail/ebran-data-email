@@ -48,6 +48,7 @@ import { ACCOUNTS_KEY, STATUS_LABEL, STATUS_VARIANT, type VaultAccount } from ".
 import { cn } from "@/lib/utils";
 import { safeAccountUrl } from "@/lib/vault/access-safety";
 import { GmailInboxMonitor } from "./GmailInboxMonitor";
+import { LinkedAccountsTab } from "./LinkedAccountsTab";
 
 export function AccountVaultCard({
   account,
@@ -352,6 +353,13 @@ export function AccountVaultCard({
                   Catatan
                 </TabsTrigger>
                 <TabsTrigger
+                  value="digital"
+                  className="relative gap-2 rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                >
+                  <Plus className="size-3.5" />
+                  Akun Digital
+                </TabsTrigger>
+                <TabsTrigger
                   value="attachments"
                   className="relative gap-2 rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
                 >
@@ -642,6 +650,9 @@ export function AccountVaultCard({
                   type="account"
                   onFilesCountChange={setAttachmentsCount}
                 />
+              </TabsContent>
+              <TabsContent value="digital" className="mt-0">
+                <LinkedAccountsTab emailAccountId={account.id} />
               </TabsContent>
             </div>
 
