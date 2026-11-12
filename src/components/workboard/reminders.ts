@@ -7,7 +7,7 @@ export type TaskReminder = {
   task_id: string;
   remind_at: string;
   offset_minutes: number;
-  channel: "in_app" | "browser" | "email";
+  channel: "in_app" | "browser" | "email" | "ntfy";
   status: "pending" | "fired" | "dismissed";
   snoozed_until: string | null;
   fired_at: string | null;
