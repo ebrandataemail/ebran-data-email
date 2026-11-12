@@ -12,8 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
@@ -42,14 +42,14 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAccountsRoute = AuthenticatedAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAccountsRoute = AuthenticatedAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
@@ -93,11 +93,12 @@ const AuthenticatedWorkboardRoute = AuthenticatedWorkboardRouteImport.update({
   path: '/workboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedWorkboardSettingsRoute = AuthenticatedWorkboardSettingsRouteImport.update({
-  id: '/workboard-settings',
-  path: '/workboard-settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedWorkboardSettingsRoute =
+  AuthenticatedWorkboardSettingsRouteImport.update({
+    id: '/workboard-settings',
+    path: '/workboard-settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const BriefShareTokenRoute = BriefShareTokenRouteImport.update({
   id: '/brief-share/$token',
   path: '/brief-share/$token',
@@ -123,8 +124,8 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/accounts': typeof AuthenticatedAccountsRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/accounts': typeof AuthenticatedAccountsRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -134,7 +135,6 @@ export interface FileRoutesByFullPath {
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
   '/workboard-settings': typeof AuthenticatedWorkboardSettingsRoute
-  '/workboard-settings': typeof AuthenticatedWorkboardSettingsRoute
   '/brief-share/$token': typeof BriefShareTokenRoute
   '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -143,8 +143,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/accounts': typeof AuthenticatedAccountsRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/accounts': typeof AuthenticatedAccountsRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/ai': typeof AuthenticatedAiRoute
   '/developer-tools': typeof AuthenticatedDeveloperToolsRoute
@@ -152,6 +152,7 @@ export interface FileRoutesByTo {
   '/social': typeof AuthenticatedSocialRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/workboard': typeof AuthenticatedWorkboardRoute
+  '/workboard-settings': typeof AuthenticatedWorkboardSettingsRoute
   '/brief-share/$token': typeof BriefShareTokenRoute
   '/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -162,8 +163,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -172,6 +173,7 @@ export interface FileRoutesById {
   '/_authenticated/social': typeof AuthenticatedSocialRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/_authenticated/workboard': typeof AuthenticatedWorkboardRoute
+  '/_authenticated/workboard-settings': typeof AuthenticatedWorkboardSettingsRoute
   '/brief-share/$token': typeof BriefShareTokenRoute
   '/_authenticated/clients/new': typeof AuthenticatedClientsNewRoute
   '/api/ai/chat': typeof ApiAiChatRoute
@@ -182,8 +184,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/accounts'
     | '/account'
+    | '/accounts'
     | '/ads'
     | '/ai'
     | '/clients'
@@ -201,6 +203,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/account'
     | '/accounts'
     | '/ads'
     | '/ai'
@@ -209,6 +212,7 @@ export interface FileRouteTypes {
     | '/social'
     | '/vault'
     | '/workboard'
+    | '/workboard-settings'
     | '/brief-share/$token'
     | '/clients/new'
     | '/api/ai/chat'
@@ -218,8 +222,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/accounts'
     | '/_authenticated/account'
+    | '/_authenticated/accounts'
     | '/_authenticated/ads'
     | '/_authenticated/ai'
     | '/_authenticated/clients'
@@ -266,18 +270,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/accounts': {
-      id: '/_authenticated/accounts'
-      path: '/accounts'
-      fullPath: '/accounts'
-      preLoaderRoute: typeof AuthenticatedAccountsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/account': {
       id: '/_authenticated/account'
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/accounts': {
+      id: '/_authenticated/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AuthenticatedAccountsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ads': {
@@ -388,8 +392,8 @@ const AuthenticatedClientsRouteWithChildren =
   AuthenticatedClientsRoute._addFileChildren(AuthenticatedClientsRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
@@ -402,8 +406,8 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
