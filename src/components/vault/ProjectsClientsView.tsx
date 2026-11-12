@@ -244,11 +244,11 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
         {/* Header */}
         <header className="border-b border-border bg-background/90 px-4 py-6 backdrop-blur sm:px-8">
           <div className="mx-auto flex max-w-[1400px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 {isClients ? <Users /> : <FolderKanban />}
               </span>
-              <div>
+              <div className="min-w-0">
                 <h1 className="text-xl font-semibold">
                   {isClients ? "Daftar Client & Perusahaan" : "Proyek & Workflows"}
                 </h1>
@@ -260,9 +260,9 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid gap-2 sm:flex sm:shrink-0 sm:items-center">
               {!isClients && (
-                <div className="flex items-center rounded-lg border bg-muted p-1 text-xs">
+                <div className="grid grid-cols-2 items-center rounded-lg border bg-muted p-1 text-xs sm:flex">
                   <Button
                     size="sm"
                     variant={viewMode === "kanban" ? "secondary" : "ghost"}

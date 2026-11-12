@@ -401,15 +401,15 @@ export function ClientCreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#dce3e8] p-2 text-slate-800 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-canvas text-foreground">
       <AppSidebar />
 
-      <main className="flex flex-col items-center lg:pl-64">
+      <main className="flex min-w-0 flex-col items-center px-4 py-5 sm:px-6 lg:ml-64 lg:px-8">
         {/* Main Unified Container */}
         <div className="w-full max-w-[1400px] overflow-hidden rounded-xl border border-slate-300 bg-[#f8fafc] shadow-2xl">
           {/* Top Navigation Bar */}
-          <header className="flex select-none items-center justify-between bg-[#003837] px-4 py-2.5 text-xs tracking-wide text-white sm:px-6">
-            <div className="flex items-center space-x-3 overflow-x-auto">
+          <header className="grid grid-cols-[minmax(0,1fr)_auto] select-none items-center gap-2 bg-primary px-4 py-2.5 text-xs text-primary-foreground sm:px-6">
+            <div className="flex min-w-0 items-center gap-3 overflow-x-auto">
               <div
                 className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#ea580c] font-bold text-white shadow-sm"
                 title="Enterprise CRM Platform"
@@ -429,7 +429,7 @@ export function ClientCreatePage() {
                 </svg>
               </div>
 
-              <nav className="flex items-center space-x-1">
+              <nav className="flex shrink-0 items-center space-x-1">
                 <button
                   type="button"
                   className="flex items-center space-x-1.5 rounded bg-[#012625] px-3 py-1.5 font-medium text-white transition hover:bg-[#022e2d]"
@@ -459,8 +459,8 @@ export function ClientCreatePage() {
           </header>
 
           {/* Header Formulir */}
-          <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-5">
-            <div>
+          <div className="grid gap-3 border-b border-border bg-background px-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-6">
+            <div className="min-w-0">
               <h1 className="text-xl font-bold tracking-tight text-slate-900">
                 Formulir Pendaftaran Klien &amp; Proyek Baru
               </h1>

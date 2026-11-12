@@ -10,6 +10,7 @@ import {
   Activity,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { GraphicWorkspace } from "./GraphicWorkspace";
 import { TaskBoard } from "./TaskBoard";
@@ -81,8 +82,8 @@ export function WorkboardContent() {
   ];
   return (
     <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
+        <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-wb-blue-strong">
             Ebran · Operations
           </p>
@@ -91,7 +92,9 @@ export function WorkboardContent() {
             Data client, proyek, task, deadline, dokumen, dan aktivitas tersinkron dari Supabase.
           </p>
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           type="button"
           onClick={() =>
             void refresh()
@@ -102,8 +105,9 @@ export function WorkboardContent() {
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-[10px] font-semibold text-wb-ink shadow-soft hover:bg-muted disabled:opacity-50"
         >
           <RefreshCw className={loading ? "size-3 animate-spin" : "size-3"} />
-          Refresh data
-        </button>
+          <span className="hidden sm:inline">Refresh data</span>
+          <span className="sr-only sm:hidden">Perbarui data</span>
+        </Button>
       </header>
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
         {counts.map(({ label, value, icon: Icon }) => (
@@ -134,8 +138,8 @@ export function WorkboardContent() {
         </div>
       )}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="flex w-full max-w-[340px] items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 shadow-soft">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <label className="flex w-full min-w-0 items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 shadow-soft sm:max-w-[340px]">
             <Search className="size-3.5 text-muted-foreground" />
             <input
               value={query}
@@ -147,7 +151,7 @@ export function WorkboardContent() {
               ⌘ K
             </kbd>
           </label>
-          <label className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <label className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-xs text-muted-foreground">
             Client aktif
             <select
               value={selectedClientId}
@@ -155,7 +159,7 @@ export function WorkboardContent() {
                 setSelectedClientId(e.target.value);
                 setSelectedTaskId(null);
               }}
-              className="h-8 max-w-[220px] rounded-md border border-border bg-card px-2 text-[10px] font-semibold text-wb-ink"
+              className="h-10 w-full min-w-0 rounded-md border border-border bg-card px-2 text-xs font-semibold text-wb-ink sm:max-w-[220px]"
             >
               <option value="">Pilih client</option>
               {clients.map((c) => (
@@ -210,7 +214,7 @@ export function WorkboardContent() {
           if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
         }}
       />
-      <section className="grid gap-4 lg:grid-cols-[1fr_1.15fr_0.95fr]">
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.95fr)]">
         <CalendarPanel tasks={tasks} activities={activities} />
         <WorkListPanel tasks={tasks} clients={clients} />
         <AiSecretaryPanel />
@@ -232,7 +236,7 @@ export function WorkboardContent() {
             const client = clients.find((c) => c.id === a.client_id);
             return (
               <article key={a.id} className="rounded-lg border border-border bg-muted/20 p-2.5">
-                <div className="flex items-start justify-between gap-2">
+                <div className="grid min-w-0 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-2">
                   <p className="text-[10px] font-semibold text-wb-ink">{a.title}</p>
                   <span className="shrink-0 text-[8px] text-muted-foreground">
                     {new Date(a.occurred_at).toLocaleString("id-ID")}

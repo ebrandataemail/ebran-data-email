@@ -6,7 +6,6 @@ import {
   Instagram,
   KeyRound,
   LogIn,
-  Menu,
   Search,
   SquarePen,
   UserRound,
@@ -14,9 +13,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { asset } from "@/data/asset";
-import { SidebarContents } from "./AppSidebar";
 import { triggerAssetCommandPalette } from "@/lib/vault/palette-trigger";
 import { CopyButton, QuickChip, SecretValue, StatusDot } from "./primitives";
 
@@ -24,26 +21,15 @@ export function AssetHeader() {
   return (
     <header className="z-20 border-b sm:sticky sm:top-0 border-border bg-background/90 backdrop-blur-md">
       {/* Breadcrumb bar */}
-      <div className="flex h-12 items-center gap-2 border-b border-border px-4 sm:px-8">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon-sm" className="lg:hidden" aria-label="Buka menu">
-              <Menu />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <SheetTitle className="sr-only">Navigasi</SheetTitle>
-            <SidebarContents />
-          </SheetContent>
-        </Sheet>
+      <div className="grid h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-4 sm:flex sm:px-8">
         <nav className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <span className="hidden sm:inline">Kategori</span>
           <ChevronRight className="hidden size-3.5 sm:inline" />
-          <span>{asset.category}</span>
+          <span className="shrink-0">{asset.category}</span>
           <ChevronRight className="size-3.5" />
           <span className="truncate font-medium text-foreground">{asset.title}</span>
         </nav>
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex shrink-0 items-center gap-2.5">
           <Button
             type="button"
             variant="outline"
@@ -72,7 +58,7 @@ export function AssetHeader() {
       {/* Title row */}
       <div className="flex flex-col gap-5 px-4 pb-4 pt-5 sm:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
+          <div className="flex min-w-0 items-start gap-3 sm:gap-4">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-instagram text-brand-contrast shadow-card">
               <Instagram className="size-7" strokeWidth={1.8} />
             </div>
@@ -90,7 +76,7 @@ export function AssetHeader() {
                 href={`https://${asset.publicUrl}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-4"
+                className="mt-1 inline-flex max-w-full items-center gap-1 break-all text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-4"
               >
                 {asset.publicUrl}
                 <ExternalLink className="size-3.5" />

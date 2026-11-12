@@ -11,7 +11,6 @@ import {
   List,
   LoaderCircle,
   Mail,
-  Menu,
   Pencil,
   Plus,
   Search,
@@ -40,7 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -54,7 +52,7 @@ import { safeAccountUrl } from "@/lib/vault/access-safety";
 import { useTransientSecret } from "@/lib/vault/use-transient-secret";
 import { vaultDeleteAccount, vaultRevealPassword } from "@/lib/vault/vault.functions";
 import { cn } from "@/lib/utils";
-import { AppSidebar, SidebarContents } from "../AppSidebar";
+import { AppSidebar } from "../AppSidebar";
 import { triggerAssetCommandPalette } from "@/lib/vault/palette-trigger";
 import { CopyButton } from "../primitives";
 import { errorMessage } from "../use-ai";
@@ -234,27 +232,11 @@ export function AccountsView() {
       <main className="lg:pl-64">
         <header className="z-20 border-b border-border bg-background/90 backdrop-blur-md sm:sticky sm:top-0">
           <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div className="flex items-center gap-3">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="lg:hidden"
-                    aria-label="Buka menu"
-                  >
-                    <Menu />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0">
-                  <SheetTitle className="sr-only">Navigasi</SheetTitle>
-                  <SidebarContents />
-                </SheetContent>
-              </Sheet>
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
                 <Mail className="size-5" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">
                   Accounts
                 </h1>
@@ -263,7 +245,7 @@ export function AccountsView() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 sm:flex">
               <Button
                 variant="outline"
                 onClick={triggerAssetCommandPalette}
@@ -302,7 +284,7 @@ export function AccountsView() {
                 />
               </div>
               <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-                <SelectTrigger className="sm:w-56">
+                <SelectTrigger className="w-full sm:w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -250,6 +250,7 @@
 
   html {
     -webkit-font-smoothing: antialiased;
+    letter-spacing: 0;
   }
 
   body {
@@ -262,6 +263,28 @@
   kbd {
     font-family: var(--font-mono);
   }
+}
+
+/* Shared containment: wide tables and tab strips scroll locally, not the page. */
+@layer base {
+  main { min-width: 0; }
+  main :where(.grid, .flex) > :where(div, section, article, form) { min-width: 0; }
+  main :where(h1, h2, h3, h4, p, dd) { overflow-wrap: anywhere; }
+  :where(input, textarea, select) { max-width: 100%; }
+  [role="dialog"] { max-width: calc(100vw - 2rem); }
+  [role="tablist"] { max-width: 100%; overflow-x: auto; justify-content: flex-start; }
+  [role="tab"] { flex-shrink: 0; }
+}
+
+@media (max-width: 1023px) {
+  /* Keep each page's existing sticky header below the shared mobile navigation. */
+  .mobile-app-navigation + main > header { top: 3.5rem; }
+  .mobile-app-navigation { padding-top: env(safe-area-inset-top); height: calc(3.5rem + env(safe-area-inset-top)); }
+  main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]), textarea, select) { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
 @utility wb-hex-pattern {
