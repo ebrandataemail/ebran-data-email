@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_linked_assets: {
+        Row: {
+          account_reference: string | null
+          category: string
+          created_at: string
+          display_name: string
+          email_account_id: string
+          id: string
+          login_email: string | null
+          login_url: string | null
+          metadata: Json
+          note: string | null
+          owner_name: string | null
+          password_enc: string | null
+          phone: string | null
+          provider: string
+          recovery_contact: string | null
+          secret_enc: string | null
+          security_method: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          username: string | null
+          website_url: string | null
+        }
+        Insert: {
+          account_reference?: string | null
+          category: string
+          created_at?: string
+          display_name: string
+          email_account_id: string
+          id?: string
+          login_email?: string | null
+          login_url?: string | null
+          metadata?: Json
+          note?: string | null
+          owner_name?: string | null
+          password_enc?: string | null
+          phone?: string | null
+          provider: string
+          recovery_contact?: string | null
+          secret_enc?: string | null
+          security_method?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          account_reference?: string | null
+          category?: string
+          created_at?: string
+          display_name?: string
+          email_account_id?: string
+          id?: string
+          login_email?: string | null
+          login_url?: string | null
+          metadata?: Json
+          note?: string | null
+          owner_name?: string | null
+          password_enc?: string | null
+          phone?: string | null
+          provider?: string
+          recovery_contact?: string | null
+          secret_enc?: string | null
+          security_method?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_linked_assets_email_account_id_fkey"
+            columns: ["email_account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads_assets: {
         Row: {
           account_identifier: string | null
@@ -531,6 +614,7 @@ export type Database = {
           client_id: string
           created_at: string
           description: string | null
+          due_at: string | null
           due_date: string | null
           id: string
           priority: string
@@ -546,6 +630,7 @@ export type Database = {
           client_id: string
           created_at?: string
           description?: string | null
+          due_at?: string | null
           due_date?: string | null
           id?: string
           priority?: string
@@ -561,6 +646,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           description?: string | null
+          due_at?: string | null
           due_date?: string | null
           id?: string
           priority?: string
@@ -1990,6 +2076,65 @@ export type Database = {
           },
         ]
       }
+      task_reminders: {
+        Row: {
+          channel: string
+          created_at: string
+          fired_at: string | null
+          id: string
+          ntfy_attempts: number
+          ntfy_last_error: string | null
+          ntfy_request_id: number | null
+          ntfy_requested_at: string | null
+          offset_minutes: number
+          remind_at: string
+          snoozed_until: string | null
+          status: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          fired_at?: string | null
+          id?: string
+          ntfy_attempts?: number
+          ntfy_last_error?: string | null
+          ntfy_request_id?: number | null
+          ntfy_requested_at?: string | null
+          offset_minutes?: number
+          remind_at: string
+          snoozed_until?: string | null
+          status?: string
+          task_id: string
+          user_id?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          fired_at?: string | null
+          id?: string
+          ntfy_attempts?: number
+          ntfy_last_error?: string | null
+          ntfy_request_id?: number | null
+          ntfy_requested_at?: string | null
+          offset_minutes?: number
+          remind_at?: string
+          snoozed_until?: string | null
+          status?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_reminders_task_owner_fkey"
+            columns: ["task_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       task_reviews: {
         Row: {
           created_at: string
@@ -2035,12 +2180,45 @@ export type Database = {
           },
         ]
       }
+      user_ntfy_channels: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          topic: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          topic: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          topic?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      dispatch_due_task_reminders: { Args: never; Returns: number }
+      get_or_create_my_ntfy_topic: {
+        Args: never
+        Returns: {
+          enabled: boolean
+          topic: string
+        }[]
+      }
       get_shared_task_brief: { Args: { p_token_hash: string }; Returns: Json }
+      set_my_ntfy_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
       submit_shared_task_brief_feedback: {
         Args: {
           p_client_name: string
