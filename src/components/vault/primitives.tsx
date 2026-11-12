@@ -3,8 +3,19 @@ import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+/*
+ * ELEVASI — 3 level, tiap level punya "bahasa" visual sendiri:
+ *
+ *  L0  Canvas   bg-canvas                         (latar halaman)
+ *  L1  Card     rounded-xl + border + shadow-soft (satu entitas: 1 akun, 1 proyek)
+ *  L2  Isi card TANPA kotak lagi: pemisah garis (divide-y), bukan border+radius+shadow
+ *
+ * Aturan emas: jangan pernah "kotak di dalam kotak di dalam kotak".
+ */
 
 export async function copyText(value: string, label = "Nilai") {
   try {
@@ -83,6 +94,7 @@ export function SecretValue({
   );
 }
 
+/** Baris label → nilai. Ikon dibuat polos (tanpa kotak) supaya tidak jadi "kotak kecil" ekstra. */
 export function FieldRow({
   icon,
   label,
@@ -95,13 +107,9 @@ export function FieldRow({
   children: ReactNode;
 }) {
   return (
-    <div className="group grid grid-cols-1 gap-1.5 px-5 py-3.5 transition-colors hover:bg-subtle sm:grid-cols-[220px_1fr] sm:items-center sm:gap-6">
+    <div className="grid grid-cols-1 gap-1.5 px-4 py-3 sm:grid-cols-[200px_1fr] sm:items-center sm:gap-6 sm:px-5">
       <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-        {icon && (
-          <span className="flex size-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground [&_svg]:size-3.5">
-            {icon}
-          </span>
-        )}
+        {icon && <span className="[&_svg]:size-4">{icon}</span>}
         <div className="flex flex-col">
           <span className="font-medium">{label}</span>
           {hint && <span className="text-xs text-muted-foreground/80">{hint}</span>}
@@ -114,27 +122,40 @@ export function FieldRow({
   );
 }
 
+/**
+ * Panel dengan dua varian:
+ *  - "card" (default): L1, berdiri sendiri di atas canvas.
+ *  - "flat": dipakai DI DALAM card/tab — tanpa border, radius, dan shadow.
+ */
 export function Panel({
   title,
   description,
   action,
   children,
   className,
+  variant = "card",
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  variant?: "card" | "flat";
 }) {
+  const flat = variant === "flat";
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-card shadow-card",
+        flat ? "bg-transparent" : "overflow-hidden rounded-xl border border-border bg-card shadow-soft",
         className,
       )}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+      <header
+        className={cn(
+          "flex items-start justify-between gap-4 px-4 py-3.5 sm:px-5",
+          !flat && "border-b border-border",
+        )}
+      >
         <div>
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
@@ -143,6 +164,27 @@ export function Panel({
       </header>
       {children}
     </section>
+  );
+}
+
+/** Satu-satunya definisi gaya tab garis-bawah, supaya semua tab di vault konsisten. */
+export function VaultTabTrigger({
+  value,
+  icon,
+  children,
+}: {
+  value: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <TabsTrigger
+      value={value}
+      className="h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-3.5 text-[13px] font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none [&_svg]:size-4"
+    >
+      {icon}
+      {children}
+    </TabsTrigger>
   );
 }
 
