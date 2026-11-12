@@ -28,9 +28,10 @@ type Category = (typeof CATEGORIES)[number]["key"];
 type LinkedAsset = Awaited<ReturnType<typeof vaultListLinkedAssets>>[number];
 type Draft = {
   provider: string; displayName: string; username: string; loginEmail: string; phone: string;
+  ownerName: string; accountReference: string; recoveryContact: string; securityMethod: string;
   websiteUrl: string; loginUrl: string; password: string; secret: string; status: string; note: string;
 };
-const EMPTY: Draft = { provider: "", displayName: "", username: "", loginEmail: "", phone: "", websiteUrl: "", loginUrl: "", password: "", secret: "", status: "manual", note: "" };
+const EMPTY: Draft = { provider: "", displayName: "", username: "", loginEmail: "", phone: "", ownerName: "", accountReference: "", recoveryContact: "", securityMethod: "", websiteUrl: "", loginUrl: "", password: "", secret: "", status: "manual", note: "" };
 const KEY = (id: string) => ["vault", "linked-assets", id] as const;
 
 export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }) {
@@ -60,7 +61,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
   const startEdit = (row: LinkedAsset) => {
     setEditing(row); setDraft({
       provider: row.provider, displayName: row.displayName, username: row.username ?? "",
-      loginEmail: row.loginEmail ?? "", phone: row.phone ?? "", websiteUrl: row.websiteUrl ?? "",
+      loginEmail: row.loginEmail ?? "", phone: row.phone ?? "", ownerName: row.ownerName ?? "", accountReference: row.accountReference ?? "", recoveryContact: row.recoveryContact ?? "", securityMethod: row.securityMethod ?? "", websiteUrl: row.websiteUrl ?? "",
       loginUrl: row.loginUrl ?? "", password: "", secret: "", status: row.status, note: row.note ?? "",
     }); setAdding(true); setShown(null);
   };
@@ -73,7 +74,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
       await saveFn({ data: {
         id: editing?.id ?? null, emailAccountId, category, provider: draft.provider,
         displayName: draft.displayName, username: draft.username || null, loginEmail: draft.loginEmail || null,
-        phone: draft.phone || null, websiteUrl: draft.websiteUrl || null, loginUrl: draft.loginUrl || null,
+        phone: draft.phone || null, ownerName: draft.ownerName || null, accountReference: draft.accountReference || null, recoveryContact: draft.recoveryContact || null, securityMethod: draft.securityMethod || null, websiteUrl: draft.websiteUrl || null, loginUrl: draft.loginUrl || null,
         password: draft.password || null, secret: draft.secret || null, status: draft.status, note: draft.note || null,
       } });
       await client.invalidateQueries({ queryKey: KEY(emailAccountId) });
@@ -126,6 +127,10 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
                 <div className="space-y-1.5"><Label>Username / ID</Label><Input value={draft.username} onChange={(e) => patch("username", e.target.value)} /></div>
                 <div className="space-y-1.5"><Label>Email login</Label><Input type="email" value={draft.loginEmail} onChange={(e) => patch("loginEmail", e.target.value)} /></div>
                 <div className="space-y-1.5"><Label>Nomor telepon</Label><Input value={draft.phone} onChange={(e) => patch("phone", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Nama pemilik / pemegang</Label><Input value={draft.ownerName} onChange={(e) => patch("ownerName", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Referensi akun (nomor tersamarkan / 4 digit akhir)</Label><Input value={draft.accountReference} onChange={(e) => patch("accountReference", e.target.value)} placeholder="Contoh: •••• 1234" /></div>
+                <div className="space-y-1.5"><Label>Kontak pemulihan</Label><Input value={draft.recoveryContact} onChange={(e) => patch("recoveryContact", e.target.value)} placeholder="Email / nomor pemulihan" /></div>
+                <div className="space-y-1.5"><Label>Metode keamanan / 2FA</Label><Input value={draft.securityMethod} onChange={(e) => patch("securityMethod", e.target.value)} placeholder="Authenticator, SMS, passkey..." /></div>
                 <div className="space-y-1.5"><Label>Website</Label><Input value={draft.websiteUrl} onChange={(e) => patch("websiteUrl", e.target.value)} placeholder="https://..." /></div>
                 <div className="space-y-1.5"><Label>URL Login</Label><Input value={draft.loginUrl} onChange={(e) => patch("loginUrl", e.target.value)} placeholder="https://..." /></div>
                 <div className="space-y-1.5"><Label>Status</Label><Select value={draft.status} onValueChange={(value) => patch("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="manual">Dicatat manual</SelectItem><SelectItem value="connected">Ditandai terhubung</SelectItem><SelectItem value="needs_attention">Perlu perhatian</SelectItem><SelectItem value="disabled">Nonaktif</SelectItem></SelectContent></Select></div>
@@ -134,7 +139,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
               </div>
               <div className="space-y-1.5"><Label>Catatan</Label><Textarea rows={3} value={draft.note} onChange={(e) => patch("note", e.target.value)} /></div>
               <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeForm}>Batal</Button><Button type="submit" disabled={busy}>{busy && <LoaderCircle className="animate-spin" />} Simpan Akun</Button></div>
-              <p className="text-xs text-muted-foreground">Password dan API secret dienkripsi di server. Nilainya tidak dikirim kembali saat daftar akun dimuat.</p>
+              <p className="text-xs text-muted-foreground">Password dan API secret dienkripsi di server. Untuk kartu, simpan hanya nama pemegang dan 4 digit terakhir; jangan masukkan nomor kartu lengkap, CVV, PIN, atau OTP.</p>
             </form>
           )}
 
@@ -146,7 +151,7 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
                <div className="min-w-0 space-y-1">
                  <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{row.displayName}</span><Badge variant={row.status === "connected" ? "success" : row.status === "needs_attention" ? "warning" : "muted"}>{row.status === "connected" ? "Ditandai terhubung" : row.status === "needs_attention" ? "Perlu perhatian" : row.status === "disabled" ? "Nonaktif" : "Manual"}</Badge><Badge variant="outline">{row.provider}</Badge></div>
                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                   {row.username && <span>@{row.username}</span>}{row.loginEmail && <span>{row.loginEmail}</span>}{row.phone && <span>{row.phone}</span>}
+                   {row.username && <span>@{row.username}</span>}{row.loginEmail && <span>{row.loginEmail}</span>}{row.phone && <span>{row.phone}</span>}{row.ownerName && <span>{row.ownerName}</span>}{row.accountReference && <span>{row.accountReference}</span>}{row.recoveryContact && <span>Recovery: {row.recoveryContact}</span>}{row.securityMethod && <span>2FA: {row.securityMethod}</span>}
                  </div>
                  {row.loginUrl && <a href={row.loginUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{row.loginUrl}</a>}
                  {row.note && <p className="pt-1 text-sm text-muted-foreground">{row.note}</p>}
