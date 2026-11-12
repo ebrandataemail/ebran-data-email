@@ -11,6 +11,7 @@ import {
   Megaphone,
   Plus,
   Sparkles,
+  Settings2,
   Users,
 } from "lucide-react";
 
@@ -58,6 +59,7 @@ type NavTarget =
   | "/ai"
   | "/projects"
   | "/workboard"
+  | "/workboard-settings"
   | "/clients"
   | "/developer-tools"
   | "/ads"
@@ -147,6 +149,7 @@ export function SidebarContents() {
           <div className="space-y-0.5">
             <NavItem icon={<Folder />} label="Semua Proyek" to="/projects" />
             <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
+            <NavItem icon={<Settings2 />} label="Pengaturan & Peringatan" to="/workboard-settings" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
           </div>
         </div>
