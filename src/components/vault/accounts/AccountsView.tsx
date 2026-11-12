@@ -257,7 +257,7 @@ export function AccountsView() {
               </span>
               <div>
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                  Email (Core)
+                  Accounts
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Pusat akun email, sosial media, developer tools, dan aset digital lainnya.
