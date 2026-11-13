@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Check,
@@ -185,6 +185,9 @@ function RiskBadges({ a }: { a: VaultAccount }) {
   );
 }
 
+/** L1 — pembungkus untuk state kosong / loading / error / tabel (satu card, bukan card bersarang). */
+const stateCard = "rounded-xl border border-border bg-card shadow-soft";
+
 export function AccountsView() {
   const { data: accounts = [], isPending, isError, error, refetch } = useAccounts();
   const queryClient = useQueryClient();
@@ -227,23 +230,16 @@ export function AccountsView() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
         <header className="z-20 border-b border-border bg-background/90 backdrop-blur-md sm:sticky sm:top-0">
           <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
-                <Mail className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                  Accounts
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Pusat akun email, sosial media, developer tools, dan aset digital lainnya.
-                </p>
-              </div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">Accounts</h1>
+              <p className="text-sm text-muted-foreground">
+                Pusat akun email, sosial media, developer tools, dan aset digital lainnya.
+              </p>
             </div>
             <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 sm:flex">
               <Button
@@ -271,20 +267,21 @@ export function AccountsView() {
         </header>
 
         <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+          {/* Tidak ada pembungkus card di sini: toolbar datar di atas canvas, card akun langsung di bawahnya. */}
+          <section className="space-y-4">
             {/* Toolbar: Search, Filters, View Switcher */}
-            <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Cari email, proyek, catatan…"
-                  className="pl-9"
+                  className="bg-card pl-9"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
               <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-                <SelectTrigger className="w-full sm:w-56">
+                <SelectTrigger className="w-full bg-card sm:w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -297,28 +294,30 @@ export function AccountsView() {
               </Select>
 
               {/* View Switcher: Card (Vault Style) vs Table */}
-              <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+              <div className="flex items-center rounded-lg border border-border bg-card p-0.5 shadow-soft">
                 <button
                   type="button"
                   onClick={() => setViewMode("card")}
+                  aria-pressed={viewMode === "card"}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                    "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                     viewMode === "card"
-                      ? "bg-background text-foreground shadow-soft"
+                      ? "bg-secondary text-foreground"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                   title="Tampilan Kartu Vault"
                 >
                   <LayoutGrid className="size-3.5" />
-                  <span className="hidden sm:inline">Kartu Vault</span>
+                  <span className="hidden sm:inline">Kartu</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
+                  aria-pressed={viewMode === "table"}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                    "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                     viewMode === "table"
-                      ? "bg-background text-foreground shadow-soft"
+                      ? "bg-secondary text-foreground"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                   title="Tampilan Tabel"
@@ -328,26 +327,41 @@ export function AccountsView() {
                 </button>
               </div>
 
-              <span className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">
+              <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                 {visible.length} / {accounts.length} akun
               </span>
             </div>
 
             {isPending ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+              <div
+                className={cn(
+                  stateCard,
+                  "flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground",
+                )}
+              >
                 <LoaderCircle className="size-4 animate-spin" />
                 Memuat akun…
               </div>
             ) : isError ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-sm text-muted-foreground">
+              <div
+                className={cn(
+                  stateCard,
+                  "flex flex-col items-center gap-3 py-16 text-sm text-muted-foreground",
+                )}
+              >
                 {errorMessage(error)}
                 <Button variant="outline" size="sm" onClick={() => refetch()}>
                   Coba lagi
                 </Button>
               </div>
             ) : accounts.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div
+                className={cn(
+                  stateCard,
+                  "flex flex-col items-center gap-3 px-6 py-16 text-center",
+                )}
+              >
+                <div className="flex size-12 items-center justify-center rounded-lg bg-secondary text-foreground">
                   <Mail className="size-6" />
                 </div>
                 <p className="text-sm font-semibold text-foreground">Vault email masih kosong</p>
@@ -361,8 +375,8 @@ export function AccountsView() {
                 </Button>
               </div>
             ) : viewMode === "card" ? (
-              /* /vault Card Style List */
-              <div className="space-y-4 p-4 sm:p-6 bg-subtle/40">
+              /* Daftar kartu: tiap AccountVaultCard adalah satu-satunya L1, langsung di atas canvas */
+              <div className="space-y-3">
                 {visible.map((a) => (
                   <AccountVaultCard
                     key={a.id}
@@ -373,12 +387,17 @@ export function AccountsView() {
                   />
                 ))}
                 {visible.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Mail className="size-8 text-muted-foreground/30 mb-2" />
+                  <div
+                    className={cn(
+                      stateCard,
+                      "flex flex-col items-center justify-center border-dashed py-12 text-center shadow-none",
+                    )}
+                  >
+                    <Mail className="mb-2 size-8 text-muted-foreground/30" />
                     <p className="text-sm font-semibold text-foreground">
                       Tidak ada akun yang cocok
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Coba sesuaikan kata kunci pencarian atau filter status.
                     </p>
                     <Button
@@ -396,120 +415,122 @@ export function AccountsView() {
                 )}
               </div>
             ) : (
-              /* Table View Option */
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="pl-5">Email</TableHead>
-                    <TableHead>Password</TableHead>
-                    <TableHead>Proyek Lovable</TableHead>
-                    <TableHead>Catatan</TableHead>
-                    <TableHead className="w-24 pr-5 text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visible.map((a) => (
-                    <TableRow key={a.id} className="align-top">
-                      <TableCell className="pl-5">
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium text-foreground">{a.email}</span>
-                          <CopyButton value={a.email} label="Email" />
-                        </div>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          <Badge
-                            variant={STATUS_VARIANT[a.lovableStatus]}
-                            className="px-1.5 py-0 text-[10px]"
-                          >
-                            {STATUS_LABEL[a.lovableStatus]}
-                          </Badge>
-                          {a.provider !== "gmail" && (
-                            <Badge variant="muted" className="px-1.5 py-0 text-[10px]">
-                              {a.provider}
-                            </Badge>
-                          )}
-                          {a.usageTag && (
-                            <Badge variant="ai" className="px-1.5 py-0 text-[10px]">
-                              {a.usageTag}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <PasswordCell account={a} />
-                        <RiskBadges a={a} />
-                      </TableCell>
-                      <TableCell>
-                        {a.projects.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        ) : (
-                          <ul className="space-y-1">
-                            {a.projects.map((p) => (
-                              <li key={p.id} className="text-[13px]">
-                                {safeAccountUrl(p.url) ? (
-                                  <a
-                                    href={safeAccountUrl(p.url) ?? undefined}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
-                                  >
-                                    {p.name}
-                                    <ExternalLink className="size-3 text-muted-foreground" />
-                                  </a>
-                                ) : (
-                                  <span className="font-medium text-foreground">{p.name}</span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[220px] text-xs text-muted-foreground">
-                        {a.note ?? "—"}
-                      </TableCell>
-                      <TableCell className="pr-5">
-                        <div className="flex justify-end gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={`Edit ${a.email}`}
-                                onClick={() => setEditing({ open: true, account: a })}
-                              >
-                                <Pencil />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Edit</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost-danger"
-                                size="icon-sm"
-                                aria-label={`Hapus ${a.email}`}
-                                onClick={() => setDeleting(a)}
-                              >
-                                <Trash2 />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Hapus</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {visible.length === 0 && (
+              /* Mode tabel: satu-satunya mode yang butuh pembungkus card */
+              <div className={cn(stateCard, "overflow-hidden")}>
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="py-10 text-center text-sm text-muted-foreground"
-                      >
-                        Tidak ada akun yang cocok.
-                      </TableCell>
+                      <TableHead className="pl-5">Email</TableHead>
+                      <TableHead>Password</TableHead>
+                      <TableHead>Proyek Lovable</TableHead>
+                      <TableHead>Catatan</TableHead>
+                      <TableHead className="w-24 pr-5 text-right">Aksi</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {visible.map((a) => (
+                      <TableRow key={a.id} className="align-top">
+                        <TableCell className="pl-5">
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium text-foreground">{a.email}</span>
+                            <CopyButton value={a.email} label="Email" />
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <Badge
+                              variant={STATUS_VARIANT[a.lovableStatus]}
+                              className="px-1.5 py-0 text-[10px]"
+                            >
+                              {STATUS_LABEL[a.lovableStatus]}
+                            </Badge>
+                            {a.provider !== "gmail" && (
+                              <Badge variant="muted" className="px-1.5 py-0 text-[10px]">
+                                {a.provider}
+                              </Badge>
+                            )}
+                            {a.usageTag && (
+                              <Badge variant="ai" className="px-1.5 py-0 text-[10px]">
+                                {a.usageTag}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <PasswordCell account={a} />
+                          <RiskBadges a={a} />
+                        </TableCell>
+                        <TableCell>
+                          {a.projects.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            <ul className="space-y-1">
+                              {a.projects.map((p) => (
+                                <li key={p.id} className="text-[13px]">
+                                  {safeAccountUrl(p.url) ? (
+                                    <a
+                                      href={safeAccountUrl(p.url) ?? undefined}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
+                                    >
+                                      {p.name}
+                                      <ExternalLink className="size-3 text-muted-foreground" />
+                                    </a>
+                                  ) : (
+                                    <span className="font-medium text-foreground">{p.name}</span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-[220px] text-xs text-muted-foreground">
+                          {a.note ?? "—"}
+                        </TableCell>
+                        <TableCell className="pr-5">
+                          <div className="flex justify-end gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Edit ${a.email}`}
+                                  onClick={() => setEditing({ open: true, account: a })}
+                                >
+                                  <Pencil />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost-danger"
+                                  size="icon-sm"
+                                  aria-label={`Hapus ${a.email}`}
+                                  onClick={() => setDeleting(a)}
+                                >
+                                  <Trash2 />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Hapus</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {visible.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="py-10 text-center text-sm text-muted-foreground"
+                        >
+                          Tidak ada akun yang cocok.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </section>
         </div>
