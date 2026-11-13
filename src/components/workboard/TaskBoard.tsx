@@ -171,7 +171,9 @@ function TaskMenu({
   onDelete: (task: WorkboardTask) => void;
 }) {
   return (
-    <DropdownMenu>
+    // modal={false}: Dialog "Edit" dibuka dari item menu ini. Dengan dropdown modal, Radix bisa
+    // meninggalkan `pointer-events: none` di body setelah dialog ditutup (halaman tidak bisa diklik).
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
