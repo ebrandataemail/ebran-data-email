@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,8 +6,8 @@ import {
   BriefcaseBusiness,
   Building2,
   Calendar,
+  ChevronRight,
   CodeXml,
-  ExternalLink,
   Flame,
   FolderKanban,
   Globe,
@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -57,6 +56,7 @@ import {
   parseProjectDescription,
   type PriorityLevel,
 } from "@/lib/projects/deadline";
+import { cn } from "@/lib/utils";
 import { ClientDetailWorkspace } from "./clients/ClientDetailWorkspace";
 import { ClientDialog, type ClientData } from "./clients/ClientDialog";
 import { KanbanBoard } from "./projects/KanbanBoard";
@@ -65,6 +65,9 @@ const KEY = ["workspace", "projects-clients"] as const;
 type Workspace = Awaited<ReturnType<typeof workspaceList>>;
 type Client = Workspace["clients"][number];
 type Project = Workspace["projects"][number];
+
+/** L1 — satu bahasa card untuk seluruh halaman ini (sama dengan AccountVaultCard). */
+const surface = "rounded-xl border border-border bg-card shadow-soft";
 
 function ClientLogoAvatar({ logoPath, name }: { logoPath?: string | null; name: string }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -88,41 +91,66 @@ function ClientLogoAvatar({ logoPath, name }: { logoPath?: string | null; name: 
       <img
         src={url}
         alt={name}
-        className="size-10 rounded-lg object-cover border border-slate-200"
+        className="size-10 shrink-0 rounded-lg border border-border object-cover"
       />
     );
   }
 
   return (
-    <span className="flex size-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold text-sm dark:bg-emerald-950 dark:text-emerald-200 shrink-0">
+    <span
+      aria-hidden
+      className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-sm font-semibold text-foreground"
+    >
       {name.slice(0, 2).toUpperCase()}
     </span>
   );
 }
 
-const statusBadgeStyles: Record<string, { label: string; class: string }> = {
-  active: {
-    label: "Active Partner",
-    class:
-      "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200",
-  },
-  prospect: {
-    label: "New Lead / Prospek",
-    class: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-200",
-  },
-  "on-hold": {
-    label: "On Hold",
-    class: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
-  },
-  completed: {
-    label: "Completed",
-    class: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-200",
-  },
-  inactive: {
-    label: "Tidak Aktif",
-    class: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950 dark:text-rose-200",
-  },
+// Status client memakai varian Badge dari design system, bukan warna Tailwind mentah.
+const statusBadgeStyles: Record<
+  string,
+  { label: string; variant: "success" | "warning" | "muted" | "secondary" | "danger" }
+> = {
+  active: { label: "Active Partner", variant: "success" },
+  prospect: { label: "New Lead / Prospek", variant: "warning" },
+  "on-hold": { label: "On Hold", variant: "muted" },
+  completed: { label: "Completed", variant: "secondary" },
+  inactive: { label: "Tidak Aktif", variant: "danger" },
 };
+
+/**
+ * Ringkasan: SATU card dengan pemisah garis, bukan lima card identik.
+ * Angka hanya diberi warna peringatan bila ada yang perlu ditindaklanjuti.
+ */
+function StatStrip({
+  items,
+}: {
+  items: { icon: ReactNode; value: number; label: string; attention?: boolean }[];
+}) {
+  return (
+    <div className={cn(surface, "flex divide-x divide-border overflow-x-auto")}>
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="flex min-w-[176px] flex-1 items-center gap-3 px-4 py-3.5"
+        >
+          <span className="text-muted-foreground [&_svg]:size-4">{item.icon}</span>
+          <div>
+            <p
+              className={cn(
+                "text-xl font-semibold leading-none tabular-nums text-foreground",
+                item.attention && item.value > 0 && "text-warning-foreground",
+              )}
+            >
+              {item.value}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{item.label}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) {
   const navigate = useNavigate();
@@ -238,49 +266,54 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
   const isClients = mode === "clients";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
         {/* Header */}
-        <header className="border-b border-border bg-background/90 px-4 py-6 backdrop-blur sm:px-8">
+        <header className="border-b border-border bg-background/90 px-4 py-5 backdrop-blur sm:px-8">
           <div className="mx-auto flex max-w-[1400px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                {isClients ? <Users /> : <FolderKanban />}
-              </span>
-              <div>
-                <h1 className="text-xl font-semibold">
-                  {isClients ? "Daftar Client & Perusahaan" : "Proyek & Workflows"}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {isClients
-                    ? "Kelola data perusahaan, profil, kontak, aset digital, dan dokumen kerjasama."
-                    : "Kelola status proyek, prioritas, tenggat waktu, dan data client yang tersinkronisasi."}
-                </p>
-              </div>
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                {isClients ? "Daftar Client & Perusahaan" : "Proyek & Workflows"}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {isClients
+                  ? "Kelola data perusahaan, profil, kontak, aset digital, dan dokumen kerjasama."
+                  : "Kelola status proyek, prioritas, tenggat waktu, dan data client yang tersinkronisasi."}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
               {!isClients && (
-                <div className="flex items-center rounded-lg border bg-muted p-1 text-xs">
-                  <Button
-                    size="sm"
-                    variant={viewMode === "kanban" ? "secondary" : "ghost"}
+                <div className="flex items-center rounded-lg border border-border bg-card p-0.5 shadow-soft">
+                  <button
+                    type="button"
+                    aria-pressed={viewMode === "kanban"}
                     onClick={() => setViewMode("kanban")}
-                    className="h-7 px-2.5 text-xs font-medium"
+                    className={cn(
+                      "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                      viewMode === "kanban"
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
                   >
-                    <Trello className="mr-1.5 size-3.5" />
-                    Kanban Board
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    <Trello className="size-3.5" />
+                    Kanban
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={viewMode === "grid"}
                     onClick={() => setViewMode("grid")}
-                    className="h-7 px-2.5 text-xs font-medium"
+                    className={cn(
+                      "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                      viewMode === "grid"
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
                   >
-                    <LayoutGrid className="mr-1.5 size-3.5" />
-                    Daftar Grid
-                  </Button>
+                    <LayoutGrid className="size-3.5" />
+                    Grid
+                  </button>
                 </div>
               )}
 
@@ -295,7 +328,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
         </header>
 
         {/* Content Section */}
-        <section className="mx-auto max-w-[1400px] space-y-5 px-4 py-6 sm:px-8">
+        <section className="mx-auto max-w-[1400px] space-y-5 px-4 py-6 pb-16 sm:px-8">
           {isClients &&
           selectedClientId &&
           data?.clients.some((client) => client.id === selectedClientId) ? (
@@ -312,74 +345,44 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
           ) : (
             <>
               {!isClients && (
-                <>
-                  {/* Summary Metric Cards */}
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                    <Card>
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <BriefcaseBusiness className="text-muted-foreground" />
-                        <div>
-                          <p className="text-2xl font-semibold">{data?.projects.length ?? 0}</p>
-                          <p className="text-xs text-muted-foreground">Total proyek</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <Users className="text-muted-foreground" />
-                        <div>
-                          <p className="text-2xl font-semibold">{data?.clients.length ?? 0}</p>
-                          <p className="text-xs text-muted-foreground">Total client</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <Mail className="text-muted-foreground" />
-                        <div>
-                          <p className="text-2xl font-semibold">
-                            {data?.unassignedEmailCount ?? 0}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Email belum terhubung proyek
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <CodeXml className="text-muted-foreground" />
-                        <div>
-                          <p className="text-2xl font-semibold">
-                            {data?.unassignedDeveloperAssetCount ?? 0}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Aset developer belum terhubung proyek
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <Megaphone className="text-muted-foreground" />
-                        <div>
-                          <p className="text-2xl font-semibold">
-                            {data?.unassignedAdsAssetCount ?? 0}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Aset Ads belum terhubung proyek
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
+                <StatStrip
+                  items={[
+                    {
+                      icon: <BriefcaseBusiness />,
+                      value: data?.projects.length ?? 0,
+                      label: "Total proyek",
+                    },
+                    { icon: <Users />, value: data?.clients.length ?? 0, label: "Total client" },
+                    {
+                      icon: <Mail />,
+                      value: data?.unassignedEmailCount ?? 0,
+                      label: "Email belum terhubung proyek",
+                      attention: true,
+                    },
+                    {
+                      icon: <CodeXml />,
+                      value: data?.unassignedDeveloperAssetCount ?? 0,
+                      label: "Aset developer belum terhubung",
+                      attention: true,
+                    },
+                    {
+                      icon: <Megaphone />,
+                      value: data?.unassignedAdsAssetCount ?? 0,
+                      label: "Aset Ads belum terhubung",
+                      attention: true,
+                    },
+                  ]}
+                />
               )}
 
               {query.isPending ? (
-                <p className="py-16 text-center text-sm text-muted-foreground">Memuat data…</p>
+                <div
+                  className={cn(surface, "py-16 text-center text-sm text-muted-foreground")}
+                >
+                  Memuat data…
+                </div>
               ) : query.isError ? (
-                <div className="rounded-xl border p-6 text-center">
+                <div className={cn(surface, "p-6 text-center")}>
                   <p className="text-sm text-destructive">Gagal memuat data workspace.</p>
                   <Button className="mt-3" variant="outline" onClick={() => query.refetch()}>
                     Coba lagi
@@ -410,46 +413,37 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                       : null;
 
                     return (
-                      <Card
+                      <article
                         key={item.id}
-                        className={
-                          isClients
-                            ? "group cursor-pointer shadow-sm transition hover:border-emerald-500/60 hover:shadow-md"
-                            : "shadow-sm"
-                        }
+                        className={cn(
+                          surface,
+                          "flex flex-col transition-colors",
+                          isClients && "cursor-pointer hover:border-border-strong",
+                        )}
                         onClick={(e) => {
                           if (isClients && !(e.target as HTMLElement).closest("button")) {
                             setSelectedClientId(item.id);
                           }
                         }}
                       >
-                        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                          <div className="flex items-center gap-3 min-w-0">
+                        {/* Header */}
+                        <header className="flex items-start justify-between gap-3 px-4 pb-3 pt-4">
+                          <div className="flex min-w-0 items-center gap-3">
                             {isClients ? (
                               <ClientLogoAvatar
                                 logoPath={client?.logoPath}
                                 name={client?.name ?? "Client"}
                               />
                             ) : (
-                              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
                                 <FolderKanban className="size-5" />
                               </span>
                             )}
                             <div className="min-w-0">
-                              <CardTitle className="text-sm font-semibold truncate">
-                                {isClients ? (
-                                  <button
-                                    type="button"
-                                    className="text-left font-bold text-slate-900 hover:text-emerald-700 dark:text-slate-100 dark:hover:text-emerald-400"
-                                    onClick={() => setSelectedClientId(item.id)}
-                                  >
-                                    {title}
-                                  </button>
-                                ) : (
-                                  title
-                                )}
-                              </CardTitle>
-                              <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                              <h3 className="truncate text-sm font-semibold text-foreground">
+                                {title}
+                              </h3>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                 {isClients
                                   ? client?.legalName
                                     ? `${client.legalName} ${client.city ? `· ${client.city}` : ""}`
@@ -458,32 +452,34 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-1 shrink-0">
+                          <div className="flex shrink-0 gap-0.5">
                             <Button
-                              size="icon"
+                              size="icon-sm"
                               variant="ghost"
                               onClick={() =>
                                 isClients ? startClientEdit(client!) : startProjectEdit(project!)
                               }
-                              aria-label="Edit"
+                              aria-label={`Edit ${title}`}
                             >
-                              <Pencil className="size-4" />
+                              <Pencil />
                             </Button>
                             <Button
-                              size="icon"
-                              variant="ghost"
+                              size="icon-sm"
+                              variant="ghost-danger"
                               onClick={() => void remove(item.id)}
-                              aria-label="Hapus"
+                              aria-label={`Hapus ${title}`}
                             >
-                              <Trash2 className="size-4" />
+                              <Trash2 />
                             </Button>
                           </div>
-                        </CardHeader>
-                        <CardContent className="pt-0 space-y-3">
-                          {isClients && (
+                        </header>
+
+                        {/* Body: badge + deskripsi, tanpa kotak tambahan */}
+                        <div className="flex-1 space-y-2.5 px-4 pb-4">
+                          {isClients && (clientStatusMeta || client?.industry) && (
                             <div className="flex flex-wrap items-center gap-1.5">
                               {clientStatusMeta && (
-                                <Badge variant="outline" className={clientStatusMeta.class}>
+                                <Badge variant={clientStatusMeta.variant}>
                                   {clientStatusMeta.label}
                                 </Badge>
                               )}
@@ -496,25 +492,30 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                             </div>
                           )}
 
-                          {!isClients && priorityInfo && (
-                            <div className="flex items-center gap-1.5">
-                              <Badge variant="outline" className={priorityInfo.badgeClass}>
-                                <span
-                                  className={`size-1.5 rounded-full mr-1 ${priorityInfo.dotClass}`}
-                                />
-                                {priorityInfo.label}
+                          {!isClients && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {priorityInfo && (
+                                <Badge variant="outline" className={priorityInfo.badgeClass}>
+                                  <span
+                                    className={`mr-1 size-1.5 rounded-full ${priorityInfo.dotClass}`}
+                                  />
+                                  {priorityInfo.label}
+                                </Badge>
+                              )}
+                              <Badge variant="muted" className="capitalize">
+                                {project!.status}
                               </Badge>
                             </div>
                           )}
 
-                          <p className="line-clamp-2 min-h-10 text-xs text-muted-foreground">
+                          <p className="line-clamp-2 min-h-10 text-xs leading-relaxed text-muted-foreground">
                             {parsedDesc
                               ? parsedDesc.cleanDescription || "Belum ada deskripsi."
                               : item.description || "Belum ada deskripsi."}
                           </p>
 
                           {isClients && (client?.contactEmail || client?.contactPhone) && (
-                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground pt-1 border-t">
+                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                               {client.contactEmail && (
                                 <span className="flex items-center gap-1 truncate">
                                   <Mail className="size-3 shrink-0" />
@@ -529,44 +530,44 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                               )}
                             </div>
                           )}
+                        </div>
 
-                          <div className="mt-3 flex items-center justify-between pt-1 border-t">
-                            {isClients ? (
-                              <>
-                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                                  {client!.projectCount} proyek ·{" "}
-                                  {(client as any).digitalAssetCount ?? 0} aset ·{" "}
-                                  {(client as any).documentCount ?? 0} dokumen
-                                </span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 dark:text-emerald-400"
-                                  onClick={() => setSelectedClientId(item.id)}
-                                >
-                                  Buka Workspace
-                                  <ExternalLink className="ml-1 size-3" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Badge variant="outline" className="capitalize text-xs">
-                                  {project!.status}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {project!.emailCount} email · {project!.developerAssetCount} dev ·{" "}
-                                  {project!.adsAssetCount} ads
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
+                        {/* Footer: satu garis pemisah, ringkasan di kiri, satu aksi di kanan */}
+                        <footer className="flex items-center justify-between gap-2 border-t border-border bg-subtle px-4 py-2.5">
+                          {isClients ? (
+                            <>
+                              <span className="text-[11px] tabular-nums text-muted-foreground">
+                                {client!.projectCount} proyek · {(client as any).digitalAssetCount ?? 0}{" "}
+                                aset · {(client as any).documentCount ?? 0} dokumen
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 gap-1 px-2 text-xs"
+                                onClick={() => setSelectedClientId(item.id)}
+                              >
+                                Buka
+                                <ChevronRight className="size-3.5" />
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-[11px] tabular-nums text-muted-foreground">
+                              {project!.emailCount} email · {project!.developerAssetCount} dev ·{" "}
+                              {project!.adsAssetCount} ads
+                            </span>
+                          )}
+                        </footer>
+                      </article>
                     );
                   })}
                   {(isClients ? data!.clients : data!.projects).length === 0 && (
-                    <div className="col-span-full rounded-xl border border-dashed p-12 text-center">
-                      <p className="text-sm font-medium">
+                    <div
+                      className={cn(
+                        surface,
+                        "col-span-full border-dashed p-12 text-center shadow-none",
+                      )}
+                    >
+                      <p className="text-sm font-medium text-foreground">
                         Belum ada {isClients ? "client" : "proyek"}.
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -575,10 +576,7 @@ export function ProjectsClientsView({ mode }: { mode: "projects" | "clients" }) 
                           : "Tambahkan data pertama untuk mulai menghubungkan akun email dan status proyek."}
                       </p>
                       {isClients && (
-                        <Button
-                          className="mt-4 bg-[#003837] text-white hover:bg-[#022e2d]"
-                          onClick={() => void navigate({ to: "/clients/new" })}
-                        >
+                        <Button className="mt-4" onClick={() => void navigate({ to: "/clients/new" })}>
                           <Plus className="mr-1.5 size-4" />
                           Tambah Client Baru
                         </Button>
