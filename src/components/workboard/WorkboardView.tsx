@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Search,
-  SlidersHorizontal,
   RefreshCw,
   Users,
   FolderKanban,
@@ -11,14 +10,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/vault/AppSidebar";
+import { StatStrip } from "@/components/vault/StatStrip";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { GraphicWorkspace } from "./GraphicWorkspace";
 import { TaskBoard } from "./TaskBoard";
 import { AiSecretaryPanel, CalendarPanel, WorkListPanel } from "./BottomPanels";
 import { useWorkboardData, type WorkboardTask } from "./useWorkboardData";
 
+/** L1 — sama dengan halaman Accounts dan Proyek. */
+const surface = "rounded-xl border border-border bg-card shadow-soft";
+
 export function WorkboardView() {
   return (
-    <div className="min-h-screen bg-wb-canvas">
+    <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
         <WorkboardContent />
@@ -69,10 +74,10 @@ export function WorkboardContent() {
   }, [selectedTask?.id]);
   const latestActivities = activities.slice(0, 8);
   const counts = [
-    { label: "Total Client", value: clients.length, icon: Users },
-    { label: "Total Proyek", value: projects.length, icon: FolderKanban },
+    { label: "Total client", value: clients.length, icon: Users },
+    { label: "Total proyek", value: projects.length, icon: FolderKanban },
     {
-      label: "Task Aktif",
+      label: "Task aktif",
       value: tasks.filter((t) => !["finished", "cancel"].includes(t.status)).length,
       icon: ListTodo,
     },
@@ -80,74 +85,68 @@ export function WorkboardContent() {
     { label: "Aktivitas", value: activities.length, icon: Activity },
   ];
   return (
-    <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6">
+    <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 pb-16 sm:px-8">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-wb-blue-strong">
-            Ebran · Operations
-          </p>
-          <h1 className="mt-1 text-xl font-extrabold tracking-tight text-wb-ink">Workboard</h1>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Workboard</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Data client, proyek, task, deadline, dokumen, dan aktivitas tersinkron dari Supabase.
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() =>
             void refresh()
               .then(() => toast.success("Data Workboard diperbarui"))
               .catch((e) => toast.error(e.message))
           }
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-[10px] font-semibold text-wb-ink shadow-soft hover:bg-muted disabled:opacity-50"
+          className="gap-2"
         >
-          <RefreshCw className={loading ? "size-3 animate-spin" : "size-3"} />
+          <RefreshCw className={cn("size-3.5", loading && "animate-spin")} />
           Refresh data
-        </button>
+        </Button>
       </header>
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        {counts.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-xl border border-border bg-card p-3 shadow-soft">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-medium text-muted-foreground">{label}</span>
-              <Icon className="size-4 text-wb-blue-strong" />
-            </div>
-            <p className="mt-1 text-xl font-extrabold tabular-nums text-wb-ink">
-              {loading ? "—" : value}
-            </p>
-          </div>
-        ))}
-      </section>
+
+      <StatStrip
+        items={counts.map(({ label, value, icon: Icon }) => ({
+          label,
+          value: loading ? "—" : value,
+          icon: <Icon />,
+        }))}
+      />
+
       {error && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[10px] text-destructive"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive-soft px-4 py-2.5 text-sm text-destructive"
         >
           <span>Gagal memuat data Supabase: {error}</span>
-          <button
-            type="button"
+          <Button
+            variant="ghost-danger"
+            size="sm"
             onClick={() => void refresh().catch((e) => toast.error(e.message))}
-            className="font-bold underline"
           >
             Coba lagi
-          </button>
+          </Button>
         </div>
       )}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="flex w-full max-w-[340px] items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 shadow-soft">
-            <Search className="size-3.5 text-muted-foreground" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex w-full max-w-[360px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-soft">
+            <Search className="size-4 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari task, client, PIC, deskripsi…"
-              className="min-w-0 flex-1 bg-transparent text-[11px] text-wb-ink outline-none placeholder:text-muted-foreground"
+              className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
-            <kbd className="rounded border border-border bg-muted px-1 font-mono text-[8px] text-muted-foreground">
-              ⌘ K
+            <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[11px] text-muted-foreground">
+              ⌘K
             </kbd>
           </label>
-          <label className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             Client aktif
             <select
               value={selectedClientId}
@@ -155,7 +154,7 @@ export function WorkboardContent() {
                 setSelectedClientId(e.target.value);
                 setSelectedTaskId(null);
               }}
-              className="h-8 max-w-[220px] rounded-md border border-border bg-card px-2 text-[10px] font-semibold text-wb-ink"
+              className="h-9 max-w-[240px] rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground shadow-soft"
             >
               <option value="">Pilih client</option>
               {clients.map((c) => (
@@ -167,24 +166,24 @@ export function WorkboardContent() {
           </label>
         </div>
         {loading && !clients.length ? (
-          <div className="rounded-xl border bg-card p-10 text-center text-xs text-muted-foreground">
+          <div className={cn(surface, "p-10 text-center text-sm text-muted-foreground")}>
             Menghubungkan ke Supabase…
           </div>
         ) : (
           <div id="graphic-workspace">
-          <GraphicWorkspace
-            clients={clients}
-            projects={projects}
-            tasks={boardTasks}
-            documents={documents}
-            activities={activities}
-            designVersions={designVersions}
-            designComments={designComments}
-            designReviews={designReviews}
-            selectedClientId={selectedClientId}
-            onDataChanged={refresh}
-            selectedTask={selectedTask}
-          />
+            <GraphicWorkspace
+              clients={clients}
+              projects={projects}
+              tasks={boardTasks}
+              documents={documents}
+              activities={activities}
+              designVersions={designVersions}
+              designComments={designComments}
+              designReviews={designReviews}
+              selectedClientId={selectedClientId}
+              onDataChanged={refresh}
+              selectedTask={selectedTask}
+            />
           </div>
         )}
       </div>
@@ -215,46 +214,49 @@ export function WorkboardContent() {
         <WorkListPanel tasks={tasks} clients={clients} />
         <AiSecretaryPanel />
       </section>
-      <section className="rounded-xl border border-border bg-card p-3 shadow-soft">
-        <div className="mb-3 flex items-center justify-between">
+
+      {/* Aktivitas: satu card, baris dipisah garis — tanpa kartu kecil di dalam kartu */}
+      <section className={cn(surface, "overflow-hidden")}>
+        <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-3.5 sm:px-5">
           <div>
-            <h2 className="text-[12px] font-bold text-wb-ink">Aktivitas Terbaru</h2>
-            <p className="text-[9px] text-muted-foreground">
+            <h2 className="text-sm font-semibold text-foreground">Aktivitas terbaru</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Riwayat aktivitas client dari Supabase
             </p>
           </div>
-          <span className="text-[9px] text-muted-foreground">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {latestActivities.length} terbaru
           </span>
-        </div>
-        <div className="grid gap-2 md:grid-cols-2">
-          {latestActivities.map((a) => {
-            const client = clients.find((c) => c.id === a.client_id);
-            return (
-              <article key={a.id} className="rounded-lg border border-border bg-muted/20 p-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-semibold text-wb-ink">{a.title}</p>
-                  <span className="shrink-0 text-[8px] text-muted-foreground">
-                    {new Date(a.occurred_at).toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <p className="mt-1 text-[9px] text-muted-foreground">
-                  {client?.name ?? "Client"} · {a.event_type}
-                </p>
-                {a.description && (
-                  <p className="mt-1 line-clamp-2 text-[9px] text-muted-foreground">
-                    {a.description}
+        </header>
+        {latestActivities.length ? (
+          <ul className="divide-y divide-border">
+            {latestActivities.map((a) => {
+              const client = clients.find((c) => c.id === a.client_id);
+              return (
+                <li key={a.id} className="px-4 py-3 sm:px-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-medium text-foreground">{a.title}</p>
+                    <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {new Date(a.occurred_at).toLocaleString("id-ID")}
+                    </time>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {client?.name ?? "Client"} · {a.event_type}
                   </p>
-                )}
-              </article>
-            );
-          })}
-          {!latestActivities.length && (
-            <p className="py-5 text-center text-[10px] text-muted-foreground">
-              Belum ada aktivitas yang tercatat.
-            </p>
-          )}
-        </div>
+                  {a.description && (
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {a.description}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Belum ada aktivitas yang tercatat.
+          </p>
+        )}
       </section>
     </div>
   );
