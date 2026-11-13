@@ -3,13 +3,11 @@ import { Link, useNavigate, useRouteContext, useRouterState } from "@tanstack/re
 import {
   LogOut,
   AtSign,
-  ChevronsUpDown,
   CodeXml,
   Folder,
   LayoutDashboard,
   Mail,
   Megaphone,
-  Plus,
   Sparkles,
   Settings2,
   Users,
@@ -34,21 +32,11 @@ const categoryIcons = {
   social: AtSign,
 } as const;
 
-function SectionLabel({ children, action }: { children: string; action?: boolean }) {
+/** Label seksi: sentence case, tanpa tombol palsu. */
+function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="mb-1.5 flex items-center justify-between px-3">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
-        {children}
-      </span>
-      {action && (
-        <button
-          type="button"
-          aria-label={`Tambah ${children}`}
-          className="flex size-5 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-        >
-          <Plus className="size-3.5" />
-        </button>
-      )}
+    <div className="mb-1.5 px-3">
+      <span className="text-xs font-medium text-muted-foreground">{children}</span>
     </div>
   );
 }
@@ -65,6 +53,27 @@ type NavTarget =
   | "/ads"
   | "/social";
 
+/** "Tanya AI" adalah fitur utama, bukan sekadar menu: ia punya bahasa visual emas sendiri. */
+function AskAiItem() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const active = pathname === "/ai";
+  return (
+    <Link
+      to="/ai"
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "group flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[13px] font-semibold text-ai-foreground transition-colors",
+        active
+          ? "border-ai/40 bg-ai-soft"
+          : "border-transparent bg-ai-soft/60 hover:border-ai/30 hover:bg-ai-soft",
+      )}
+    >
+      <Sparkles className="size-4" />
+      <span className="flex-1">Tanya AI</span>
+    </Link>
+  );
+}
+
 function NavItem({
   icon,
   label,
@@ -79,9 +88,9 @@ function NavItem({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const active = !!to && pathname === to;
   const className = cn(
-    "group flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
+    "group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
     active
-      ? "bg-background text-foreground shadow-soft ring-1 ring-border"
+      ? "bg-background font-semibold text-foreground shadow-soft ring-1 ring-border before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
       : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
   );
   const inner = (
@@ -137,15 +146,14 @@ export function SidebarContents() {
             Arsip Data Pribadi Aman
           </span>
         </div>
-        <ChevronsUpDown className="size-4 text-muted-foreground" />
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-2 py-5">
         <div className="px-1">
-          <NavItem icon={<Sparkles />} label="Tanya AI" to="/ai" />
+          <AskAiItem />
         </div>
         <div>
-          <SectionLabel action>PROYEK & CLIENT</SectionLabel>
+          <SectionLabel>Proyek & client</SectionLabel>
           <div className="space-y-0.5">
             <NavItem icon={<Folder />} label="Semua Proyek" to="/projects" />
             <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
@@ -155,7 +163,7 @@ export function SidebarContents() {
         </div>
 
         <div>
-          <SectionLabel>KATEGORI</SectionLabel>
+          <SectionLabel>Kategori</SectionLabel>
           <div className="space-y-0.5">
             {categories.map((c) => {
               const Icon = categoryIcons[c.key as keyof typeof categoryIcons];
@@ -181,14 +189,13 @@ export function SidebarContents() {
         </div>
 
         <div>
-          <SectionLabel action>TAGS</SectionLabel>
+          <SectionLabel>Tag</SectionLabel>
+          {/* Tag belum punya aksi (filter), jadi tampil sebagai label biasa, bukan tombol. */}
           <div className="flex flex-wrap gap-1.5 px-3">
             {tags.map((t) => (
-              <button key={t.label} type="button" className="cursor-pointer">
-                <Badge variant={t.tone} className="transition-opacity hover:opacity-80">
-                  {t.label}
-                </Badge>
-              </button>
+              <Badge key={t.label} variant={t.tone}>
+                {t.label}
+              </Badge>
             ))}
           </div>
         </div>
