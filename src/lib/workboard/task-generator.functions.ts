@@ -130,7 +130,7 @@ export const generateTasksFromSource = createServerFn({ method: "POST" })
     let runId: string | null = null;
     try {
       const transcript = data.audio ? await transcribeAudio(data.audio) : "";
-      const extractedText = [data.sourceText, transcript ? "TRANSKRIPSI AUDIO:\\n" + transcript : ""].filter(Boolean).join("\\n\\n").slice(0, 24000);
+      const extractedText = [data.sourceText, transcript ? "TRANSKRIPSI AUDIO:\n" + transcript : ""].filter(Boolean).join("\n\n").slice(0, 24000);
       const { data: client, error: clientError } = await db.from("clients")
         .select("id,name").eq("id", data.clientId).eq("user_id", userId).maybeSingle();
       if (clientError) throw clientError;
@@ -152,12 +152,14 @@ export const generateTasksFromSource = createServerFn({ method: "POST" })
         if (sourceError) throw sourceError;
         if (!existingSource) throw new Error("Sumber webhook tidak ditemukan atau sudah diproses.");
         source = existingSource;
+        sourceId = source.id;
         const { data: queuedRun, error: queuedError } = await db.from("task_generation_runs")
           .select("id").eq("source_id", source.id).eq("user_id", userId).eq("status", "queued")
           .order("created_at", { ascending: false }).limit(1).maybeSingle();
         if (queuedError) throw queuedError;
         if (queuedRun) {
           run = queuedRun;
+          runId = run.id;
           const { error } = await db.from("task_generation_runs").update({ status: "processing", started_at: new Date().toISOString() }).eq("id", run.id).eq("user_id", userId);
           if (error) throw error;
         } else {
@@ -166,6 +168,7 @@ export const generateTasksFromSource = createServerFn({ method: "POST" })
           }).select("id").single();
           if (error) throw error;
           run = newRun;
+          runId = run.id;
         }
         const { error: sourceUpdateError } = await db.from("task_intake_sources").update({ status: "processing" }).eq("id", source.id).eq("user_id", userId);
         if (sourceUpdateError) throw sourceUpdateError;
@@ -181,14 +184,14 @@ export const generateTasksFromSource = createServerFn({ method: "POST" })
         }).select("id").single();
         if (sourceError) throw sourceError;
         source = newSource;
+        sourceId = source.id;
         const { data: newRun, error: runError } = await db.from("task_generation_runs").insert({
           user_id: userId, source_id: source.id, status: "processing", started_at: new Date().toISOString(),
         }).select("id").single();
         if (runError) throw runError;
         run = newRun;
+        runId = run.id;
       }
-      sourceId = source.id;
-      runId = run.id;
 
       const existing = await db.from("client_tasks")
         .select("title,description,status,due_date").eq("client_id", data.clientId)
