@@ -75,6 +75,14 @@ function findText(payload: any): string {
   let result = "";
   if (payload.mimeType === "text/plain" && payload.body?.data) {
     try { result += decodeBase64Url(payload.body.data) + "\n"; } catch { /* ignore malformed MIME part */ }
+  } else if (payload.mimeType === "text/html" && payload.body?.data) {
+    try {
+      const html = decodeBase64Url(payload.body.data);
+      const plain = html.replace(/<\\/(p|div|li|tr|h[1-6])>/gi, "\\n")
+        .replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&#39;/gi, "'").replace(/&quot;/gi, '"');
+      result += plain + "\\n";
+    } catch { /* ignore malformed HTML part */ }
   }
   for (const part of payload.parts || []) result += findText(part);
   return result.slice(0, 30000);
