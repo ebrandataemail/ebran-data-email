@@ -38,8 +38,14 @@ export const createTaskWebhookEndpoint = createServerFn({ method: "POST" })
     if (error) throw error;
     const supabaseUrl = process.env["SUPABASE_URL"]?.replace(/\/+$/, "");
     if (!supabaseUrl) throw new Error("SUPABASE_URL belum dikonfigurasi di server.");
-    return { ...endpoint, webhookUrl: supabaseUrl + "/functions/v1/task-intake-webhook",
-      authorizationHeader: "Bearer " + token };
+    const isWhatsApp = data.sourceType === "whatsapp";
+    const webhookUrl = isWhatsApp
+      ? supabaseUrl + "/functions/v1/whatsapp-cloud-webhook?endpoint_id=" + endpoint.id
+      : supabaseUrl + "/functions/v1/task-intake-webhook";
+    return { ...endpoint, webhookUrl,
+      authorizationHeader: isWhatsApp ? null : "Bearer " + token,
+      verificationToken: isWhatsApp ? token : null,
+      provider: isWhatsApp ? "whatsapp_cloud_api" : "generic_webhook" };
   });
 
 export const listPendingTaskIntakes = createServerFn({ method: "POST" })
