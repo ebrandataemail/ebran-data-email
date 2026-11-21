@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Bot, Check, FileUp, Link2, Loader2, Plus, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Check, FileUp, Link2, Loader2, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const clientProjects = useMemo(() => projects.filter((p) => p.client_id === clientId), [projects, clientId]);
+  useEffect(() => { if (!clientId && clients.length) setClientId(clients[0].id); }, [clients, clientId]);
 
   async function generate() {
     if (!clientId) return toast.error("Pilih client terlebih dahulu.");
