@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "");
     if (action === "scheduled-task-auto-sync") {
-      const supplied = req.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "") || "";
+      const supplied = req.headers.get("apikey") || req.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "") || "";
       if (!serviceKey || supplied !== serviceKey) return json({ error: "Unauthorized scheduled Gmail sync." }, 401);
       return json(await syncGmailAutomationRules(null));
     }
