@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Check, FileUp, Link2, Loader2, Sparkles, X } from "lucide-react";
+import { Bot, Check, FileUp, Link2, Loader2, Mic, Sparkles, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,9 +74,55 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
   const [draft, setDraft] = useState<DraftResult | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [recording, setRecording] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
   const clientProjects = useMemo(() => projects.filter((p) => p.client_id === clientId), [projects, clientId]);
   useEffect(() => { if (!clientId && clients.length) setClientId(clients[0].id); }, [clients, clientId]);
+
+  useEffect(() => () => {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
+  async function toggleRecording() {
+    if (recording) {
+      recorderRef.current?.stop();
+      return;
+    }
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        throw new Error("Browser ini belum mendukung perekaman suara.");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      recordedChunksRef.current = [];
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : undefined;
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) recordedChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        const type = recorder.mimeType || "audio/webm";
+        const blob = new Blob(recordedChunksRef.current, { type });
+        if (blob.size) setFile(new File([blob], "voice-note.webm", { type }));
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        recorderRef.current = null;
+        setRecording(false);
+        if (blob.size) toast.success("Rekaman suara siap dianalisis.");
+      };
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      toast.error(error instanceof Error ? error.message : "Tidak dapat memulai rekaman.");
+    }
+  }
 
   async function generate() {
     if (!clientId) return toast.error("Pilih client terlebih dahulu.");
@@ -180,6 +226,10 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}><FileUp className="mr-1.5 size-4" /> Lampirkan file</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => void toggleRecording()} disabled={busy}>
+              {recording ? <Square className="mr-1.5 size-3.5" /> : <Mic className="mr-1.5 size-3.5" />}
+              {recording ? "Stop rekaman" : "Rekam suara"}
+            </Button>
             {file && <span className="max-w-52 truncate text-xs text-muted-foreground">{file.name} <button type="button" onClick={() => setFile(null)} aria-label="Hapus file"><X className="inline size-3" /></button></span>}
           </div>
           <Button type="button" size="sm" onClick={() => void generate()} disabled={busy || !clients.length}>
