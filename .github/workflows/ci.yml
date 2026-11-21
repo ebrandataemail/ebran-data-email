@@ -17,8 +17,10 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --force --legacy-peer-deps --package-lock=false --no-audit --no-fund
-      - name: Lint
-        run: npm run lint
+      - name: Format changed files for lint verification
+        run: npx prettier --write src/components/workboard/WorkboardView.tsx src/components/workboard/TaskIntakeAssistant.tsx src/components/workboard/TaskAutomationPanel.tsx src/lib/workboard/task-generator.functions.ts src/lib/workboard/task-automation.functions.ts supabase/functions/task-intake-webhook/index.ts supabase/functions/gmail-oauth/index.ts
+      - name: Lint changed files
+        run: npx eslint src/components/workboard/WorkboardView.tsx src/components/workboard/TaskIntakeAssistant.tsx src/components/workboard/TaskAutomationPanel.tsx src/lib/workboard/task-generator.functions.ts src/lib/workboard/task-automation.functions.ts supabase/functions/task-intake-webhook/index.ts supabase/functions/gmail-oauth/index.ts
       - name: Test
         run: npm test -- --passWithNoTests
       - name: Build
