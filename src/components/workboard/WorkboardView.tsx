@@ -67,13 +67,14 @@ export function WorkboardContent() {
   const selectedTask = boardTasks.find((task) => task.id === selectedTaskId) ?? null;
 
   // Scroll only after React has rendered the selected task detail in Graphic Workspace.
+  const selectedTaskIdToScroll = selectedTask?.id ?? null;
   useEffect(() => {
-    if (!selectedTask) return;
+    if (!selectedTaskIdToScroll) return;
     document.getElementById("graphic-task-detail")?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
-  }, [selectedTask?.id]);
+  }, [selectedTaskIdToScroll]);
   const latestActivities = activities.slice(0, 8);
   const counts = [
     { label: "Total client", value: clients.length, icon: Users },
