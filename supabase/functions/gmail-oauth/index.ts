@@ -105,6 +105,119 @@ async function refreshAccessToken(refreshToken: string) {
   return data.access_token as string;
 }
 
+
+async function syncGmailAutomationRules(userId: string | null, requestedAccountId = "") {
+  const query = admin.from("task_automation_rules")
+    .select("id,name,user_id,trigger_config,last_checked_at")
+    .eq("source_type", "gmail").eq("enabled", true);
+  if (userId) query.eq("user_id", userId);
+  const { data: rules, error: rulesError } = await query;
+  if (rulesError) throw rulesError;
+  const matchingRules = (rules || []).filter((rule: any) =>
+    (!requestedAccountId || rule.trigger_config?.emailAccountId === requestedAccountId));
+  const accountKeys = [...new Set(matchingRules.map((rule: any) =>
+    String(rule.user_id) + ":" + String(rule.trigger_config?.emailAccountId || "")).filter((key: string) => !key.endsWith(":")))];
+  let scanned = 0, imported = 0, ignored = 0, duplicates = 0, reauthRequired = 0;
+  const now = new Date();
+  for (const accountKey of accountKeys) {
+    const [ownerId, accountId] = accountKey.split(":");
+    const { data: account } = await admin.from("email_accounts").select("id,email")
+      .eq("id", accountId).eq("user_id", ownerId).maybeSingle();
+    if (!account) continue;
+    const { data: connection } = await admin.from("gmail_mailbox_connections")
+      .select("google_email,refresh_token_ciphertext,status").eq("email_account_id", accountId)
+      .eq("user_id", ownerId).maybeSingle();
+    if (!connection || connection.status !== "connected") continue;
+    let accessToken: string;
+    try {
+      accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
+    } catch {
+      await admin.from("gmail_mailbox_connections").update({ status: "reauth_required", updated_at: now.toISOString() })
+        .eq("email_account_id", accountId).eq("user_id", ownerId);
+      reauthRequired++;
+      continue;
+    }
+    for (const rule of matchingRules.filter((item: any) =>
+      item.user_id === ownerId && item.trigger_config?.emailAccountId === accountId)) {
+      const config = rule.trigger_config || {};
+      const cursor = rule.last_checked_at ? new Date(rule.last_checked_at).getTime() : now.getTime() - 10 * 60_000;
+      const afterSeconds = Math.max(0, Math.floor((cursor - 60_000) / 1000));
+      const listResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX&q=after:" + afterSeconds, {
+        headers: { Authorization: "Bearer " + accessToken },
+      });
+      const list = await listResponse.json();
+      if (!listResponse.ok) throw new Error("Gagal memeriksa inbox Gmail untuk aturan " + rule.name + ".");
+      let ruleImported = 0;
+      for (const listed of list.messages || []) {
+        scanned++;
+        const messageResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/" + listed.id + "?format=full", {
+          headers: { Authorization: "Bearer " + accessToken },
+        });
+        const message = await messageResponse.json();
+        if (!messageResponse.ok) continue;
+        const headers = message.payload?.headers || [];
+        const getHeader = (name: string) => headers.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value || "";
+        const from = String(getHeader("From"));
+        const subject = String(getHeader("Subject") || "(Tanpa subjek)");
+        const bodyText = [message.snippet || "", findText(message.payload)].filter(Boolean).join("\n").slice(0, 24000);
+        const haystacks = { subject: subject.toLowerCase(), sender: from.toLowerCase(), body: bodyText.toLowerCase() };
+        const positive = [
+          ...(Array.isArray(config.subjectIncludes) ? config.subjectIncludes.map((v: string) => [haystacks.subject, String(v).toLowerCase()]) : []),
+          ...(Array.isArray(config.senderIncludes) ? config.senderIncludes.map((v: string) => [haystacks.sender, String(v).toLowerCase()]) : []),
+          ...(Array.isArray(config.bodyIncludes) ? config.bodyIncludes.map((v: string) => [haystacks.body, String(v).toLowerCase()]) : []),
+        ].filter((pair: string[]) => pair[1].trim());
+        const negative = [
+          ...(Array.isArray(config.subjectExcludes) ? config.subjectExcludes.map((v: string) => [haystacks.subject, String(v).toLowerCase()]) : []),
+          ...(Array.isArray(config.senderExcludes) ? config.senderExcludes.map((v: string) => [haystacks.sender, String(v).toLowerCase()]) : []),
+          ...(Array.isArray(config.bodyExcludes) ? config.bodyExcludes.map((v: string) => [haystacks.body, String(v).toLowerCase()]) : []),
+        ].filter((pair: string[]) => pair[1].trim());
+        const positiveMatch = config.matchMode === "all"
+          ? positive.length > 0 && positive.every((pair: string[]) => pair[0].includes(pair[1].trim()))
+          : positive.some((pair: string[]) => pair[0].includes(pair[1].trim()));
+        if (!positiveMatch || negative.some((pair: string[]) => pair[0].includes(pair[1].trim()))) { ignored++; continue; }
+
+        const { data: existingSource } = await admin.from("task_intake_sources").select("id")
+          .eq("user_id", ownerId).contains("metadata", { gmail_message_id: message.id }).maybeSingle();
+        if (existingSource) { duplicates++; continue; }
+        const clientId = String(config.clientId || "");
+        const projectId = config.projectId ? String(config.projectId) : null;
+        if (!clientId) continue;
+        const receivedAt = message.internalDate ? new Date(Number(message.internalDate)).toISOString() : null;
+        const { data: source, error: sourceError } = await admin.from("task_intake_sources").insert({
+          user_id: ownerId, client_id: clientId, project_id: projectId, source_type: "email",
+          source_label: "Gmail Otomatis · " + from + " · " + subject,
+          source_uri: "https://mail.google.com/mail/u/0/#all/" + message.id,
+          extracted_text: ["Email masuk (aturan otomatis: " + rule.name + ")", "Dari: " + from,
+            "Subjek: " + subject, "Tanggal: " + (receivedAt || "Tidak diketahui"), "", bodyText].join("\n"),
+          metadata: { integration_source: "gmail", gmail_message_id: message.id,
+            gmail_thread_id: message.threadId || null, email_account_id: accountId,
+            automation_rule_id: rule.id, automation_rule_name: rule.name },
+          status: "received",
+        }).select("id").single();
+        if (sourceError || !source) {
+          if (sourceError?.code === "23505") duplicates++;
+          continue;
+        }
+        const { error: runError } = await admin.from("task_generation_runs").insert({
+          user_id: ownerId, source_id: source.id, status: "queued", prompt_version: "task-generator-v1",
+        });
+        if (runError) {
+          await admin.from("task_intake_sources").update({ status: "failed" }).eq("id", source.id);
+          continue;
+        }
+        imported++; ruleImported++;
+      }
+      await admin.from("task_automation_rules").update({
+        last_checked_at: now.toISOString(),
+        ...(ruleImported ? { last_triggered_at: now.toISOString() } : {}),
+      }).eq("id", rule.id).eq("user_id", ownerId);
+    }
+    await admin.from("gmail_mailbox_connections").update({ last_checked_at: now.toISOString(), updated_at: now.toISOString() })
+      .eq("email_account_id", accountId).eq("user_id", ownerId);
+  }
+  return { ok: true, scanned, imported, ignored, duplicates, reauthRequired };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const url = new URL(req.url);
@@ -161,9 +274,14 @@ Deno.serve(async (req) => {
     }
 
     if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
-    const user = await requireUser(req);
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "");
+    if (action === "scheduled-task-auto-sync") {
+      const supplied = req.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "") || "";
+      if (!serviceKey || supplied !== serviceKey) return json({ error: "Unauthorized scheduled Gmail sync." }, 401);
+      return json(await syncGmailAutomationRules(null));
+    }
+    const user = await requireUser(req);
 
     if (action === "connect") {
       if (!appOrigin) return json({ error: "APP_URL belum dikonfigurasi ke domain aplikasi produksi." }, 503);
@@ -322,122 +440,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "task-auto-sync") {
-      const requestedAccountId = String(body.emailAccountId || "");
-      const { data: rules, error: rulesError } = await admin.from("task_automation_rules")
-        .select("id,name,user_id,trigger_config,last_checked_at")
-        .eq("user_id", user.id).eq("source_type", "gmail").eq("enabled", true);
-      if (rulesError) throw rulesError;
-      const matchingRules = (rules || []).filter((rule: any) =>
-        !requestedAccountId || rule.trigger_config?.emailAccountId === requestedAccountId);
-      const accountIds = [...new Set(matchingRules.map((rule: any) => String(rule.trigger_config?.emailAccountId || "")).filter(Boolean))];
-      let scanned = 0, imported = 0, ignored = 0, duplicates = 0, reauthRequired = 0;
-      const now = new Date();
-      for (const accountId of accountIds) {
-        const { data: account } = await admin.from("email_accounts").select("id,email")
-          .eq("id", accountId).eq("user_id", user.id).maybeSingle();
-        if (!account) continue;
-        const { data: connection } = await admin.from("gmail_mailbox_connections")
-          .select("google_email,refresh_token_ciphertext,status").eq("email_account_id", accountId)
-          .eq("user_id", user.id).maybeSingle();
-        if (!connection || connection.status !== "connected") continue;
-        let accessToken: string;
-        try {
-          accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
-        } catch {
-          await admin.from("gmail_mailbox_connections").update({ status: "reauth_required", updated_at: now.toISOString() })
-            .eq("email_account_id", accountId).eq("user_id", user.id);
-          reauthRequired++;
-          continue;
-        }
-        for (const rule of matchingRules.filter((item: any) => item.trigger_config?.emailAccountId === accountId)) {
-          const config = rule.trigger_config || {};
-          const includes = [
-            ...(Array.isArray(config.subjectIncludes) ? config.subjectIncludes : []),
-            ...(Array.isArray(config.senderIncludes) ? config.senderIncludes : []),
-            ...(Array.isArray(config.bodyIncludes) ? config.bodyIncludes : []),
-          ].map((value: unknown) => String(value).trim().toLowerCase()).filter(Boolean);
-          const excludes = [
-            ...(Array.isArray(config.subjectExcludes) ? config.subjectExcludes : []),
-            ...(Array.isArray(config.senderExcludes) ? config.senderExcludes : []),
-            ...(Array.isArray(config.bodyExcludes) ? config.bodyExcludes : []),
-          ].map((value: unknown) => String(value).trim().toLowerCase()).filter(Boolean);
-          if (!includes.length) continue;
-          const cursor = rule.last_checked_at ? new Date(rule.last_checked_at).getTime() : now.getTime() - 10 * 60_000;
-          const afterSeconds = Math.max(0, Math.floor((cursor - 60_000) / 1000));
-          const listResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX&q=after:" + afterSeconds, {
-            headers: { Authorization: "Bearer " + accessToken },
-          });
-          const list = await listResponse.json();
-          if (!listResponse.ok) throw new Error("Gagal memeriksa inbox Gmail untuk aturan " + rule.name + ".");
-          for (const listed of list.messages || []) {
-            scanned++;
-            const messageResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/" + listed.id + "?format=full", {
-              headers: { Authorization: "Bearer " + accessToken },
-            });
-            const message = await messageResponse.json();
-            if (!messageResponse.ok) continue;
-            const headers = message.payload?.headers || [];
-            const getHeader = (name: string) => headers.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value || "";
-            const from = String(getHeader("From"));
-            const subject = String(getHeader("Subject") || "(Tanpa subjek)");
-            const bodyText = [message.snippet || "", findText(message.payload)].filter(Boolean).join("\n").slice(0, 24000);
-            const haystacks = {
-              subject: subject.toLowerCase(), sender: from.toLowerCase(), body: bodyText.toLowerCase(),
-            };
-            const positive = [
-              ...(Array.isArray(config.subjectIncludes) ? config.subjectIncludes.map((v: string) => [haystacks.subject, String(v).toLowerCase()]) : []),
-              ...(Array.isArray(config.senderIncludes) ? config.senderIncludes.map((v: string) => [haystacks.sender, String(v).toLowerCase()]) : []),
-              ...(Array.isArray(config.bodyIncludes) ? config.bodyIncludes.map((v: string) => [haystacks.body, String(v).toLowerCase()]) : []),
-            ].filter((pair: string[]) => pair[1].trim());
-            const negative = [
-              ...(Array.isArray(config.subjectExcludes) ? config.subjectExcludes.map((v: string) => [haystacks.subject, String(v).toLowerCase()]) : []),
-              ...(Array.isArray(config.senderExcludes) ? config.senderExcludes.map((v: string) => [haystacks.sender, String(v).toLowerCase()]) : []),
-              ...(Array.isArray(config.bodyExcludes) ? config.bodyExcludes.map((v: string) => [haystacks.body, String(v).toLowerCase()]) : []),
-            ].filter((pair: string[]) => pair[1].trim());
-            const mode = config.matchMode === "all" ? "all" : "any";
-            const positiveMatch = mode === "all"
-              ? positive.every((pair: string[]) => pair[0].includes(pair[1].trim()))
-              : positive.some((pair: string[]) => pair[0].includes(pair[1].trim()));
-            if (!positiveMatch || negative.some((pair: string[]) => pair[0].includes(pair[1].trim()))) { ignored++; continue; }
-
-            const { data: existingSource } = await admin.from("task_intake_sources").select("id")
-              .eq("user_id", user.id).contains("metadata", { gmail_message_id: message.id }).maybeSingle();
-            if (existingSource) { duplicates++; continue; }
-            const clientId = String(config.clientId || "");
-            const projectId = config.projectId ? String(config.projectId) : null;
-            if (!clientId) continue;
-            const receivedAt = message.internalDate ? new Date(Number(message.internalDate)).toISOString() : null;
-            const { data: source, error: sourceError } = await admin.from("task_intake_sources").insert({
-              user_id: user.id, client_id: clientId, project_id: projectId, source_type: "email",
-              source_label: "Gmail Otomatis · " + from + " · " + subject,
-              source_uri: "https://mail.google.com/mail/u/0/#all/" + message.id,
-              extracted_text: ["Email masuk (aturan otomatis: " + rule.name + ")", "Dari: " + from,
-                "Subjek: " + subject, "Tanggal: " + (receivedAt || "Tidak diketahui"), "", bodyText].join("\n"),
-              metadata: { integration_source: "gmail", gmail_message_id: message.id,
-                gmail_thread_id: message.threadId || null, email_account_id: accountId,
-                automation_rule_id: rule.id, automation_rule_name: rule.name },
-              status: "received",
-            }).select("id").single();
-            if (sourceError || !source) {
-              if (sourceError?.code === "23505") duplicates++;
-              continue;
-            }
-            const { error: runError } = await admin.from("task_generation_runs").insert({
-              user_id: user.id, source_id: source.id, status: "queued", prompt_version: "task-generator-v1",
-            });
-            if (runError) {
-              await admin.from("task_intake_sources").update({ status: "failed" }).eq("id", source.id);
-              continue;
-            }
-            imported++;
-          }
-          await admin.from("task_automation_rules").update({ last_checked_at: now.toISOString(), last_triggered_at: imported ? now.toISOString() : rule.last_triggered_at })
-            .eq("id", rule.id).eq("user_id", user.id);
-        }
-        await admin.from("gmail_mailbox_connections").update({ last_checked_at: now.toISOString(), updated_at: now.toISOString() })
-          .eq("email_account_id", accountId).eq("user_id", user.id);
-      }
-      return json({ ok: true, scanned, imported, ignored, duplicates, reauthRequired });
+      return json(await syncGmailAutomationRules(user.id, String(body.emailAccountId || "")));
     }
 
     if (action === "disconnect") {
