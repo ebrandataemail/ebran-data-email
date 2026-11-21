@@ -8,7 +8,7 @@
 - Secure webhook endpoints use one-time random Bearer secrets; only SHA-256 hashes are stored. Webhook event IDs are idempotent.
 - Existing webhook and Gmail sources can be processed into task drafts without duplicating their intake records.
 - Task approval is transactional through `approve_task_draft_items`. Selected child items include their pending parent items; task creation, provenance links, draft-item status and draft status commit or roll back together.
-- Workboard Copilot has immediate rules-based overdue/stale suggestions and a daily `pg_cron` job at 02:00 UTC (09:00 WIB) to generate suggestions even when Workboard is not open.
+- Workboard Copilot has immediate rules-based overdue/stale suggestions and a daily `pg_cron` job at 02:00 UTC (09:00 WIB) for overdue, stale and repeated-completion patterns. Repeated titles completed at least three times in 90 days can produce a recurring-template suggestion.
 
 ## Gmail sync
 - Requires the existing Gmail OAuth connection to be `connected` with the read-only Gmail scope.
