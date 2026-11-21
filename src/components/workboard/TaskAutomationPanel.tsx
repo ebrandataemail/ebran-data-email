@@ -16,7 +16,7 @@ import {
 type Suggestion = { id: string; task_id: string | null; client_id: string | null; suggestion_type: string; title: string; description: string; evidence: Record<string, unknown> };
 type Intake = { id: string; client_id: string; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; created_at: string; metadata?: Record<string, any> };\ntype GmailRule = { id: string; name: string; trigger_config: Record<string, any>; enabled: boolean; last_checked_at: string | null; last_triggered_at: string | null };
 type DraftItem = { id: string; title: string; description: string; priority: string; dueDate: string | null; assignee: string | null; confidence: number; missingInformation: string[]; parentDraftItemId: string | null };
-type DraftResult = { draftId: string; summary: string; questions: string[]; duplicateWarnings: string[]; items: DraftItem[] };
+type DraftResult = { draftId: string; title?: string; summary: string; questions: string[]; duplicateWarnings: string[]; items: DraftItem[] };
 
 export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, onSelectTask }: {
   clients: WorkboardClient[]; projects: WorkboardProject[]; tasks: WorkboardTask[];
@@ -30,7 +30,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [intakes, setIntakes] = useState<Intake[]>([]);
   const [gmailAccounts, setGmailAccounts] = useState<{ id: string; email: string; provider: string }[]>([]);
   const [emailAccountId, setEmailAccountId] = useState("");\n  const [gmailRules, setGmailRules] = useState<GmailRule[]>([]);\n  const [ruleName, setRuleName] = useState("Email masuk → Workboard Task");\n  const [matchMode, setMatchMode] = useState<"any" | "all">("any");\n  const [subjectIncludes, setSubjectIncludes] = useState("");\n  const [senderIncludes, setSenderIncludes] = useState("");\n  const [bodyIncludes, setBodyIncludes] = useState("");\n  const autoSyncRunning = useRef(false);\n  const autoProcessedSources = useRef(new Set<string>());
-  const [draft, setDraft] = useState<DraftResult | null>(null);
+  const [draft, setDraft] = useState<DraftResult | null>(null);\n  const [pendingDrafts, setPendingDrafts] = useState<DraftResult[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -287,6 +287,13 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
             <Button size="sm" variant="outline" disabled={busy} onClick={() => void processIntake(item)}>Analisis</Button>
           </li>)}</ul> : <p className="mt-2 text-xs text-muted-foreground">Belum ada event webhook yang menunggu diproses.</p>}
         </div>
+        {pendingDrafts.length > 0 && <div className="mt-3 space-y-2 border-t border-border pt-3">
+          <div className="flex items-center justify-between"><h3 className="text-xs font-semibold text-foreground">Draft Task menunggu persetujuan</h3><span className="text-[11px] text-muted-foreground">{pendingDrafts.length} draft</span></div>
+          {pendingDrafts.map((item) => <div key={item.draftId} className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 p-2">
+            <div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{item.title || "Draft dari email"}</p><p className="text-[11px] text-muted-foreground">{item.items.length} task · {item.summary.slice(0, 110)}</p></div>
+            <Button size="sm" variant="outline" onClick={() => { setDraft(item); setSelectedItems(item.items.map((task) => task.id)); }}>Review</Button>
+          </div>)}
+        </div>}
         {draft && <div className="mt-3 space-y-2 border-t border-border pt-3">
           <p className="text-xs font-semibold text-foreground">Review hasil analisis webhook</p>
           <p className="rounded-lg bg-muted/50 p-2 text-xs text-foreground">{draft.summary}</p>
