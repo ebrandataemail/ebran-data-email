@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { TaskIntakeAssistant } from "./TaskIntakeAssistant";
 import {
   Search,
   RefreshCw,
@@ -189,6 +190,7 @@ export function WorkboardContent() {
           </div>
         )}
       </div>
+      <TaskIntakeAssistant clients={clients} projects={projects} onCreated={refresh} />
       <TaskBoard
         query={query}
         tasks={boardTasks}
