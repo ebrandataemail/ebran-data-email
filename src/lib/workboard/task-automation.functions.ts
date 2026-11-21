@@ -120,3 +120,106 @@ export const dismissTaskCopilotSuggestion = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+
+export type GmailTaskRuleInput = {
+  name: string;
+  emailAccountId: string;
+  clientId: string;
+  projectId?: string | null;
+  matchMode: "any" | "all";
+  subjectIncludes: string[];
+  senderIncludes: string[];
+  bodyIncludes: string[];
+  subjectExcludes: string[];
+  senderExcludes: string[];
+  bodyExcludes: string[];
+};
+
+export const listGmailTaskAutomationRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await (context.supabase as any).from("task_automation_rules")
+      .select("id,name,trigger_config,enabled,last_checked_at,last_triggered_at,created_at")
+      .eq("user_id", context.userId).eq("source_type", "gmail")
+      .order("created_at", { ascending: false }).limit(50);
+    if (error) throw error;
+    return data ?? [];
+  });
+
+export const createGmailTaskAutomationRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: GmailTaskRuleInput) => {
+    const split = (values: unknown) => (Array.isArray(values) ? values : [])
+      .map((value) => String(value ?? "").trim().slice(0, 120)).filter(Boolean).slice(0, 20);
+    const result: GmailTaskRuleInput = {
+      name: String(input?.name ?? "").trim().slice(0, 100),
+      emailAccountId: String(input?.emailAccountId ?? ""),
+      clientId: String(input?.clientId ?? ""),
+      projectId: input?.projectId ?? null,
+      matchMode: input?.matchMode === "all" ? "all" : "any",
+      subjectIncludes: split(input?.subjectIncludes),
+      senderIncludes: split(input?.senderIncludes),
+      bodyIncludes: split(input?.bodyIncludes),
+      subjectExcludes: split(input?.subjectExcludes),
+      senderExcludes: split(input?.senderExcludes),
+      bodyExcludes: split(input?.bodyExcludes),
+    };
+    if (!result.name) throw new Error("Nama aturan wajib diisi.");
+    if (!UUID.test(result.emailAccountId) || !UUID.test(result.clientId)) throw new Error("Pilih akun Gmail dan client yang valid.");
+    if (result.projectId && !UUID.test(result.projectId)) throw new Error("Project tidak valid.");
+    if (![...result.subjectIncludes, ...result.senderIncludes, ...result.bodyIncludes].length) {
+      throw new Error("Isi minimal satu kriteria: subject, pengirim, atau isi email.");
+    }
+    return result;
+  })
+  .handler(async ({ data, context }) => {
+    const db = context.supabase as any;
+    const userId = context.userId;
+    const { data: account, error: accountError } = await db.from("email_accounts").select("id")
+      .eq("id", data.emailAccountId).eq("user_id", userId).maybeSingle();
+    if (accountError) throw accountError;
+    if (!account) throw new Error("Akun email tidak ditemukan atau akses ditolak.");
+    const { data: connection, error: connectionError } = await db.from("gmail_mailbox_connections")
+      .select("email_account_id,status").eq("email_account_id", data.emailAccountId)
+      .eq("user_id", userId).maybeSingle();
+    if (connectionError) throw connectionError;
+    if (!connection || connection.status !== "connected") throw new Error("Hubungkan akun Gmail terlebih dahulu.");
+    const { data: client, error: clientError } = await db.from("clients").select("id")
+      .eq("id", data.clientId).eq("user_id", userId).maybeSingle();
+    if (clientError) throw clientError;
+    if (!client) throw new Error("Client tidak ditemukan atau akses ditolak.");
+    if (data.projectId) {
+      const { data: project, error } = await db.from("projects").select("id")
+        .eq("id", data.projectId).eq("client_id", data.clientId).eq("user_id", userId).maybeSingle();
+      if (error) throw error;
+      if (!project) throw new Error("Project tidak termasuk client yang dipilih.");
+    }
+    const { data: rule, error } = await db.from("task_automation_rules").insert({
+      user_id: userId, name: data.name, source_type: "gmail", enabled: true,
+      last_checked_at: new Date().toISOString(),
+      trigger_config: {
+        emailAccountId: data.emailAccountId, clientId: data.clientId, projectId: data.projectId,
+        matchMode: data.matchMode, subjectIncludes: data.subjectIncludes, senderIncludes: data.senderIncludes,
+        bodyIncludes: data.bodyIncludes, subjectExcludes: data.subjectExcludes,
+        senderExcludes: data.senderExcludes, bodyExcludes: data.bodyExcludes,
+      },
+      action_config: { mode: "draft_for_approval", autoAnalyze: true },
+    }).select("id,name,trigger_config,enabled,last_checked_at,last_triggered_at,created_at").single();
+    if (error) throw error;
+    return rule;
+  });
+
+export const setGmailTaskAutomationRuleEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { ruleId: string; enabled: boolean }) => {
+    if (!UUID.test(String(input?.ruleId ?? ""))) throw new Error("Aturan tidak valid.");
+    return { ruleId: input.ruleId, enabled: Boolean(input.enabled) };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).from("task_automation_rules")
+      .update({ enabled: data.enabled, updated_at: new Date().toISOString() })
+      .eq("id", data.ruleId).eq("user_id", context.userId).eq("source_type", "gmail");
+    if (error) throw error;
+    return { ok: true };
+  });
