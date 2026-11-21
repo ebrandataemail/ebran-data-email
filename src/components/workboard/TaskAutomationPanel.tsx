@@ -241,7 +241,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
         </Button>
         {gmailAccounts.length > 0 && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
           <p className="text-xs font-semibold text-foreground">Otomatisasi Gmail → Task Workboard</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Email baru diperiksa berkala saat Workboard terbuka. Jika kriteria cocok, AI otomatis membuat draft Task untuk kamu review.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Supabase Cron memeriksa inbox tiap 5 menit setelah Vault dikonfigurasi. Saat Workboard terbuka, AI otomatis menganalisis email cocok menjadi draft Task; jika aplikasi tertutup, draft akan dianalisis saat Workboard dibuka kembali.</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <label className="space-y-1 text-[11px] text-muted-foreground sm:col-span-2">Akun Gmail
               <select value={emailAccountId} onChange={(e) => setEmailAccountId(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground">
