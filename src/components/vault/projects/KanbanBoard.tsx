@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from "react";
+import { useState, type DragEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -11,7 +11,6 @@ import {
   CircleDot,
   Clock,
   CodeXml,
-  Flame,
   FolderKanban,
   GripVertical,
   Mail,
@@ -21,13 +20,11 @@ import {
   PlayCircle,
   Plus,
   Trash2,
-  Users,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +57,24 @@ type Client = WorkspaceData["clients"][number];
 export type KanbanColumnId =
   "things-to-do" | "on-process" | "pending" | "revision" | "finished" | "cancel";
 
+/**
+ * Warna kartu mengikuti STATUS (satu warna per status), bukan warna acak:
+ * lajur, garis aksen kartu, ikon, penghitung, dan avatar client memakai warna yang sama.
+ * Semuanya token design system. Warna peringatan deadline tetap terpisah (merah/kuning).
+ */
+export interface KanbanTone {
+  /** Garis aksen 4px di sisi kiri kartu */
+  bar: string;
+  /** Latar lajur (kolom) */
+  lane: string;
+  /** Wash gradien di bagian atas kartu */
+  card: string;
+  /** Warna ikon header lajur */
+  icon: string;
+  /** Penghitung dan avatar client */
+  chip: string;
+}
+
 export interface KanbanColumn {
   id: KanbanColumnId;
   title: string;
@@ -67,6 +82,7 @@ export interface KanbanColumn {
   icon: React.ElementType;
   badgeClass: string;
   columnClass: string;
+  tone: KanbanTone;
   aliases: string[];
 }
 
@@ -76,9 +92,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     title: "Things To Do",
     subtitle: "Antrian & Perencanaan",
     icon: CircleDot,
-    badgeClass:
-      "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200",
-    columnClass: "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30",
+    badgeClass: "border-transparent bg-muted-foreground/15 text-foreground/80",
+    columnClass: "bg-muted-foreground/[0.08]",
+    tone: {
+      bar: "bg-muted-foreground/60",
+      lane: "bg-muted-foreground/[0.08]",
+      card: "from-muted-foreground/[0.07]",
+      icon: "text-muted-foreground",
+      chip: "bg-muted-foreground/15 text-foreground/80",
+    },
     aliases: ["things-to-do", "queue-on-process"],
   },
   {
@@ -86,8 +108,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     title: "On Process",
     subtitle: "Sedang Dikerjakan",
     icon: PlayCircle,
-    badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 border-blue-200",
-    columnClass: "border-blue-200 dark:border-blue-800/60 bg-blue-50/30 dark:bg-blue-950/20",
+    badgeClass: "border-transparent bg-wb-blue-strong/15 text-wb-blue-strong",
+    columnClass: "bg-wb-blue-strong/[0.07]",
+    tone: {
+      bar: "bg-wb-blue-strong",
+      lane: "bg-wb-blue-strong/[0.07]",
+      card: "from-wb-blue-strong/[0.08]",
+      icon: "text-wb-blue-strong",
+      chip: "bg-wb-blue-strong/15 text-wb-blue-strong",
+    },
     aliases: ["on-process", "active"],
   },
   {
@@ -95,9 +124,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     title: "Pending",
     subtitle: "Tertunda / Menunggu",
     icon: Clock,
-    badgeClass:
-      "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 border-amber-200",
-    columnClass: "border-amber-200 dark:border-amber-800/60 bg-amber-50/30 dark:bg-amber-950/20",
+    badgeClass: "border-transparent bg-warning/25 text-warning-foreground",
+    columnClass: "bg-warning/[0.12]",
+    tone: {
+      bar: "bg-warning",
+      lane: "bg-warning/[0.12]",
+      card: "from-warning/[0.14]",
+      icon: "text-warning-foreground",
+      chip: "bg-warning/25 text-warning-foreground",
+    },
     aliases: ["pending", "paused"],
   },
   {
@@ -105,10 +140,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     title: "Revisi / Review",
     subtitle: "Evaluasi & Perbaikan",
     icon: AlertCircle,
-    badgeClass:
-      "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200 border-purple-200",
-    columnClass:
-      "border-purple-200 dark:border-purple-800/60 bg-purple-50/30 dark:bg-purple-950/20",
+    badgeClass: "border-transparent bg-wb-purple/15 text-wb-purple",
+    columnClass: "bg-wb-purple/[0.07]",
+    tone: {
+      bar: "bg-wb-purple",
+      lane: "bg-wb-purple/[0.07]",
+      card: "from-wb-purple/[0.08]",
+      icon: "text-wb-purple",
+      chip: "bg-wb-purple/15 text-wb-purple",
+    },
     aliases: ["revision"],
   },
   {
@@ -116,10 +156,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     title: "Finished",
     subtitle: "Selesai",
     icon: CheckCircle2,
-    badgeClass:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border-emerald-200",
-    columnClass:
-      "border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/30 dark:bg-emerald-950/20",
+    badgeClass: "border-transparent bg-success/15 text-success-foreground",
+    columnClass: "bg-success/[0.08]",
+    tone: {
+      bar: "bg-success",
+      lane: "bg-success/[0.08]",
+      card: "from-success/[0.09]",
+      icon: "text-success-foreground",
+      chip: "bg-success/15 text-success-foreground",
+    },
     aliases: ["finished", "done", "archived"],
   },
   {
@@ -127,8 +172,15 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     title: "Cancel / STOP",
     subtitle: "Dibatalkan",
     icon: XCircle,
-    badgeClass: "bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 border-rose-200",
-    columnClass: "border-rose-200 dark:border-rose-800/60 bg-rose-50/30 dark:bg-rose-950/20",
+    badgeClass: "border-transparent bg-destructive/15 text-destructive",
+    columnClass: "bg-destructive/[0.06]",
+    tone: {
+      bar: "bg-destructive",
+      lane: "bg-destructive/[0.06]",
+      card: "from-destructive/[0.07]",
+      icon: "text-destructive",
+      chip: "bg-destructive/15 text-destructive",
+    },
     aliases: ["cancel"],
   },
 ];
@@ -141,6 +193,33 @@ export function mapProjectToColumn(status: string): KanbanColumnId {
     }
   }
   return "on-process";
+}
+
+/** Penghitung aset terhubung; tiap jenis punya rona sendiri, dipudarkan saat kosong. */
+function AssetPill({
+  icon,
+  count,
+  label,
+  className,
+}: {
+  icon: ReactNode;
+  count: number;
+  label: string;
+  className: string;
+}) {
+  return (
+    <span
+      title={`${count} ${label}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums [&_svg]:size-3.5",
+        className,
+        count === 0 && "opacity-40",
+      )}
+    >
+      {icon}
+      {count}
+    </span>
+  );
 }
 
 interface KanbanBoardProps {
@@ -281,10 +360,10 @@ export function KanbanBoard({
             placeholder="Cari proyek atau client…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full sm:w-56"
+            className="h-9 w-full bg-card sm:w-56"
           />
           <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-            <SelectTrigger className="h-9 w-full sm:w-44">
+            <SelectTrigger className="h-9 w-full bg-card sm:w-44">
               <SelectValue placeholder="Filter Client" />
             </SelectTrigger>
             <SelectContent>
@@ -298,7 +377,7 @@ export function KanbanBoard({
           </Select>
 
           <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-40">
+            <SelectTrigger className="h-9 w-full bg-card sm:w-40">
               <SelectValue placeholder="Prioritas" />
             </SelectTrigger>
             <SelectContent>
@@ -310,7 +389,7 @@ export function KanbanBoard({
           </Select>
 
           <Select value={deadlineFilter} onValueChange={setDeadlineFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-44">
+            <SelectTrigger className="h-9 w-full bg-card sm:w-44">
               <SelectValue placeholder="Filter Tenggat" />
             </SelectTrigger>
             <SelectContent>
@@ -347,20 +426,27 @@ export function KanbanBoard({
               onDragLeave={() => handleDragLeave(col.id)}
               onDrop={(e) => handleDrop(e, col.id)}
               className={cn(
-                "flex flex-col rounded-xl border p-3 transition-colors min-h-[480px]",
-                col.columnClass,
-                isOver && "ring-2 ring-primary border-primary bg-primary/5",
+                "flex min-h-[480px] min-w-0 flex-col rounded-xl p-3 transition-colors",
+                col.tone.lane,
+                isOver && "ring-2 ring-primary",
               )}
             >
               {/* Column Header */}
-              <div className="mb-3 flex items-center justify-between border-b pb-2">
-                <div className="flex items-center gap-2">
-                  <Icon className="size-4 shrink-0" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">{col.title}</span>
+              <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Icon className={cn("size-4 shrink-0", col.tone.icon)} />
+                  <span className="truncate text-sm font-semibold text-foreground">
+                    {col.title}
+                  </span>
                 </div>
-                <Badge variant="outline" className={cn("text-[11px]", col.badgeClass)}>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums",
+                    col.tone.chip,
+                  )}
+                >
                   {columnProjects.length}
-                </Badge>
+                </span>
               </div>
 
               {/* Cards Container */}
@@ -374,74 +460,89 @@ export function KanbanBoard({
                   const priorityInfo = getPriorityInfo(parsedDesc.priority);
 
                   return (
-                    <Card
+                    <div
                       key={project.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, project.id)}
                       onDragEnd={handleDragEnd}
                       className={cn(
-                        "group relative cursor-grab border bg-card p-3 shadow-sm transition-all hover:shadow-md active:cursor-grabbing",
-                        isDragging && "opacity-40 scale-95 ring-2 ring-primary",
+                        // Kartu berwarna: wash gradien status di atas, garis aksen di kiri.
+                        "group relative cursor-grab overflow-hidden rounded-lg border border-border bg-linear-to-b to-card p-3 pl-4 shadow-soft transition-shadow hover:shadow-card active:cursor-grabbing",
+                        col.tone.card,
+                        isDragging && "scale-95 opacity-40 ring-2 ring-primary",
                         isMoving && "animate-pulse opacity-70",
                         deadlineInfo?.cardBorderClass,
                       )}
                     >
-                      <CardContent className="p-0 space-y-2">
-                        {/* Card Header & Title */}
+                      <span
+                        aria-hidden
+                        className={cn("absolute inset-y-0 left-0 w-1", col.tone.bar)}
+                      />
+                      <div className="space-y-2.5">
+                        {/* Title + menu */}
                         <div className="flex items-start justify-between gap-1.5">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1">
-                              <GripVertical className="size-3.5 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0" />
-                              <h4 className="truncate text-xs font-semibold text-foreground">
+                              <GripVertical className="size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground" />
+                              <h4 className="truncate text-sm font-semibold text-foreground">
                                 {project.name}
                               </h4>
                             </div>
                             {project.clientName && (
-                              <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                                <Users className="size-3 shrink-0" />
+                              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <span
+                                  aria-hidden
+                                  className={cn(
+                                    "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                                    col.tone.chip,
+                                  )}
+                                >
+                                  {project.clientName.slice(0, 1).toUpperCase()}
+                                </span>
                                 <span className="truncate font-medium">{project.clientName}</span>
                               </div>
                             )}
                           </div>
 
-                          <DropdownMenu>
+                          {/* modal={false}: "Edit Data" membuka Dialog di halaman induk; dropdown modal
+                              bisa meninggalkan pointer-events: none di body setelah dialog ditutup. */}
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button
-                                size="icon"
+                                size="icon-sm"
                                 variant="ghost"
-                                className="size-6 text-muted-foreground hover:text-foreground"
+                                aria-label={`Opsi untuk ${project.name}`}
                               >
-                                <MoreVertical className="size-3.5" />
+                                <MoreVertical />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuLabel className="text-[11px]">
-                                Opsi Proyek
-                              </DropdownMenuLabel>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuLabel className="text-xs">Opsi Proyek</DropdownMenuLabel>
                               <DropdownMenuItem
                                 onClick={() => onEditProject(project)}
-                                className="text-xs"
+                                className="text-sm"
                               >
                                 <Pencil className="mr-1.5 size-3.5" /> Edit Data
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuLabel className="text-[11px]">
-                                Pindah Status
-                              </DropdownMenuLabel>
+                              <DropdownMenuLabel className="text-xs">Pindah Status</DropdownMenuLabel>
                               {KANBAN_COLUMNS.map((targetCol) => (
                                 <DropdownMenuItem
                                   key={targetCol.id}
                                   disabled={col.id === targetCol.id}
                                   onClick={() => handleUpdateStatus(project.id, targetCol.id)}
-                                  className="text-xs"
+                                  className="text-sm"
                                 >
+                                  <span
+                                    className={cn("mr-1.5 size-2 rounded-full", targetCol.tone.bar)}
+                                  />
                                   {targetCol.title}
                                 </DropdownMenuItem>
                               ))}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => handleDeleteProject(project)}
-                                className="text-xs text-destructive"
+                                className="text-sm text-destructive"
                               >
                                 <Trash2 className="mr-1.5 size-3.5" /> Hapus Proyek
                               </DropdownMenuItem>
@@ -449,13 +550,12 @@ export function KanbanBoard({
                           </DropdownMenu>
                         </div>
 
-                        {/* Priority & Deadline Badges Bar */}
-                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                          {/* Priority Badge */}
+                        {/* Priority & deadline */}
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Badge
                             variant="outline"
                             className={cn(
-                              "flex items-center gap-1 text-[10px] py-0.5 px-1.5",
+                              "flex items-center gap-1 px-1.5 py-0.5 text-xs",
                               priorityInfo.badgeClass,
                             )}
                           >
@@ -463,95 +563,90 @@ export function KanbanBoard({
                             {priorityInfo.label}
                           </Badge>
 
-                          {/* Deadline Indicator Badge */}
                           {deadlineInfo && (
                             <Badge
                               variant="outline"
                               className={cn(
-                                "flex items-center gap-1 text-[10px] py-0.5 px-1.5",
+                                "flex items-center gap-1 px-1.5 py-0.5 text-xs",
                                 deadlineInfo.badgeClass,
                               )}
                             >
                               {deadlineInfo.type === "overdue" ? (
-                                <AlertTriangle className="size-3 text-rose-600 shrink-0" />
+                                <AlertTriangle className="size-3 shrink-0 text-destructive" />
                               ) : deadlineInfo.type === "nearing" ? (
-                                <Clock className="size-3 text-amber-600 shrink-0" />
+                                <Clock className="size-3 shrink-0 text-warning-foreground" />
                               ) : (
-                                <Calendar className="size-3 text-muted-foreground shrink-0" />
+                                <Calendar className="size-3 shrink-0 text-muted-foreground" />
                               )}
                               <span className="truncate">{deadlineInfo.label}</span>
                             </Badge>
                           )}
                         </div>
 
-                        {/* Clean Description */}
                         {parsedDesc.cleanDescription && (
-                          <p className="line-clamp-2 text-[11px] text-muted-foreground">
+                          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                             {parsedDesc.cleanDescription}
                           </p>
                         )}
 
-                        {/* Connected Assets Badges */}
-                        <div className="flex items-center gap-2 pt-1 border-t text-[10px] text-muted-foreground">
-                          <span
-                            className="flex items-center gap-0.5"
-                            title={`${project.emailCount} Email`}
-                          >
-                            <Mail className="size-3" /> {project.emailCount}
-                          </span>
-                          <span
-                            className="flex items-center gap-0.5"
-                            title={`${project.developerAssetCount} Dev Assets`}
-                          >
-                            <CodeXml className="size-3" /> {project.developerAssetCount}
-                          </span>
-                          <span
-                            className="flex items-center gap-0.5"
-                            title={`${project.adsAssetCount} Ads Assets`}
-                          >
-                            <Megaphone className="size-3" /> {project.adsAssetCount}
-                          </span>
+                        {/* Footer: aset terhubung (kiri) + geser status (kanan) dalam satu baris */}
+                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-t border-border/60 pt-2">
+                          <div className="flex flex-wrap items-center gap-1">
+                            <AssetPill
+                              icon={<Mail />}
+                              count={project.emailCount}
+                              label="Email"
+                              className="bg-wb-cyan-soft text-wb-blue-strong"
+                            />
+                            <AssetPill
+                              icon={<CodeXml />}
+                              count={project.developerAssetCount}
+                              label="Dev Assets"
+                              className="bg-wb-purple-soft text-wb-purple"
+                            />
+                            <AssetPill
+                              icon={<Megaphone />}
+                              count={project.adsAssetCount}
+                              label="Ads Assets"
+                              className="bg-warning-soft text-warning-foreground"
+                            />
+                          </div>
+                          <div className="flex items-center">
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              disabled={colIndex === 0}
+                              onClick={() =>
+                                handleUpdateStatus(project.id, KANBAN_COLUMNS[colIndex - 1].id)
+                              }
+                              title="Geser ke kiri"
+                              aria-label="Geser ke kiri"
+                            >
+                              <ArrowLeft />
+                            </Button>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              disabled={colIndex === KANBAN_COLUMNS.length - 1}
+                              onClick={() =>
+                                handleUpdateStatus(project.id, KANBAN_COLUMNS[colIndex + 1].id)
+                              }
+                              title="Geser ke kanan"
+                              aria-label="Geser ke kanan"
+                            >
+                              <ArrowRight />
+                            </Button>
+                          </div>
                         </div>
-
-                        {/* Quick Direction Controls */}
-                        <div className="flex items-center justify-between pt-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            disabled={colIndex === 0}
-                            onClick={() =>
-                              handleUpdateStatus(project.id, KANBAN_COLUMNS[colIndex - 1].id)
-                            }
-                            className="size-5 text-muted-foreground hover:text-foreground"
-                            title="Geser ke kiri"
-                          >
-                            <ArrowLeft className="size-3" />
-                          </Button>
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            {col.title}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            disabled={colIndex === KANBAN_COLUMNS.length - 1}
-                            onClick={() =>
-                              handleUpdateStatus(project.id, KANBAN_COLUMNS[colIndex + 1].id)
-                            }
-                            className="size-5 text-muted-foreground hover:text-foreground"
-                            title="Geser ke kanan"
-                          >
-                            <ArrowRight className="size-3" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
 
                 {columnProjects.length === 0 && (
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center text-muted-foreground/60">
-                    <FolderKanban className="mb-1 size-5 opacity-40" />
-                    <span className="text-[11px]">Kosong</span>
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border-strong/60 py-10 text-center text-muted-foreground/70">
+                    <FolderKanban className="mb-1 size-5 opacity-50" />
+                    <span className="text-xs">Kosong</span>
                   </div>
                 )}
               </div>

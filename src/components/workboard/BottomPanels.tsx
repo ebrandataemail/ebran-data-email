@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Bot } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   DAY_MS,
@@ -14,6 +15,35 @@ import {
 } from "./status";
 import type { WorkboardActivity, WorkboardClient, WorkboardTask } from "./useWorkboardData";
 
+/**
+ * Cangkang panel: satu bahasa untuk ketiga panel di bawah papan.
+ * L1 (card) → header dengan garis bawah → isi tanpa kotak tambahan.
+ */
+function PanelShell({
+  title,
+  meta,
+  icon,
+  children,
+}: {
+  title: string;
+  meta?: ReactNode;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {icon}
+          <h3 className="truncate text-sm font-semibold text-foreground">{title}</h3>
+        </div>
+        {meta && <span className="shrink-0 text-xs text-muted-foreground">{meta}</span>}
+      </header>
+      {children}
+    </section>
+  );
+}
+
 /* ---------------------------------------------------------------- Calendar */
 
 function localDateKey(value: string | Date) {
@@ -25,11 +55,14 @@ function localDateKey(value: string | Date) {
   return `${year}-${month}-${day}`;
 }
 
-/** Day tint = same semantics as the rest of the board (urgency / review / has task). */
+/**
+ * Tint hari = semantik yang sama dengan papan: urgensi (kuning), review client (ungu,
+ * sama dengan titik status), dan "ada task" (netral, bukan warna lagi).
+ */
 const tones = {
   soon: "bg-warning-soft text-warning-foreground",
   review: "bg-wb-purple-soft text-wb-purple",
-  task: "bg-wb-blue-strong/10 text-wb-blue-strong",
+  task: "bg-secondary text-foreground",
 } as const;
 
 function toneOf(dayTasks: WorkboardTask[] | undefined): keyof typeof tones | null {
@@ -105,95 +138,97 @@ export function CalendarPanel({
   }
 
   return (
-    <div className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-soft">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-extrabold tracking-tight text-wb-ink">Kalender</h3>
-        <span className="text-xs text-muted-foreground">
-          {tasks.length} task · {activities.length} aktivitas
-        </span>
-      </div>
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          type="button"
-          aria-label="Bulan sebelumnya"
-          onClick={() => shift(-1)}
-          className="flex size-10 items-center justify-center rounded-lg border border-border text-wb-ink hover:bg-muted"
-        >
-          <ArrowLeft className="size-4" />
-        </button>
-        <span className="text-sm font-semibold text-wb-ink">
-          {new Date(cursor.year, cursor.month, 1).toLocaleDateString("id-ID", {
-            month: "long",
-            year: "numeric",
-          })}
-        </span>
-        <button
-          type="button"
-          aria-label="Bulan berikutnya"
-          onClick={() => shift(1)}
-          className="flex size-10 items-center justify-center rounded-lg border border-border text-wb-ink hover:bg-muted"
-        >
-          <ArrowRight className="size-4" />
-        </button>
-      </div>
-      <div className="mt-4 grid grid-cols-7 gap-1.5 text-center">
-        {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day) => (
-          <span key={day} className="pb-1 text-xs font-semibold text-muted-foreground">
-            {day}
+    <PanelShell title="Kalender" meta={`${tasks.length} task · ${activities.length} aktivitas`}>
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Bulan sebelumnya"
+            onClick={() => shift(-1)}
+          >
+            <ArrowLeft />
+          </Button>
+          <span className="text-sm font-semibold text-foreground">
+            {new Date(cursor.year, cursor.month, 1).toLocaleDateString("id-ID", {
+              month: "long",
+              year: "numeric",
+            })}
           </span>
-        ))}
-        {cells.map((cell, index) => {
-          const dateKey = cell.current
-            ? localDateKey(new Date(cursor.year, cursor.month, cell.day))
-            : "";
-          const tone = cell.current ? toneOf(tasksByDate.get(dateKey)) : null;
-          const hasActivity = !!activitiesByDate.get(dateKey)?.length;
-          const isSelected = !!dateKey && selectedDate === dateKey;
-          const isToday = !!dateKey && dateKey === todayKey;
-          return (
-            <button
-              key={index}
-              type="button"
-              disabled={!cell.current}
-              onClick={() => setSelectedDate(dateKey)}
-              aria-label={cell.current ? dateLabel(dateKey) : undefined}
-              aria-pressed={isSelected}
-              className={cn(
-                "relative flex h-11 flex-col items-center justify-center rounded-lg text-sm font-semibold transition",
-                !cell.current && "text-muted-foreground/40",
-                cell.current && (tone ? tones[tone] : "bg-muted text-wb-ink"),
-                cell.current && "hover:brightness-95",
-                isToday && "border border-wb-ink",
-                isSelected && "ring-2 ring-wb-ink ring-offset-1 ring-offset-card",
-              )}
-            >
-              {cell.day}
-              {hasActivity && <i className="absolute bottom-1 size-1 rounded-full bg-wb-orange" />}
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <i className="size-3 rounded-sm bg-wb-blue-strong/10 ring-1 ring-wb-blue-strong/40" /> Ada task
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <i className="size-3 rounded-sm bg-warning-soft ring-1 ring-warning-foreground/40" /> Nyaris
-          deadline / telat
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <i className="size-3 rounded-sm bg-wb-purple-soft ring-1 ring-wb-purple/40" /> Review Client
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <i className="size-1.5 rounded-full bg-wb-orange" /> Aktivitas
-        </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Bulan berikutnya"
+            onClick={() => shift(1)}
+          >
+            <ArrowRight />
+          </Button>
+        </div>
+        <div className="mt-4 grid grid-cols-7 gap-1 text-center">
+          {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day) => (
+            <span key={day} className="pb-1 text-xs font-medium text-muted-foreground">
+              {day}
+            </span>
+          ))}
+          {cells.map((cell, index) => {
+            const dateKey = cell.current
+              ? localDateKey(new Date(cursor.year, cursor.month, cell.day))
+              : "";
+            const tone = cell.current ? toneOf(tasksByDate.get(dateKey)) : null;
+            const hasActivity = !!activitiesByDate.get(dateKey)?.length;
+            const isSelected = !!dateKey && selectedDate === dateKey;
+            const isToday = !!dateKey && dateKey === todayKey;
+            return (
+              <button
+                key={index}
+                type="button"
+                disabled={!cell.current}
+                onClick={() => setSelectedDate(dateKey)}
+                aria-label={cell.current ? dateLabel(dateKey) : undefined}
+                aria-pressed={isSelected}
+                className={cn(
+                  "relative flex h-10 flex-col items-center justify-center rounded-lg text-sm transition-colors",
+                  !cell.current && "text-muted-foreground/40",
+                  // Hari biasa polos (tanpa kotak abu-abu); hanya hari bermakna yang diberi tint.
+                  cell.current && (tone ? cn(tones[tone], "font-semibold") : "text-foreground hover:bg-muted"),
+                  cell.current && tone && "hover:brightness-95",
+                  isToday && "ring-1 ring-primary/50",
+                  isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-card",
+                )}
+              >
+                {cell.day}
+                {hasActivity && (
+                  <i className="absolute bottom-1 size-1 rounded-full bg-primary/70" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <i className="size-3 rounded-sm bg-secondary ring-1 ring-border-strong" /> Ada task
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="size-3 rounded-sm bg-warning-soft ring-1 ring-warning-foreground/40" />{" "}
+            Nyaris deadline / telat
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="size-3 rounded-sm bg-wb-purple-soft ring-1 ring-wb-purple/40" /> Review
+            client
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="size-1.5 rounded-full bg-primary/70" /> Aktivitas
+          </span>
+        </div>
       </div>
       {selectedDate && (
-        <div className="mt-4 border-t border-border pt-4">
-          <p className="text-sm font-bold text-wb-ink">{dateLabel(selectedDate)}</p>
+        <div className="space-y-2 border-t border-border bg-subtle px-4 py-3.5 sm:px-5">
+          <p className="text-sm font-semibold text-foreground">{dateLabel(selectedDate)}</p>
           {selectedTasks.map((task) => (
-            <div key={task.id} className="mt-2 flex items-start justify-between gap-2 text-xs">
-              <span className="min-w-0 flex-1 text-wb-ink">{task.title}</span>
+            <div key={task.id} className="flex items-start justify-between gap-2 text-xs">
+              <span className="min-w-0 flex-1 text-foreground">{task.title}</span>
               <span className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground">
                 <i className={cn("size-2 rounded-full", statusMeta(task.status)?.dot)} />
                 {statusMeta(task.status)?.title ?? task.status}
@@ -201,8 +236,8 @@ export function CalendarPanel({
             </div>
           ))}
           {selectedActivities.map((activity) => (
-            <div key={activity.id} className="mt-2 border-l-2 border-wb-orange pl-2 text-xs">
-              <p className="font-semibold text-wb-ink">{activity.title}</p>
+            <div key={activity.id} className="border-l-2 border-border-strong pl-2 text-xs">
+              <p className="font-medium text-foreground">{activity.title}</p>
               <p className="text-muted-foreground">
                 {activity.event_type} ·{" "}
                 {new Date(activity.occurred_at).toLocaleTimeString("id-ID", {
@@ -213,13 +248,13 @@ export function CalendarPanel({
             </div>
           ))}
           {!selectedTasks.length && !selectedActivities.length && (
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Tidak ada deadline atau aktivitas tercatat pada tanggal ini.
             </p>
           )}
         </div>
       )}
-    </div>
+    </PanelShell>
   );
 }
 
@@ -268,32 +303,34 @@ export function WorkListPanel({
   const selected = items.find((task) => task.id === active) ?? items[0];
 
   return (
-    <div className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-soft">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-extrabold tracking-tight text-wb-ink">Daftar Task</h3>
-        <span className="text-xs text-muted-foreground">Urut deadline</span>
+    <PanelShell title="Daftar task" meta="Urut deadline">
+      <div className="px-4 pt-4 sm:px-5">
+        <div className="inline-flex gap-0.5 rounded-lg bg-muted p-0.5" role="tablist">
+          {workFilters.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              role="tab"
+              aria-selected={filter === f.id}
+              onClick={() => {
+                setFilter(f.id);
+                setShowAll(false);
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                filter === f.id
+                  ? "bg-card text-foreground shadow-soft"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="mt-4 inline-flex gap-1 rounded-lg bg-muted p-1" role="tablist">
-        {workFilters.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            role="tab"
-            aria-selected={filter === f.id}
-            onClick={() => {
-              setFilter(f.id);
-              setShowAll(false);
-            }}
-            className={cn(
-              "rounded-md px-3.5 py-1.5 text-xs font-bold transition",
-              filter === f.id ? "bg-card text-wb-ink shadow-soft" : "text-muted-foreground",
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-      <ul className="mt-4 space-y-3">
+
+      {/* Baris dipisah garis, bukan kartu bergaris di dalam kartu */}
+      <ul className="mt-3 divide-y divide-border border-t border-border">
         {visible.map((task) => {
           const client = clientById.get(task.client_id);
           const meta = statusMeta(task.status);
@@ -303,39 +340,42 @@ export function WorkListPanel({
               <button
                 type="button"
                 onClick={() => setActive(task.id)}
+                aria-current={selected?.id === task.id ? "true" : undefined}
                 className={cn(
-                  "flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 text-left transition hover:bg-muted/50",
-                  selected?.id === task.id && "border-wb-ink/40 bg-muted/50",
+                  "flex w-full flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-subtle sm:px-5",
+                  selected?.id === task.id && "bg-secondary/60 hover:bg-secondary/60",
                 )}
               >
-                <span className="flex items-center gap-2">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-wb-ink text-xs font-bold text-white">
+                <span className="flex items-center gap-2.5">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground">
                     {(client?.name ?? "C").slice(0, 2).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold text-wb-ink">{task.title}</span>
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {task.title}
+                    </span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {client?.name ?? "Client tidak ditemukan"}
                     </span>
                   </span>
                 </span>
-                <span className="flex flex-wrap items-center justify-between gap-2">
+                <span className="flex flex-wrap items-center justify-between gap-2 pl-[42px]">
                   <span className="inline-flex items-center gap-1.5 text-xs text-foreground/80">
-                    <i className={cn("size-2.5 rounded-full", meta?.dot ?? "bg-muted-foreground")} />
+                    <i className={cn("size-2 rounded-full", meta?.dot ?? "bg-muted-foreground")} />
                     {meta?.title ?? task.status}
                   </span>
                   <span className="inline-flex items-center gap-2">
                     {urgency && (
                       <span
                         className={cn(
-                          "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
                           urgency.className,
                         )}
                       >
                         {urgency.label}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs tabular-nums text-muted-foreground">
                       {task.due_date ? shortDateLabel(task.due_date) : "Tanpa deadline"}
                     </span>
                   </span>
@@ -345,41 +385,45 @@ export function WorkListPanel({
           );
         })}
         {!items.length && (
-          <li className="py-6 text-center text-xs text-muted-foreground">
+          <li className="py-8 text-center text-xs text-muted-foreground">
             Tidak ada task untuk filter ini.
           </li>
         )}
       </ul>
+
       {items.length > PAGE && (
-        <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-border px-4 py-2.5 sm:px-5">
           <span className="text-xs text-muted-foreground">
             {visible.length} dari {items.length} task
           </span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
             onClick={() => setShowAll((v) => !v)}
-            className="text-xs font-bold text-wb-blue-strong hover:underline"
           >
             {showAll ? "Ringkas" : "Lihat semua"}
-          </button>
+          </Button>
         </div>
       )}
+
       {selected && (
-        <div className="mt-4 rounded-xl border border-border bg-muted/40 p-3">
-          <p className="text-sm font-bold text-wb-ink">{selected.title}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
+        <div className="space-y-1 border-t border-border bg-subtle px-4 py-3.5 sm:px-5">
+          <p className="text-sm font-semibold text-foreground">{selected.title}</p>
+          <p className="text-xs text-muted-foreground">
             {selected.description || "Tidak ada deskripsi."}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="pt-1 text-xs text-muted-foreground">
             PIC: {selected.assignee || "Belum ditentukan"} · Prioritas: {selected.priority}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Deadline: {selected.due_date ? dateLabel(selected.due_date) : "Belum ditentukan"} ·
             Diperbarui: {new Date(selected.updated_at).toLocaleString("id-ID")}
           </p>
         </div>
       )}
-    </div>
+    </PanelShell>
   );
 }
 
@@ -413,37 +457,40 @@ export function AiSecretaryPanel() {
     });
   };
   return (
-    <div className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-soft">
-      <div className="flex items-center gap-2">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-ai-soft text-ai-foreground">
+    <PanelShell
+      title="Tanya sekretaris AI"
+      icon={
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-ai-soft text-ai-foreground">
           <Bot className="size-4" />
         </span>
-        <h3 className="flex-1 text-base font-extrabold tracking-tight text-wb-ink">
-          Tanya Sekretaris AI
-        </h3>
+      }
+    >
+      <div className="p-4 sm:p-5">
+        <Link
+          to="/ai"
+          className="flex h-10 items-center justify-center gap-2 rounded-lg bg-gradient-ai text-sm font-semibold text-foreground shadow-ai transition hover:brightness-95"
+        >
+          <Bot className="size-4" /> Mulai chat
+        </Link>
+        <p className="mt-5 text-xs font-medium text-muted-foreground">Prompt cepat</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {quickPrompts.map((p) => (
+            <Button
+              key={p.label}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => void copyPrompt(p.text)}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+          AI hanya menerima konteks yang sudah disaring dari password dan secret.
+        </p>
       </div>
-      <Link
-        to="/ai"
-        className="mt-4 flex h-11 items-center justify-center gap-2 rounded-lg bg-gradient-ai text-sm font-bold text-wb-ink shadow-ai transition hover:brightness-95"
-      >
-        <Bot className="size-4" /> Mulai Chat
-      </Link>
-      <p className="mt-5 text-xs font-bold uppercase tracking-wider text-wb-ink">Prompt cepat</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {quickPrompts.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            onClick={() => void copyPrompt(p.text)}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-wb-ink transition hover:bg-muted"
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-        AI hanya menerima konteks yang sudah disaring dari password dan secret.
-      </p>
-    </div>
+    </PanelShell>
   );
 }
