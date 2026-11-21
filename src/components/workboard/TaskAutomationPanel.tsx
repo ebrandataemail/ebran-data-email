@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { WorkboardClient, WorkboardProject, WorkboardTask } from "./useWorkboardData";
 import {
-  createTaskWebhookEndpoint, dismissTaskCopilotSuggestion, listPendingTaskIntakes,
-  listTaskCopilotSuggestions, refreshTaskCopilotSuggestions,
+  createTaskWebhookEndpoint, createGmailTaskAutomationRule, dismissTaskCopilotSuggestion,
+  listGmailTaskAutomationRules, listPendingGmailTaskDraftReviews, listPendingTaskIntakes,
+  listTaskCopilotSuggestions, refreshTaskCopilotSuggestions, setGmailTaskAutomationRuleEnabled,
 } from "@/lib/workboard/task-automation.functions";
 import {
   approveTaskDraftItems, generateTasksFromSource, rejectTaskDraft,
@@ -198,41 +199,8 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
     };
     void run();
     const timer = window.setInterval(() => void run(), 60_000);
-    useEffect(() => {
-    if (!gmailRules.some((rule) => rule.enabled)) return;
-    let cancelled = false;
-    const run = async () => {
-      if (autoSyncRunning.current) return;
-      autoSyncRunning.current = true;
-      try {
-        const { data, error } = await supabase.functions.invoke("gmail-oauth", { body: { action: "task-auto-sync" } });
-        if (error) throw error;
-        if (!cancelled && Number(data?.imported || 0) > 0) {
-          toast.success(data.imported + " email cocok dengan aturan Gmail dan masuk ke AI Task Generator.");
-          await load();
-        }
-        if (!cancelled && Number(data?.reauthRequired || 0) > 0) toast.error("Ada akun Gmail yang perlu dihubungkan ulang.");
-      } catch (error) {
-        if (!cancelled) toast.error(error instanceof Error ? error.message : "Pemeriksaan otomatis Gmail gagal.");
-      } finally { autoSyncRunning.current = false; }
-    };
-    void run();
-    const timer = window.setInterval(() => void run(), 60_000);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [gmailRules, load]);
-
-  useEffect(() => {
-    if (busy) return;
-    const next = intakes.find((item) =>
-      item.source_type === "email" && item.metadata?.integration_source === "gmail" &&
-      Boolean(item.metadata?.automation_rule_id) && !autoProcessedSources.current.has(item.id));
-    if (!next) return;
-    autoProcessedSources.current.add(next.id);
-    void processIntake(next);
-  }, [intakes, busy]);
-
-  return () => { cancelled = true; window.clearInterval(timer); };
-  }, [emailAccountId, gmailRules, load]);
 
   useEffect(() => {
     if (busy) return;
