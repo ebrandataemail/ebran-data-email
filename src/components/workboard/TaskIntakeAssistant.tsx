@@ -16,6 +16,52 @@ type DraftResult = {
   items: DraftItem[];
 };
 
+async function fileBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Gagal membaca file."));
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.readAsDataURL(file);
+  });
+}
+
+async function extractVideoFrames(file: File) {
+  if (file.size > 30 * 1024 * 1024) throw new Error("Video melebihi batas 30 MB.");
+  const url = URL.createObjectURL(file);
+  const video = document.createElement("video");
+  video.preload = "metadata";
+  video.muted = true;
+  video.src = url;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error("Video tidak dapat dibaca browser."));
+    });
+    if (!Number.isFinite(video.duration) || video.duration <= 0) throw new Error("Durasi video tidak valid.");
+    const duration = video.duration;
+    const times = [...new Set([0.1, duration * 0.25, duration * 0.5, duration * 0.75, Math.max(0.1, duration - 0.1)].map((time) => Math.min(time, Math.max(0.1, duration - 0.05))))].slice(0, 5);
+    const frames: { fileName: string; base64: string; atSeconds: number }[] = [];
+    for (const atSeconds of times) {
+      await new Promise<void>((resolve, reject) => {
+        video.onseeked = () => resolve();
+        video.onerror = () => reject(new Error("Gagal mengambil frame video."));
+        video.currentTime = atSeconds;
+      });
+      const scale = Math.min(1, 1024 / video.videoWidth);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Browser tidak mendukung ekstraksi frame.");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      frames.push({ fileName: "frame-" + atSeconds.toFixed(1) + "s.jpg", base64: canvas.toDataURL("image/jpeg", 0.78).split(",")[1] ?? "", atSeconds });
+    }
+    return frames;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function TaskIntakeAssistant({ clients, projects, onCreated }: {
   clients: WorkboardClient[]; projects: WorkboardProject[]; onCreated: () => Promise<unknown>;
 }) {
@@ -38,17 +84,25 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
     setBusy(true);
     try {
       let filePayload: { fileName: string; mediaType: string; base64: string } | null = null;
+      let audioPayload: { fileName: string; mediaType: string; base64: string } | null = null;
+      let imageFrames: { fileName: string; base64: string; atSeconds: number }[] = [];
+      let combinedText = sourceText;
       if (file) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = () => reject(new Error("Gagal membaca file."));
-          reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-          reader.readAsDataURL(file);
-        });
-        filePayload = { fileName: file.name, mediaType: file.type || "application/octet-stream", base64 };
+        const extension = file.name.toLowerCase().split(".").pop() ?? "";
+        if (file.type.startsWith("audio/")) {
+          if (file.size > 20 * 1024 * 1024) throw new Error("Audio melebihi batas 20 MB.");
+          audioPayload = { fileName: file.name, mediaType: file.type, base64: await fileBase64(file) };
+        } else if (file.type.startsWith("video/")) {
+          imageFrames = await extractVideoFrames(file);
+        } else if (file.type.startsWith("text/") || ["txt","md","csv","html","json"].includes(extension)) {
+          combinedText = [sourceText, "ISI FILE " + file.name + ":\\n" + (await file.text()).slice(0, 24000)].filter(Boolean).join("\\n\\n").slice(0, 24000);
+        } else {
+          filePayload = { fileName: file.name, mediaType: file.type || "application/octet-stream", base64: await fileBase64(file) };
+        }
       }
       const result = await generateTasksFromSource({
-        data: { clientId, projectId: projectId || null, sourceType, sourceLabel: file?.name || sourceType, sourceText, sourceUrl, file: filePayload },
+        data: { clientId, projectId: projectId || null, sourceType, sourceLabel: file?.name || sourceType,
+          sourceText: combinedText, sourceUrl, file: filePayload, audio: audioPayload, imageFrames },
       }) as DraftResult;
       setDraft(result);
       setSelected(result.items.map((item) => item.id));
@@ -122,7 +176,7 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
           </label>
         </div>
         <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} rows={5} placeholder="Tempel chat client, brief, notulen meeting, daftar revisi, laporan bug, ide konten, atau instruksi kerja di sini…" />
-        <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.html,.json,application/pdf,image/*,text/*,application/json" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.html,.json,.mp3,.wav,.m4a,.ogg,.webm,.mp4,.mov,application/pdf,image/*,text/*,application/json,audio/*,video/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}><FileUp className="mr-1.5 size-4" /> Lampirkan file</Button>

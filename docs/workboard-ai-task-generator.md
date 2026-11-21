@@ -1,8 +1,9 @@
 # Workboard AI Task Intake & Automation
 
 ## Implemented in this increment
-- Manual prompt, pasted brief, email/chat transcript and URL reference intake.
-- PDF and image attachment support through the configured server-side AI model.
+- Manual prompt, pasted brief, email/chat transcript, URL reference, text files (TXT/MD/CSV/HTML/JSON), PDF and image attachment intake.
+- Audio upload transcription through the server-side OpenAI-compatible transcription endpoint. Configure `AI_TRANSCRIPTION_MODEL` if the default `whisper-1` is not appropriate.
+- Video upload samples up to five visual frames in the browser and sends those frames for image analysis. Video audio is not transcribed; upload the audio track separately for speech extraction.
 - Existing webhook sources can be processed into drafts without duplicating their intake record.
 - Task approval is transactional through `approve_task_draft_items`: parent tasks are included when a selected subtask depends on them, task creation, provenance linking and draft state updates commit or roll back together.
 - Webhook endpoint secrets are generated once, stored only as SHA-256 hashes, and never returned again by list/read APIs.
