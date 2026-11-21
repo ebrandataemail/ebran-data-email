@@ -25,7 +25,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [projectId, setProjectId] = useState("");
   const [sourceType, setSourceType] = useState("webhook");
-  const [endpoint, setEndpoint] = useState<{ webhookUrl: string; authorizationHeader: string; endpoint_name: string } | null>(null);
+  const [endpoint, setEndpoint] = useState<{ webhookUrl: string; authorizationHeader: string | null; verificationToken?: string | null; provider?: string; endpoint_name: string } | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [intakes, setIntakes] = useState<Intake[]>([]);
   const [gmailAccounts, setGmailAccounts] = useState<{ id: string; email: string; provider: string }[]>([]);
@@ -139,7 +139,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       <div className="rounded-xl border border-border bg-card p-4 shadow-soft sm:p-5">
         <div className="flex items-center gap-2"><Webhook className="size-5 text-primary" /><div>
           <h2 className="text-sm font-semibold text-foreground">Integrasi masuk · Webhook</h2>
-          <p className="text-xs text-muted-foreground">Terima event dari Make, n8n, Zapier, atau sistem yang mendukung Bearer token.</p>
+          <p className="text-xs text-muted-foreground">Terima event dari Make/n8n/Zapier atau gunakan callback native WhatsApp Cloud API dengan verifikasi signature Meta.</p>
         </div></div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-xs text-muted-foreground">Client
@@ -174,11 +174,15 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
           </div>
         </div>}
         {endpoint && <div className="mt-3 space-y-2 rounded-lg border border-warning/40 bg-warning-soft p-3">
-          <p className="text-xs font-semibold text-warning-foreground">Secret ditampilkan sekali — simpan di pengaturan webhook sumber.</p>
-          <div className="space-y-1"><p className="text-[11px] text-muted-foreground">URL</p><code className="block break-all text-xs text-foreground">{endpoint.webhookUrl}</code>
+          <p className="text-xs font-semibold text-warning-foreground">Secret ditampilkan sekali — simpan dengan aman. Jangan masukkan secret ke kode frontend atau repository.</p>
+          <div className="space-y-1"><p className="text-[11px] text-muted-foreground">Callback URL</p><code className="block break-all text-xs text-foreground">{endpoint.webhookUrl}</code>
             <Button size="sm" variant="outline" onClick={() => void copy(endpoint.webhookUrl)}><Clipboard className="mr-1 size-3" /> Salin URL</Button></div>
-          <div className="space-y-1"><p className="text-[11px] text-muted-foreground">Header Authorization</p><code className="block break-all text-xs text-foreground">{endpoint.authorizationHeader}</code>
-            <Button size="sm" variant="outline" onClick={() => void copy(endpoint.authorizationHeader)}><Clipboard className="mr-1 size-3" /> Salin secret</Button></div>
+          {endpoint.provider === "whatsapp_cloud_api" ? <>
+            <div className="space-y-1"><p className="text-[11px] text-muted-foreground">Meta Verify Token</p><code className="block break-all text-xs text-foreground">{endpoint.verificationToken}</code>
+              <Button size="sm" variant="outline" onClick={() => void copy(endpoint.verificationToken ?? "")}><Clipboard className="mr-1 size-3" /> Salin Verify Token</Button></div>
+            <p className="text-[11px] text-muted-foreground">Tambahkan App Secret Meta sebagai secret <strong>WHATSAPP_APP_SECRET</strong> di Supabase → Edge Functions → Secrets. Gunakan Callback URL dan Verify Token ini pada konfigurasi Webhooks di Meta for Developers, lalu subscribe field <strong>messages</strong>.</p>
+          </> : <div className="space-y-1"><p className="text-[11px] text-muted-foreground">Header Authorization</p><code className="block break-all text-xs text-foreground">{endpoint.authorizationHeader}</code>
+            <Button size="sm" variant="outline" onClick={() => void copy(endpoint.authorizationHeader ?? "")}><Clipboard className="mr-1 size-3" /> Salin secret</Button></div>}
         </div>}
         <div className="mt-3 border-t border-border pt-3">
           <div className="flex items-center justify-between gap-2"><h3 className="text-xs font-semibold text-foreground">Inbox integrasi tertunda</h3><span className="text-xs text-muted-foreground">{intakes.length} masuk</span></div>
@@ -198,7 +202,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
           <div className="flex justify-between gap-2"><Button size="sm" variant="ghost" onClick={() => void rejectDraft()}><X className="mr-1 size-3" /> Tolak</Button>
             <Button size="sm" onClick={() => void approveDraft()} disabled={busy || !selectedItems.length}><Check className="mr-1 size-3" /> Setujui {selectedItems.length}</Button></div>
         </div>}
-        <p className="mt-3 text-[11px] text-muted-foreground">Endpoint generik memakai Bearer token. Integrasi native yang mewajibkan signature/OAuth khusus tetap membutuhkan adapter dan konfigurasi resmi penyedia.</p>
+        <p className="mt-3 text-[11px] text-muted-foreground">WhatsApp Cloud API memakai challenge Verify Token dan HMAC SHA-256 signature Meta. Pesan masuk hanya menjadi sumber Inbox; analisis dan persetujuan task tetap dilakukan manual. Audio/media belum diunduh otomatis.</p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4 shadow-soft sm:p-5">
