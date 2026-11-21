@@ -137,7 +137,7 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
         const extension = file.name.toLowerCase().split(".").pop() ?? "";
         if (file.type.startsWith("audio/")) {
           if (file.size > 20 * 1024 * 1024) throw new Error("Audio melebihi batas 20 MB.");
-          audioPayload = { fileName: file.name, mediaType: file.type, base64: await fileBase64(file) };
+          audioPayload = { fileName: file.name, mediaType: file.type.split(";")[0] || "audio/webm", base64: await fileBase64(file) };
         } else if (file.type.startsWith("video/")) {
           imageFrames = await extractVideoFrames(file);
         } else if (file.type.startsWith("text/") || ["txt","md","csv","html","json"].includes(extension)) {
