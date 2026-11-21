@@ -39,7 +39,7 @@ async function extractVideoFrames(file: File) {
     });
     if (!Number.isFinite(video.duration) || video.duration <= 0) throw new Error("Durasi video tidak valid.");
     const duration = video.duration;
-    const times = [...new Set([0.1, duration * 0.25, duration * 0.5, duration * 0.75, Math.max(0.1, duration - 0.1)].map((time) => Math.min(time, Math.max(0.1, duration - 0.05))))].slice(0, 5);
+    const times = [...new Set([0.1, 0.25, 0.5, 0.75, 0.9].map((ratio) => duration * ratio))].slice(0, 5);
     const frames: { fileName: string; base64: string; atSeconds: number }[] = [];
     for (const atSeconds of times) {
       await new Promise<void>((resolve, reject) => {

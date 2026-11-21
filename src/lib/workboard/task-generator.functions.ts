@@ -53,7 +53,9 @@ async function transcribeAudio(audio: { fileName: string; mediaType: string; bas
   const baseURL = process.env["AI_BASE_URL"]?.trim();
   const apiKey = process.env["AI_API_KEY"]?.trim();
   if (!baseURL || !apiKey) throw new Error("Transkripsi audio memerlukan AI_BASE_URL dan AI_API_KEY di server.");
-  const endpoint = new URL("audio/transcriptions", baseURL.replace(/\\/+$/, "") + "/");
+  let normalizedBaseURL = baseURL;
+  while (normalizedBaseURL.endsWith("/")) normalizedBaseURL = normalizedBaseURL.slice(0, -1);
+  const endpoint = new URL(normalizedBaseURL + "/audio/transcriptions");
   const bytes = Uint8Array.from(atob(audio.base64), (character) => character.charCodeAt(0));
   const form = new FormData();
   form.append("file", new Blob([bytes], { type: audio.mediaType }), audio.fileName);

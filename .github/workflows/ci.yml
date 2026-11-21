@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --force --legacy-peer-deps --package-lock=false --no-audit --no-fund
       - name: Lint
         run: npm run lint
       - name: Test

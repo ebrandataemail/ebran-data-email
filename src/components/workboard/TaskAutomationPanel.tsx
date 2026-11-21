@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BellRing, Check, Clipboard, Loader2, RefreshCw, Webhook, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import type { WorkboardClient, WorkboardProject, WorkboardTask } from "./useWorkboardData";
 import {
   createTaskWebhookEndpoint, dismissTaskCopilotSuggestion, listPendingTaskIntakes,
@@ -26,6 +27,8 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [endpoint, setEndpoint] = useState<{ webhookUrl: string; authorizationHeader: string; endpoint_name: string } | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [intakes, setIntakes] = useState<Intake[]>([]);
+  const [gmailAccounts, setGmailAccounts] = useState<{ id: string; email: string; provider: string }[]>([]);
+  const [emailAccountId, setEmailAccountId] = useState("");
   const [draft, setDraft] = useState<DraftResult | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -36,7 +39,14 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
     setLoading(true);
     try {
       await refreshTaskCopilotSuggestions({});
-      const [nextSuggestions, nextIntakes] = await Promise.all([listTaskCopilotSuggestions({}), listPendingTaskIntakes({})]);
+      const [nextSuggestions, nextIntakes, accountResult] = await Promise.all([
+        listTaskCopilotSuggestions({}), listPendingTaskIntakes({}),
+        (supabase.from("email_accounts" as any) as any).select("id,email,provider").order("email"),
+      ]);
+      if (accountResult.error) throw accountResult.error;
+      const availableAccounts = (accountResult.data ?? []).filter((account: any) => ["gmail","google"].includes(String(account.provider).toLowerCase()));
+      setGmailAccounts(availableAccounts);
+      setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
       setSuggestions(nextSuggestions as Suggestion[]);
       setIntakes(nextIntakes as Intake[]);
     } catch (error) {
@@ -54,6 +64,20 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       setEndpoint(result as typeof endpoint);
       toast.success("Webhook endpoint berhasil dibuat. Secret hanya ditampilkan kali ini.");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal membuat endpoint."); }
+    finally { setBusy(false); }
+  }
+
+  async function syncGmail() {
+    if (!clientId || !emailAccountId) return toast.error("Pilih akun Gmail dan client terlebih dahulu.");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gmail-oauth", {
+        body: { action: "task-intake", emailAccountId, clientId, projectId: projectId || null },
+      });
+      if (error) throw error;
+      toast.success((data?.queued ?? 0) + " email masuk ke Inbox Integrasi. " + (data?.skipped ?? 0) + " duplikat dilewati.");
+      await load();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal mengambil email Gmail."); }
     finally { setBusy(false); }
   }
 
@@ -136,6 +160,18 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
         <Button className="mt-3" size="sm" onClick={() => void createEndpoint()} disabled={busy || !clients.length}>
           {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Webhook className="mr-2 size-4" />} Buat endpoint
         </Button>
+        {gmailAccounts.length > 0 && <div className="mt-3 rounded-lg border border-border p-3">
+          <p className="text-xs font-semibold text-foreground">Ambil email Gmail terbaru</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Gunakan koneksi Gmail yang sudah ada dengan izin baca. Email masuk akan menjadi sumber draft, bukan task otomatis.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <select value={emailAccountId} onChange={(e) => setEmailAccountId(e.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 text-xs text-foreground">
+              {gmailAccounts.map((account) => <option key={account.id} value={account.id}>{account.email}</option>)}
+            </select>
+            <Button size="sm" variant="outline" onClick={() => void syncGmail()} disabled={busy || !clientId || !emailAccountId}>
+              {busy ? <Loader2 className="mr-1 size-3 animate-spin" /> : <RefreshCw className="mr-1 size-3" />} Ambil 10 email
+            </Button>
+          </div>
+        </div>}
         {endpoint && <div className="mt-3 space-y-2 rounded-lg border border-warning/40 bg-warning-soft p-3">
           <p className="text-xs font-semibold text-warning-foreground">Secret ditampilkan sekali — simpan di pengaturan webhook sumber.</p>
           <div className="space-y-1"><p className="text-[11px] text-muted-foreground">URL</p><code className="block break-all text-xs text-foreground">{endpoint.webhookUrl}</code>

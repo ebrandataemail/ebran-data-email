@@ -241,6 +241,78 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "task-intake") {
+      const accountId = String(body.emailAccountId || "");
+      const clientId = String(body.clientId || "");
+      const projectId = body.projectId ? String(body.projectId) : null;
+      const { data: account } = await admin.from("email_accounts").select("id,email,user_id")
+        .eq("id", accountId).eq("user_id", user.id).maybeSingle();
+      if (!account) return json({ error: "Akun email tidak ditemukan." }, 404);
+      const { data: client } = await admin.from("clients").select("id")
+        .eq("id", clientId).eq("user_id", user.id).maybeSingle();
+      if (!client) return json({ error: "Client tidak ditemukan atau akses ditolak." }, 404);
+      if (projectId) {
+        const { data: project } = await admin.from("projects").select("id")
+          .eq("id", projectId).eq("client_id", clientId).eq("user_id", user.id).maybeSingle();
+        if (!project) return json({ error: "Project tidak termasuk client yang dipilih." }, 400);
+      }
+      const { data: connection } = await admin.from("gmail_mailbox_connections")
+        .select("google_email,refresh_token_ciphertext,status").eq("email_account_id", accountId)
+        .eq("user_id", user.id).maybeSingle();
+      if (!connection || connection.status !== "connected") return json({ error: "Gmail belum terhubung. Hubungkan akun terlebih dahulu." }, 409);
+      let accessToken: string;
+      try {
+        accessToken = await refreshAccessToken(await decrypt(connection.refresh_token_ciphertext));
+      } catch {
+        await admin.from("gmail_mailbox_connections").update({ status: "reauth_required", updated_at: new Date().toISOString() })
+          .eq("email_account_id", accountId).eq("user_id", user.id);
+        return json({ error: "Sesi Gmail kedaluwarsa atau dicabut. Hubungkan ulang akun ini." }, 409);
+      }
+      const listResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&labelIds=INBOX&q=newer_than:14d", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const list = await listResponse.json();
+      if (!listResponse.ok) throw new Error("Gagal mengambil daftar email Gmail.");
+      let queued = 0;
+      let skipped = 0;
+      for (const listed of list.messages || []) {
+        const messageResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/" + listed.id + "?format=full", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const message = await messageResponse.json();
+        if (!messageResponse.ok) continue;
+        const { data: duplicate } = await admin.from("task_intake_sources").select("id")
+          .eq("user_id", user.id).contains("metadata", { gmail_message_id: message.id }).maybeSingle();
+        if (duplicate) { skipped++; continue; }
+        const headers = message.payload?.headers || [];
+        const getHeader = (name: string) => headers.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value || "";
+        const from = getHeader("From");
+        const subject = getHeader("Subject") || "(Tanpa subjek)";
+        const bodyText = [message.snippet || "", findText(message.payload)].filter(Boolean).join("\n").slice(0, 24000);
+        const receivedAt = message.internalDate ? new Date(Number(message.internalDate)).toISOString() : null;
+        const { data: source, error: sourceError } = await admin.from("task_intake_sources").insert({
+          user_id: user.id, client_id: clientId, project_id: projectId, source_type: "email",
+          source_label: "Gmail · " + from + " · " + subject,
+          source_uri: "https://mail.google.com/mail/u/0/#all/" + message.id,
+          extracted_text: ["Email masuk", "Dari: " + from, "Subjek: " + subject, "Tanggal: " + (receivedAt || "Tidak diketahui"), "", bodyText].join("\n"),
+          metadata: { integration_source: "gmail", gmail_message_id: message.id, gmail_thread_id: message.threadId || null, email_account_id: accountId },
+          status: "received",
+        }).select("id").single();
+        if (sourceError || !source) continue;
+        const { error: runError } = await admin.from("task_generation_runs").insert({
+          user_id: user.id, source_id: source.id, status: "queued", prompt_version: "task-generator-v1",
+        });
+        if (runError) {
+          await admin.from("task_intake_sources").update({ status: "failed" }).eq("id", source.id);
+          continue;
+        }
+        queued++;
+      }
+      await admin.from("gmail_mailbox_connections").update({ last_checked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("email_account_id", accountId).eq("user_id", user.id);
+      return json({ connectedEmail: connection.google_email, queued, skipped, message: "Email baru masuk ke Inbox Integrasi Workboard." });
+    }
+
     if (action === "disconnect") {
       const accountId = String(body.emailAccountId || "");
       const { data: account } = await admin.from("email_accounts").select("id")
