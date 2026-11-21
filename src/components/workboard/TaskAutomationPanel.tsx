@@ -40,12 +40,16 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
     setLoading(true);
     try {
       await refreshTaskCopilotSuggestions({});
-      const [nextSuggestions, nextIntakes, accountResult] = await Promise.all([
+      const [nextSuggestions, nextIntakes, accountResult, connectionResult, nextRules, nextDraftReviews] = await Promise.all([
         listTaskCopilotSuggestions({}), listPendingTaskIntakes({}),
         supabase.from("email_accounts").select("id,email,provider").order("email"),
+        supabase.from("gmail_mailbox_connections").select("email_account_id,status"),
+        listGmailTaskAutomationRules({}), listPendingGmailTaskDraftReviews({}),
       ]);
       if (accountResult.error) throw accountResult.error;
-      const availableAccounts = (accountResult.data ?? []).filter((account) => ["gmail","google"].includes(String(account.provider).toLowerCase()));
+      if (connectionResult.error) throw connectionResult.error;
+      const connectedIds = new Set((connectionResult.data ?? []).filter((item) => item.status === "connected").map((item) => item.email_account_id));
+      const availableAccounts = (accountResult.data ?? []).filter((account) => ["gmail","google"].includes(String(account.provider).toLowerCase()) && connectedIds.has(account.id));
       setGmailAccounts(availableAccounts);
       setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
       setSuggestions(nextSuggestions as Suggestion[]);
@@ -182,7 +186,40 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
     };
     void run();
     const timer = window.setInterval(() => void run(), 60_000);
+    useEffect(() => {
+    if (!gmailRules.some((rule) => rule.enabled)) return;
+    let cancelled = false;
+    const run = async () => {
+      if (autoSyncRunning.current) return;
+      autoSyncRunning.current = true;
+      try {
+        const { data, error } = await supabase.functions.invoke("gmail-oauth", { body: { action: "task-auto-sync" } });
+        if (error) throw error;
+        if (!cancelled && Number(data?.imported || 0) > 0) {
+          toast.success(data.imported + " email cocok dengan aturan Gmail dan masuk ke AI Task Generator.");
+          await load();
+        }
+        if (!cancelled && Number(data?.reauthRequired || 0) > 0) toast.error("Ada akun Gmail yang perlu dihubungkan ulang.");
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : "Pemeriksaan otomatis Gmail gagal.");
+      } finally { autoSyncRunning.current = false; }
+    };
+    void run();
+    const timer = window.setInterval(() => void run(), 60_000);
     return () => { cancelled = true; window.clearInterval(timer); };
+  }, [gmailRules, load]);
+
+  useEffect(() => {
+    if (busy) return;
+    const next = intakes.find((item) =>
+      item.source_type === "email" && item.metadata?.integration_source === "gmail" &&
+      Boolean(item.metadata?.automation_rule_id) && !autoProcessedSources.current.has(item.id));
+    if (!next) return;
+    autoProcessedSources.current.add(next.id);
+    void processIntake(next);
+  }, [intakes, busy]);
+
+  return () => { cancelled = true; window.clearInterval(timer); };
   }, [emailAccountId, gmailRules, load]);
 
   useEffect(() => {
