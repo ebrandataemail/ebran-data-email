@@ -41,10 +41,10 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       await refreshTaskCopilotSuggestions({});
       const [nextSuggestions, nextIntakes, accountResult] = await Promise.all([
         listTaskCopilotSuggestions({}), listPendingTaskIntakes({}),
-        (supabase.from("email_accounts" as any) as any).select("id,email,provider").order("email"),
+        supabase.from("email_accounts").select("id,email,provider").order("email"),
       ]);
       if (accountResult.error) throw accountResult.error;
-      const availableAccounts = (accountResult.data ?? []).filter((account: any) => ["gmail","google"].includes(String(account.provider).toLowerCase()));
+      const availableAccounts = (accountResult.data ?? []).filter((account) => ["gmail","google"].includes(String(account.provider).toLowerCase()));
       setGmailAccounts(availableAccounts);
       setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
       setSuggestions(nextSuggestions as Suggestion[]);

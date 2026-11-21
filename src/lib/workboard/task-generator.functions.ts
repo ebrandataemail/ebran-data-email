@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase table contracts are validated by the database/RLS; the server middleware currently exposes a dynamic client type. */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { FilePart, ModelMessage, TextPart } from "ai";
