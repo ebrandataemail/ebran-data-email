@@ -14,7 +14,8 @@ import {
 } from "@/lib/workboard/task-generator.functions";
 
 type Suggestion = { id: string; task_id: string | null; client_id: string | null; suggestion_type: string; title: string; description: string; evidence: Record<string, unknown> };
-type Intake = { id: string; client_id: string; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; created_at: string; metadata?: Record<string, any> };\ntype GmailRule = { id: string; name: string; trigger_config: Record<string, any>; enabled: boolean; last_checked_at: string | null; last_triggered_at: string | null };
+type Intake = { id: string; client_id: string; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; created_at: string; metadata?: Record<string, any> };
+type GmailRule = { id: string; name: string; trigger_config: Record<string, any>; enabled: boolean; last_checked_at: string | null; last_triggered_at: string | null };
 type DraftItem = { id: string; title: string; description: string; priority: string; dueDate: string | null; assignee: string | null; confidence: number; missingInformation: string[]; parentDraftItemId: string | null };
 type DraftResult = { draftId: string; title?: string; summary: string; questions: string[]; duplicateWarnings: string[]; items: DraftItem[] };
 
@@ -29,8 +30,17 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [intakes, setIntakes] = useState<Intake[]>([]);
   const [gmailAccounts, setGmailAccounts] = useState<{ id: string; email: string; provider: string }[]>([]);
-  const [emailAccountId, setEmailAccountId] = useState("");\n  const [gmailRules, setGmailRules] = useState<GmailRule[]>([]);\n  const [ruleName, setRuleName] = useState("Email masuk → Workboard Task");\n  const [matchMode, setMatchMode] = useState<"any" | "all">("any");\n  const [subjectIncludes, setSubjectIncludes] = useState("");\n  const [senderIncludes, setSenderIncludes] = useState("");\n  const [bodyIncludes, setBodyIncludes] = useState("");\n  const autoSyncRunning = useRef(false);\n  const autoProcessedSources = useRef(new Set<string>());
-  const [draft, setDraft] = useState<DraftResult | null>(null);\n  const [pendingDrafts, setPendingDrafts] = useState<DraftResult[]>([]);
+  const [emailAccountId, setEmailAccountId] = useState("");
+  const [gmailRules, setGmailRules] = useState<GmailRule[]>([]);
+  const [ruleName, setRuleName] = useState("Email masuk → Workboard Task");
+  const [matchMode, setMatchMode] = useState<"any" | "all">("any");
+  const [subjectIncludes, setSubjectIncludes] = useState("");
+  const [senderIncludes, setSenderIncludes] = useState("");
+  const [bodyIncludes, setBodyIncludes] = useState("");
+  const autoSyncRunning = useRef(false);
+  const autoProcessedSources = useRef(new Set<string>());
+  const [draft, setDraft] = useState<DraftResult | null>(null);
+  const [pendingDrafts, setPendingDrafts] = useState<DraftResult[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -54,6 +64,8 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
       setSuggestions(nextSuggestions as Suggestion[]);
       setIntakes(nextIntakes as Intake[]);
+      setGmailRules(nextRules as GmailRule[]);
+      setPendingDrafts(nextDraftReviews as DraftResult[]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gagal memuat Copilot.");
     } finally { setLoading(false); }
