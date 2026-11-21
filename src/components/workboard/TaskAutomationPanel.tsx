@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- TanStack server function response types are generated dynamically for this app. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BellRing, Check, Clipboard, Loader2, RefreshCw, Webhook, X } from "lucide-react";
 import { toast } from "sonner";
