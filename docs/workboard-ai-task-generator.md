@@ -1,27 +1,34 @@
-# Workboard AI Task Intake — audit & implementation notes
+# Workboard AI Task Intake & Automation
 
-## Current architecture audit
-- `client_tasks` is the canonical task table and already stores client, title, description, status, priority, due date, assignee, task type, sort order and timestamps.
-- `clients` and `projects` are existing user-owned tables. Task Brief already uses the server-only AI adapter in `src/lib/ai/provider.server.ts` and `runObject` from `src/lib/assistant/assistant.server.ts`.
-- Workboard reads Supabase data through `useWorkboardData`; `WorkboardView` owns the overall page composition and Graphic Workspace / Task Board components.
-- The new intake flow keeps `client_tasks` canonical; intake sources, generation runs, drafts, draft items, automation rules, suggestions and provenance links are supporting workflow tables.
+## Implemented in this increment
+- Manual prompt, pasted brief, email/chat transcript and URL reference intake.
+- PDF and image attachment support through the configured server-side AI model.
+- Existing webhook sources can be processed into drafts without duplicating their intake record.
+- Task approval is transactional through `approve_task_draft_items`: parent tasks are included when a selected subtask depends on them, task creation, provenance linking and draft state updates commit or roll back together.
+- Webhook endpoint secrets are generated once, stored only as SHA-256 hashes, and never returned again by list/read APIs.
+- The public webhook Edge Function accepts bounded JSON POST payloads with a per-endpoint Bearer secret, records idempotency event IDs and creates queued intake records.
+- Workboard Copilot currently creates deterministic overdue and stale-task follow-up suggestions from owned task data. It does not yet use an LLM or claim autonomous scheduling.
 
-## Phase coverage
-1. **Phase 1 — manual intake:** prompt, pasted brief/chat/meeting transcript, URL reference, PDF/image/TXT/MD/CSV/HTML/JSON upload; AI extracts tasks and subtasks; user reviews and approves selected rows.
-2. **Phase 2 — multimodal foundation:** image/PDF file parts are sent server-side to the configured model; audio/video are represented in the source taxonomy for future transcription / frame extraction adapters. This commit does not claim that raw audio/video transcription is active.
-3. **Phase 3 — integration foundation:** source types and per-user automation-rule storage cover Gmail, Outlook, WhatsApp, Telegram, Slack, Teams, Calendar, Zoom, Figma, GitHub, Zendesk, Intercom and webhooks. Live OAuth/webhook adapters still require provider credentials, scopes, verification and endpoint configuration.
-4. **Phase 4 — copilot foundation:** persistent AI suggestions support overdue, dependency, subtask, recurring, priority, follow-up and duplicate suggestion categories. A scheduler/worker and suggestion-generation job are required before proactive suggestions run automatically.
+## Webhook contract
+- Method: `POST`
+- URL: `https://<project-ref>.supabase.co/functions/v1/task-intake-webhook`
+- Header: `Authorization: Bearer <one-time-secret>`
+- Content type: `application/json`
+- Optional idempotency: `event_id` or `X-Webhook-Event-Id`
+- Text fields accepted in order: `text`, `body`, `message`, `content`, `transcript`, `description`, `subject`, `data`.
+- Optional source link: `source_url`, `url`, or `permalink`.
+- Maximum body: 1 MB. Intake content is truncated to 24,000 characters.
+- New events enter Workboard's integration inbox. The user runs analysis and explicitly approves tasks.
 
-## Security and correctness
-- All new public tables enable RLS and restrict all operations to `auth.uid() = user_id`.
-- Server functions validate ownership of the selected client and project before generation; approval rechecks draft/item ownership.
-- Source content is treated as untrusted input; prompt-injection text in attachments is not followed.
-- Missing deadline/assignee remain null; no silent inference. Task generation creates drafts only; selected tasks become `client_tasks` after explicit approval.
-- Source provenance is preserved through `task_source_links` and task source metadata.
-- URL is stored as reference only in this iteration; the server does not fetch arbitrary URLs, avoiding SSRF and avoiding false claims that a page was read.
+## Security notes
+- Do not put the endpoint Bearer secret in frontend source, query strings, logs, or screenshots.
+- Rotate a webhook by disabling the old endpoint and creating a new one.
+- Generic Bearer webhooks work with automation relays such as Make/n8n/Zapier. Direct provider webhooks that require OAuth or signature validation still need their own adapter; do not paste this Bearer token into a provider that cannot send it.
+- Provider OAuth tokens belong in private encrypted storage, not these public tables.
+- Webhook content is untrusted input and is only used as task context; no action is executed from it automatically.
 
-## Deployment requirements / next integration wiring
-- Configure a server-side model that accepts the supported file parts through existing `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`.
-- To activate real integrations, connect provider OAuth scopes/webhooks and implement provider-specific ingestion adapters. Never store provider tokens in these public tables; use encrypted/private secret storage.
-- For recurring/proactive copilot, deploy a scheduled worker/Edge Function and persist its outputs in `task_ai_suggestions`.
-- Audio/video require transcription and frame-extraction adapters; do not mark a raw media file as transcribed until a worker has actually processed it.
+## Remaining provider-specific work
+- Gmail and Outlook: use the existing OAuth mailbox connection, add incremental message sync, scope checks and user-selected folders/labels.
+- WhatsApp/Telegram/Slack/Teams/Zoom/Calendar/Figma/GitHub/Zendesk/Intercom: implement provider-specific OAuth/signature verification, event normalization and reconnect handling.
+- Audio: configure an OpenAI-compatible transcription endpoint/model and implement transcription; video: extract frames and separately handle audio.
+- Proactive recurrence/dependency recommendations need dependency fields, event history and a scheduled worker. Current Copilot suggestions are rules-based, user-visible and dismissible.

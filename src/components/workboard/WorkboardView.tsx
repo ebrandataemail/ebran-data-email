@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { TaskIntakeAssistant } from "./TaskIntakeAssistant";
+import { TaskAutomationPanel } from "./TaskAutomationPanel";
 import {
   Search,
   RefreshCw,
@@ -191,6 +192,16 @@ export function WorkboardContent() {
         )}
       </div>
       <TaskIntakeAssistant clients={clients} projects={projects} onCreated={refresh} />
+      <TaskAutomationPanel
+        clients={clients}
+        projects={projects}
+        tasks={tasks}
+        onTaskCreated={refresh}
+        onSelectTask={(task) => {
+          setSelectedTaskId(task.id);
+          if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
+        }}
+      />
       <TaskBoard
         query={query}
         tasks={boardTasks}
