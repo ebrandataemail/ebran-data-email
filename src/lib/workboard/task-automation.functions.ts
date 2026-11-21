@@ -223,3 +223,33 @@ export const setGmailTaskAutomationRuleEnabled = createServerFn({ method: "POST"
     if (error) throw error;
     return { ok: true };
   });
+
+
+export const listPendingGmailTaskDraftReviews = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = context.supabase as any;
+    const { data: drafts, error } = await db.from("task_drafts")
+      .select("id,title,summary,status,created_at,source_id")
+      .eq("user_id", context.userId).in("status", ["pending_review","partially_approved"])
+      .order("created_at", { ascending: false }).limit(20);
+    if (error) throw error;
+    if (!drafts?.length) return [];
+    const draftIds = drafts.map((draft: any) => draft.id);
+    const { data: items, error: itemError } = await db.from("task_draft_items")
+      .select("id,draft_id,parent_draft_item_id,title,description,priority,due_date,assignee,confidence,missing_information,status,sort_order")
+      .eq("user_id", context.userId).in("draft_id", draftIds)
+      .in("status", ["pending_review","approved"])
+      .order("sort_order", { ascending: true });
+    if (itemError) throw itemError;
+    return drafts.map((draft: any) => ({
+      draftId: draft.id, title: draft.title, summary: draft.summary,
+      questions: [], duplicateWarnings: [],
+      items: (items ?? []).filter((item: any) => item.draft_id === draft.id).map((item: any) => ({
+        id: item.id, title: item.title, description: item.description,
+        priority: item.priority, dueDate: item.due_date, assignee: item.assignee,
+        confidence: Number(item.confidence ?? 0), missingInformation: item.missing_information ?? [],
+        parentDraftItemId: item.parent_draft_item_id,
+      })),
+    })).filter((draft: any) => draft.items.length > 0);
+  });
