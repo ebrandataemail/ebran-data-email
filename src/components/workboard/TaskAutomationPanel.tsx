@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- TanStack server function response types are generated dynamically for this app. */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BellRing, Check, Clipboard, Loader2, RefreshCw, Webhook, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import {
 } from "@/lib/workboard/task-generator.functions";
 
 type Suggestion = { id: string; task_id: string | null; client_id: string | null; suggestion_type: string; title: string; description: string; evidence: Record<string, unknown> };
-type Intake = { id: string; client_id: string; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; created_at: string };
+type Intake = { id: string; client_id: string; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; created_at: string; metadata?: Record<string, any> };\ntype GmailRule = { id: string; name: string; trigger_config: Record<string, any>; enabled: boolean; last_checked_at: string | null; last_triggered_at: string | null };
 type DraftItem = { id: string; title: string; description: string; priority: string; dueDate: string | null; assignee: string | null; confidence: number; missingInformation: string[]; parentDraftItemId: string | null };
 type DraftResult = { draftId: string; summary: string; questions: string[]; duplicateWarnings: string[]; items: DraftItem[] };
 
@@ -29,7 +29,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [intakes, setIntakes] = useState<Intake[]>([]);
   const [gmailAccounts, setGmailAccounts] = useState<{ id: string; email: string; provider: string }[]>([]);
-  const [emailAccountId, setEmailAccountId] = useState("");
+  const [emailAccountId, setEmailAccountId] = useState("");\n  const [gmailRules, setGmailRules] = useState<GmailRule[]>([]);\n  const [ruleName, setRuleName] = useState("Email masuk → Workboard Task");\n  const [matchMode, setMatchMode] = useState<"any" | "all">("any");\n  const [subjectIncludes, setSubjectIncludes] = useState("");\n  const [senderIncludes, setSenderIncludes] = useState("");\n  const [bodyIncludes, setBodyIncludes] = useState("");\n  const autoSyncRunning = useRef(false);\n  const autoProcessedSources = useRef(new Set<string>());
   const [draft, setDraft] = useState<DraftResult | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -66,6 +66,33 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       toast.success("Webhook endpoint berhasil dibuat. Secret hanya ditampilkan kali ini.");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal membuat endpoint."); }
     finally { setBusy(false); }
+  }
+
+
+  const parseTerms = (value: string) => value.split(/[\n,;]/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
+
+  async function saveGmailRule() {
+    if (!clientId || !emailAccountId) return toast.error("Pilih akun Gmail dan client terlebih dahulu.");
+    setBusy(true);
+    try {
+      await createGmailTaskAutomationRule({ data: {
+        name: ruleName, emailAccountId, clientId, projectId: projectId || null, matchMode,
+        subjectIncludes: parseTerms(subjectIncludes), senderIncludes: parseTerms(senderIncludes),
+        bodyIncludes: parseTerms(bodyIncludes), subjectExcludes: [], senderExcludes: [], bodyExcludes: [],
+      } });
+      setSubjectIncludes(""); setSenderIncludes(""); setBodyIncludes("");
+      toast.success("Aturan Gmail aktif. Email baru yang cocok akan dianalisis AI otomatis.");
+      await load();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal menyimpan aturan Gmail."); }
+    finally { setBusy(false); }
+  }
+
+  async function toggleGmailRule(rule: GmailRule) {
+    try {
+      await setGmailTaskAutomationRuleEnabled({ data: { ruleId: rule.id, enabled: !rule.enabled } });
+      setGmailRules((items) => items.map((item) => item.id === rule.id ? { ...item, enabled: !item.enabled } : item));
+      toast.success(rule.enabled ? "Aturan dijeda." : "Aturan diaktifkan.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal mengubah aturan."); }
   }
 
   async function syncGmail() {
@@ -134,6 +161,40 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
     } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal menutup saran."); }
   }
 
+
+  useEffect(() => {
+    if (!emailAccountId || !gmailRules.some((rule) => rule.enabled && rule.trigger_config?.emailAccountId === emailAccountId)) return;
+    let cancelled = false;
+    const run = async () => {
+      if (autoSyncRunning.current) return;
+      autoSyncRunning.current = true;
+      try {
+        const { data, error } = await supabase.functions.invoke("gmail-oauth", { body: { action: "task-auto-sync", emailAccountId } });
+        if (error) throw error;
+        if (!cancelled && Number(data?.imported || 0) > 0) {
+          toast.success(data.imported + " email cocok dengan aturan Gmail dan masuk ke AI Task Generator.");
+          await load();
+        }
+        if (!cancelled && Number(data?.reauthRequired || 0) > 0) toast.error("Ada akun Gmail yang perlu dihubungkan ulang.");
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : "Pemeriksaan otomatis Gmail gagal.");
+      } finally { autoSyncRunning.current = false; }
+    };
+    void run();
+    const timer = window.setInterval(() => void run(), 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [emailAccountId, gmailRules, load]);
+
+  useEffect(() => {
+    if (busy) return;
+    const next = intakes.find((item) =>
+      item.source_type === "email" && item.metadata?.integration_source === "gmail" &&
+      Boolean(item.metadata?.automation_rule_id) && !autoProcessedSources.current.has(item.id));
+    if (!next) return;
+    autoProcessedSources.current.add(next.id);
+    void processIntake(next);
+  }, [intakes, busy]);
+
   return (
     <section className="grid gap-4 xl:grid-cols-2">
       <div className="rounded-xl border border-border bg-card p-4 shadow-soft sm:p-5">
@@ -161,6 +222,41 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
         <Button className="mt-3" size="sm" onClick={() => void createEndpoint()} disabled={busy || !clients.length}>
           {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Webhook className="mr-2 size-4" />} Buat endpoint
         </Button>
+        {gmailAccounts.length > 0 && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <p className="text-xs font-semibold text-foreground">Otomatisasi Gmail → Task Workboard</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Email baru diperiksa berkala saat Workboard terbuka. Jika kriteria cocok, AI otomatis membuat draft Task untuk kamu review.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <label className="space-y-1 text-[11px] text-muted-foreground">Nama aturan
+              <input value={ruleName} onChange={(e) => setRuleName(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground" />
+            </label>
+            <label className="space-y-1 text-[11px] text-muted-foreground">Pola kecocokan
+              <select value={matchMode} onChange={(e) => setMatchMode(e.target.value as "any" | "all")} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground">
+                <option value="any">Salah satu kriteria cocok (OR)</option><option value="all">Semua kriteria harus cocok (AND)</option>
+              </select>
+            </label>
+            <label className="space-y-1 text-[11px] text-muted-foreground">Subject mengandung
+              <textarea value={subjectIncludes} onChange={(e) => setSubjectIncludes(e.target.value)} rows={2} placeholder="contoh: [TASK], brief, revisi" className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground" />
+            </label>
+            <label className="space-y-1 text-[11px] text-muted-foreground">Pengirim mengandung
+              <textarea value={senderIncludes} onChange={(e) => setSenderIncludes(e.target.value)} rows={2} placeholder="contoh: client@email.com, @perusahaan.com" className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground" />
+            </label>
+            <label className="space-y-1 text-[11px] text-muted-foreground sm:col-span-2">Isi email mengandung
+              <textarea value={bodyIncludes} onChange={(e) => setBodyIncludes(e.target.value)} rows={2} placeholder="contoh: tolong buatkan, deadline, desain banner" className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground" />
+            </label>
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground">Pisahkan beberapa kata/frasa dengan koma atau baris baru. Minimal satu kriteria wajib diisi. Pencocokan tidak membedakan huruf besar/kecil.</p>
+          <Button size="sm" className="mt-2" onClick={() => void saveGmailRule()} disabled={busy || !clientId || !emailAccountId || (!subjectIncludes.trim() && !senderIncludes.trim() && !bodyIncludes.trim())}>
+            {busy ? <Loader2 className="mr-1 size-3 animate-spin" /> : <BellRing className="mr-1 size-3" />} Simpan & Aktifkan Aturan
+          </Button>
+          {gmailRules.length > 0 && <div className="mt-3 space-y-2 border-t border-border pt-3">
+            <p className="text-xs font-semibold text-foreground">Aturan yang tersimpan</p>
+            {gmailRules.map((rule) => <div key={rule.id} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-2">
+              <div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{rule.name}</p>
+                <p className="text-[10px] text-muted-foreground">{rule.trigger_config?.matchMode === "all" ? "Semua kriteria" : "Salah satu kriteria"} · {rule.trigger_config?.emailAccountId === emailAccountId ? "Akun terpilih" : "Akun Gmail lain"} · {rule.last_checked_at ? "Dicek " + new Date(rule.last_checked_at).toLocaleString("id-ID") : "Belum diperiksa"}</p></div>
+              <Button size="sm" variant={rule.enabled ? "outline" : "secondary"} onClick={() => void toggleGmailRule(rule)}>{rule.enabled ? "Jeda" : "Aktifkan"}</Button>
+            </div>)}
+          </div>}
+        </div>}
         {gmailAccounts.length > 0 && <div className="mt-3 rounded-lg border border-border p-3">
           <p className="text-xs font-semibold text-foreground">Ambil email Gmail terbaru</p>
           <p className="mt-1 text-[11px] text-muted-foreground">Gunakan koneksi Gmail yang sudah ada dengan izin baca. Email masuk akan menjadi sumber draft, bukan task otomatis.</p>
