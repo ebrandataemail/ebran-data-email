@@ -239,7 +239,7 @@ export const listPendingGmailTaskDraftReviews = createServerFn({ method: "POST" 
     const { data: items, error: itemError } = await db.from("task_draft_items")
       .select("id,draft_id,parent_draft_item_id,title,description,priority,due_date,assignee,confidence,missing_information,status,sort_order")
       .eq("user_id", context.userId).in("draft_id", draftIds)
-      .in("status", ["pending_review","approved"])
+      .eq("status", "pending_review")
       .order("sort_order", { ascending: true });
     if (itemError) throw itemError;
     return drafts.map((draft: any) => ({
