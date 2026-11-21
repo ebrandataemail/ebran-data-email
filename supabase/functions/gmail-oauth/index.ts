@@ -177,7 +177,7 @@ async function syncGmailAutomationRules(userId: string | null, requestedAccountI
         if (!positiveMatch || negative.some((pair: string[]) => pair[0].includes(pair[1].trim()))) { ignored++; continue; }
 
         const { data: existingSource } = await admin.from("task_intake_sources").select("id")
-          .eq("user_id", ownerId).contains("metadata", { gmail_message_id: message.id }).maybeSingle();
+          .eq("user_id", ownerId).contains("metadata", { gmail_message_id: message.id, email_account_id: accountId }).maybeSingle();
         if (existingSource) { duplicates++; continue; }
         const clientId = String(config.clientId || "");
         const projectId = config.projectId ? String(config.projectId) : null;
