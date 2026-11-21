@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -27,8 +26,10 @@ export const createTaskWebhookEndpoint = createServerFn({ method: "POST" })
       if (error) throw error;
       if (!project) throw new Error("Project tidak termasuk client yang dipilih.");
     }
-    const token = randomBytes(32).toString("base64url");
-    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const random = crypto.getRandomValues(new Uint8Array(32));
+    const token = Array.from(random).map((value) => value.toString(16).padStart(2, "0")).join("");
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    const tokenHash = Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
     const { data: endpoint, error } = await db.from("task_integration_endpoints").insert({
       user_id: userId, client_id: data.clientId, project_id: data.projectId,
       endpoint_name: data.endpointName, source_type: data.sourceType, token_hash: tokenHash,
