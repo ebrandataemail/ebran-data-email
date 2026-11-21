@@ -141,7 +141,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       } }) as DraftResult;
       setDraft(result);
       setSelectedItems(result.items.map((item) => item.id));
-      toast.success("Event webhook berhasil dianalisis. Periksa draft sebelum dibuat.");
+      toast.success("Email berhasil dianalisis AI. Periksa draft Task sebelum disetujui.");
       await load();
     } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal memproses webhook."); }
     finally { setBusy(false); }
@@ -243,6 +243,11 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
           <p className="text-xs font-semibold text-foreground">Otomatisasi Gmail → Task Workboard</p>
           <p className="mt-1 text-[11px] text-muted-foreground">Email baru diperiksa berkala saat Workboard terbuka. Jika kriteria cocok, AI otomatis membuat draft Task untuk kamu review.</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <label className="space-y-1 text-[11px] text-muted-foreground sm:col-span-2">Akun Gmail
+              <select value={emailAccountId} onChange={(e) => setEmailAccountId(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground">
+                {gmailAccounts.map((account) => <option key={account.id} value={account.id}>{account.email}</option>)}
+              </select>
+            </label>
             <label className="space-y-1 text-[11px] text-muted-foreground">Nama aturan
               <input value={ruleName} onChange={(e) => setRuleName(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground" />
             </label>
@@ -312,7 +317,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
           </div>)}
         </div>}
         {draft && <div className="mt-3 space-y-2 border-t border-border pt-3">
-          <p className="text-xs font-semibold text-foreground">Review hasil analisis webhook</p>
+          <p className="text-xs font-semibold text-foreground">Review hasil analisis AI</p>
           <p className="rounded-lg bg-muted/50 p-2 text-xs text-foreground">{draft.summary}</p>
           {draft.duplicateWarnings.map((warning, index) => <p key={index} className="text-xs text-warning-foreground">Periksa duplikat: {warning}</p>)}
           {draft.items.map((item) => <label key={item.id} className="flex gap-2 rounded-lg border border-border p-2">
