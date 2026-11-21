@@ -141,7 +141,7 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
         } else if (file.type.startsWith("video/")) {
           imageFrames = await extractVideoFrames(file);
         } else if (file.type.startsWith("text/") || ["txt","md","csv","html","json"].includes(extension)) {
-          combinedText = [sourceText, "ISI FILE " + file.name + ":\\n" + (await file.text()).slice(0, 24000)].filter(Boolean).join("\\n\\n").slice(0, 24000);
+          combinedText = [sourceText, "ISI FILE " + file.name + ":\n" + (await file.text()).slice(0, 24000)].filter(Boolean).join("\n\n").slice(0, 24000);
         } else {
           filePayload = { fileName: file.name, mediaType: file.type || "application/octet-stream", base64: await fileBase64(file) };
         }
