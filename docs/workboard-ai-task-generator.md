@@ -1,14 +1,20 @@
 # Workboard AI Task Intake & Automation
 
-## Implemented in this increment
-- Manual prompt, pasted brief, email/chat transcript, URL reference, text files (TXT/MD/CSV/HTML/JSON), PDF and image attachment intake.
-- Audio upload transcription through the server-side OpenAI-compatible transcription endpoint. Configure `AI_TRANSCRIPTION_MODEL` if the default `whisper-1` is not appropriate.
-- Video upload samples up to five visual frames in the browser and sends those frames for image analysis. Video audio is not transcribed; upload the audio track separately for speech extraction.
-- Existing webhook sources can be processed into drafts without duplicating their intake record.
-- Task approval is transactional through `approve_task_draft_items`: parent tasks are included when a selected subtask depends on them, task creation, provenance linking and draft state updates commit or roll back together.
-- Webhook endpoint secrets are generated once, stored only as SHA-256 hashes, and never returned again by list/read APIs.
-- The public webhook Edge Function accepts bounded JSON POST payloads with a per-endpoint Bearer secret, records idempotency event IDs and creates queued intake records.
-- Workboard Copilot currently creates deterministic overdue and stale-task follow-up suggestions from owned task data. It does not yet use an LLM or claim autonomous scheduling.
+## Implemented
+- Manual prompts, pasted briefs, chat and meeting notes, URL references, TXT/MD/CSV/HTML/JSON text files, PDF and image attachments.
+- Audio uploads are transcribed server-side using the OpenAI-compatible `/audio/transcriptions` endpoint. Default model: `whisper-1`; override with server env `AI_TRANSCRIPTION_MODEL`.
+- Video uploads are sampled into up to five frames in the browser and analyzed visually. Video audio is not transcribed; upload the audio track separately.
+- Gmail import reuses the existing Gmail OAuth connection and its read-only scope. The Workboard action fetches up to 10 recent inbox messages from the last 14 days, deduplicates by Gmail message ID, and stores them in the integration inbox as queued sources.
+- Secure webhook endpoints use one-time random Bearer secrets; only SHA-256 hashes are stored. Webhook event IDs are idempotent.
+- Existing webhook and Gmail sources can be processed into task drafts without duplicating their intake records.
+- Task approval is transactional through `approve_task_draft_items`. Selected child items include their pending parent items; task creation, provenance links, draft-item status and draft status commit or roll back together.
+- Workboard Copilot has immediate rules-based overdue/stale suggestions and a daily `pg_cron` job at 02:00 UTC (09:00 WIB) to generate suggestions even when Workboard is not open.
+
+## Gmail sync
+- Requires the existing Gmail OAuth connection to be `connected` with the read-only Gmail scope.
+- User chooses a Gmail account and a Workboard client/project, then requests a recent inbox sync.
+- Email body text, sender, subject, date and Gmail message URL are stored as source provenance. No task is created automatically; the user analyzes the source and approves the resulting draft.
+- Gmail access tokens remain encrypted in the existing private mailbox connection store.
 
 ## Webhook contract
 - Method: `POST`
@@ -16,20 +22,14 @@
 - Header: `Authorization: Bearer <one-time-secret>`
 - Content type: `application/json`
 - Optional idempotency: `event_id` or `X-Webhook-Event-Id`
-- Text fields accepted in order: `text`, `body`, `message`, `content`, `transcript`, `description`, `subject`, `data`.
+- Text fields accepted: `text`, `body`, `message`, `content`, `transcript`, `description`, `subject`, `data`.
 - Optional source link: `source_url`, `url`, or `permalink`.
-- Maximum body: 1 MB. Intake content is truncated to 24,000 characters.
-- New events enter Workboard's integration inbox. The user runs analysis and explicitly approves tasks.
+- Maximum body: 1 MB; extracted text is capped at 24,000 characters.
+- New events enter the Workboard integration inbox; users run analysis and explicitly approve tasks.
 
-## Security notes
-- Do not put the endpoint Bearer secret in frontend source, query strings, logs, or screenshots.
-- Rotate a webhook by disabling the old endpoint and creating a new one.
-- Generic Bearer webhooks work with automation relays such as Make/n8n/Zapier. Direct provider webhooks that require OAuth or signature validation still need their own adapter; do not paste this Bearer token into a provider that cannot send it.
-- Provider OAuth tokens belong in private encrypted storage, not these public tables.
-- Webhook content is untrusted input and is only used as task context; no action is executed from it automatically.
-
-## Remaining provider-specific work
-- Gmail and Outlook: use the existing OAuth mailbox connection, add incremental message sync, scope checks and user-selected folders/labels.
-- WhatsApp/Telegram/Slack/Teams/Zoom/Calendar/Figma/GitHub/Zendesk/Intercom: implement provider-specific OAuth/signature verification, event normalization and reconnect handling.
-- Audio: configure an OpenAI-compatible transcription endpoint/model and implement transcription; video: extract frames and separately handle audio.
-- Proactive recurrence/dependency recommendations need dependency fields, event history and a scheduled worker. Current Copilot suggestions are rules-based, user-visible and dismissible.
+## Security and limitations
+- Do not put webhook Bearer secrets in frontend source, query strings, logs or screenshots. Rotate by disabling the old endpoint and creating a new one.
+- Generic Bearer webhooks work with Make, n8n, Zapier or systems supporting custom headers. Direct provider webhooks requiring provider-specific OAuth/signature verification still need their own adapter.
+- Provider OAuth tokens stay in encrypted/private storage, not public task tables.
+- Uploaded/webhook content is untrusted context. It cannot trigger external actions or publish/send anything automatically.
+- DOCX/XLSX parsing, native Outlook/WhatsApp/Telegram/Slack/Teams/Zoom/Calendar/Figma/GitHub/Zendesk/Intercom OAuth adapters, automatic background AI processing of webhook inbox items, video audio transcription, dependency graph UI and model-generated recurring-pattern suggestions remain follow-up work. The current Copilot is deterministic and data-driven, not an LLM-generated task plan.
