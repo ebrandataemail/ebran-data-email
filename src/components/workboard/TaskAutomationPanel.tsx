@@ -163,13 +163,13 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
 
 
   useEffect(() => {
-    if (!emailAccountId || !gmailRules.some((rule) => rule.enabled && rule.trigger_config?.emailAccountId === emailAccountId)) return;
+    if (!gmailRules.some((rule) => rule.enabled)) return;
     let cancelled = false;
     const run = async () => {
       if (autoSyncRunning.current) return;
       autoSyncRunning.current = true;
       try {
-        const { data, error } = await supabase.functions.invoke("gmail-oauth", { body: { action: "task-auto-sync", emailAccountId } });
+        const { data, error } = await supabase.functions.invoke("gmail-oauth", { body: { action: "task-auto-sync" } });
         if (error) throw error;
         if (!cancelled && Number(data?.imported || 0) > 0) {
           toast.success(data.imported + " email cocok dengan aturan Gmail dan masuk ke AI Task Generator.");
