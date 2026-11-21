@@ -78,11 +78,10 @@ function findText(payload: any): string {
   } else if (payload.mimeType === "text/html" && payload.body?.data) {
     try {
       const html = decodeBase64Url(payload.body.data);
-      const plain = html.replace(/<\\/(p|div|li|tr|h[1-6])>/gi, "\\n")
+      const plain = html.replace(/<\/(p|div|li|tr|h[1-6])>/gi, "\n")
         .replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
         .replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&#39;/gi, "'").replace(/&quot;/gi, '"');
-      result += plain + "\\n";
-    } catch { /* ignore malformed HTML part */ }
+      result += plain + "\n";    } catch { /* ignore malformed HTML part */ }
   }
   for (const part of payload.parts || []) result += findText(part);
   return result.slice(0, 30000);
