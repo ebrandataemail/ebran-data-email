@@ -143,4 +143,3 @@ begin
   end loop;
 end $$;
 
-grant select, insert, update, delete on public.client_tasks to authenticated;
