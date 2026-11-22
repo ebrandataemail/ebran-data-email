@@ -617,8 +617,12 @@ export type Database = {
           due_at: string | null
           due_date: string | null
           id: string
+          parent_task_id: string | null
           priority: string
+          project_id: string | null
           sort_order: number
+          source_kind: string | null
+          source_reference: string | null
           status: string
           task_type: string
           title: string
@@ -633,8 +637,12 @@ export type Database = {
           due_at?: string | null
           due_date?: string | null
           id?: string
+          parent_task_id?: string | null
           priority?: string
+          project_id?: string | null
           sort_order?: number
+          source_kind?: string | null
+          source_reference?: string | null
           status?: string
           task_type?: string
           title: string
@@ -649,8 +657,12 @@ export type Database = {
           due_at?: string | null
           due_date?: string | null
           id?: string
+          parent_task_id?: string | null
           priority?: string
+          project_id?: string | null
           sort_order?: number
+          source_kind?: string | null
+          source_reference?: string | null
           status?: string
           task_type?: string
           title?: string
@@ -664,6 +676,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "client_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1393,6 +1419,105 @@ export type Database = {
           },
         ]
       }
+      task_ai_suggestions: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          description: string
+          evidence: Json
+          id: string
+          resolved_at: string | null
+          status: string
+          suggestion_type: string
+          task_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          evidence?: Json
+          id?: string
+          resolved_at?: string | null
+          status?: string
+          suggestion_type: string
+          task_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          evidence?: Json
+          id?: string
+          resolved_at?: string | null
+          status?: string
+          suggestion_type?: string
+          task_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_ai_suggestions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_ai_suggestions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_automation_rules: {
+        Row: {
+          action_config: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          last_checked_at: string | null
+          last_triggered_at: string | null
+          name: string
+          source_type: string
+          trigger_config: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_config?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_checked_at?: string | null
+          last_triggered_at?: string | null
+          name: string
+          source_type: string
+          trigger_config?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_config?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_checked_at?: string | null
+          last_triggered_at?: string | null
+          name?: string
+          source_type?: string
+          trigger_config?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_brief_acceptance_criteria: {
         Row: {
           created_at: string
@@ -2076,6 +2201,350 @@ export type Database = {
           },
         ]
       }
+      task_draft_items: {
+        Row: {
+          assignee: string | null
+          confidence: number | null
+          created_at: string
+          created_task_id: string | null
+          description: string
+          draft_id: string
+          due_date: string | null
+          duplicate_hint: string | null
+          id: string
+          missing_information: string[]
+          parent_draft_item_id: string | null
+          priority: string
+          sort_order: number
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assignee?: string | null
+          confidence?: number | null
+          created_at?: string
+          created_task_id?: string | null
+          description?: string
+          draft_id: string
+          due_date?: string | null
+          duplicate_hint?: string | null
+          id?: string
+          missing_information?: string[]
+          parent_draft_item_id?: string | null
+          priority?: string
+          sort_order?: number
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          assignee?: string | null
+          confidence?: number | null
+          created_at?: string
+          created_task_id?: string | null
+          description?: string
+          draft_id?: string
+          due_date?: string | null
+          duplicate_hint?: string | null
+          id?: string
+          missing_information?: string[]
+          parent_draft_item_id?: string | null
+          priority?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_draft_items_created_task_id_fkey"
+            columns: ["created_task_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_draft_items_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "task_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_draft_items_parent_draft_item_id_fkey"
+            columns: ["parent_draft_item_id"]
+            isOneToOne: false
+            referencedRelation: "task_draft_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_drafts: {
+        Row: {
+          approved_at: string | null
+          client_id: string
+          confidence: number | null
+          created_at: string
+          id: string
+          project_id: string | null
+          rejected_at: string | null
+          review_notes: string | null
+          run_id: string
+          source_id: string
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          client_id: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          rejected_at?: string | null
+          review_notes?: string | null
+          run_id: string
+          source_id: string
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          client_id?: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          rejected_at?: string | null
+          review_notes?: string | null
+          run_id?: string
+          source_id?: string
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_drafts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_drafts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_drafts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "task_generation_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_drafts_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "task_intake_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_generation_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          prompt_version: string
+          source_id: string
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          prompt_version?: string
+          source_id: string
+          started_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          prompt_version?: string
+          source_id?: string
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_generation_runs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "task_intake_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_intake_sources: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          extracted_text: string | null
+          file_name: string | null
+          id: string
+          metadata: Json
+          mime_type: string | null
+          project_id: string | null
+          source_label: string
+          source_type: string
+          source_uri: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          project_id?: string | null
+          source_label?: string
+          source_type: string
+          source_uri?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          project_id?: string | null
+          source_label?: string
+          source_type?: string
+          source_uri?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_intake_sources_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_intake_sources_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_integration_endpoints: {
+        Row: {
+          client_id: string
+          created_at: string
+          enabled: boolean
+          endpoint_name: string
+          id: string
+          last_received_at: string | null
+          project_id: string | null
+          source_type: string
+          token_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          enabled?: boolean
+          endpoint_name: string
+          id?: string
+          last_received_at?: string | null
+          project_id?: string | null
+          source_type: string
+          token_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint_name?: string
+          id?: string
+          last_received_at?: string | null
+          project_id?: string | null
+          source_type?: string
+          token_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_integration_endpoints_client_owner_fkey"
+            columns: ["client_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "task_integration_endpoints_project_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_reminders: {
         Row: {
           channel: string
@@ -2180,6 +2649,106 @@ export type Database = {
           },
         ]
       }
+      task_source_links: {
+        Row: {
+          created_at: string
+          draft_item_id: string | null
+          excerpt: string | null
+          id: string
+          source_id: string | null
+          source_label: string
+          source_uri: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          draft_item_id?: string | null
+          excerpt?: string | null
+          id?: string
+          source_id?: string | null
+          source_label?: string
+          source_uri?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          draft_item_id?: string | null
+          excerpt?: string | null
+          id?: string
+          source_id?: string | null
+          source_label?: string
+          source_uri?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_source_links_draft_item_id_fkey"
+            columns: ["draft_item_id"]
+            isOneToOne: false
+            referencedRelation: "task_draft_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_source_links_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "task_intake_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_source_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "client_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_webhook_events: {
+        Row: {
+          endpoint_id: string
+          external_event_id: string
+          id: string
+          received_at: string
+          source_id: string | null
+          user_id: string
+        }
+        Insert: {
+          endpoint_id: string
+          external_event_id: string
+          id?: string
+          received_at?: string
+          source_id?: string | null
+          user_id: string
+        }
+        Update: {
+          endpoint_id?: string
+          external_event_id?: string
+          id?: string
+          received_at?: string
+          source_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_webhook_events_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "task_integration_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_webhook_events_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "task_intake_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_ntfy_channels: {
         Row: {
           created_at: string
@@ -2209,6 +2778,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_task_draft_items: {
+        Args: { p_draft_id: string; p_item_ids: string[] }
+        Returns: string[]
+      }
       dispatch_due_task_reminders: { Args: never; Returns: number }
       get_or_create_my_ntfy_topic: {
         Args: never
