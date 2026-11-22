@@ -96,22 +96,23 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
     : "—";
 
   return (
-    <section className="mx-5 mb-5 rounded-xl border border-border bg-background p-4 sm:mx-6">
+    // Berada di dalam tab (isi tab sudah punya padding): tanpa border, margin, atau card sendiri.
+    <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Mail className="size-4" /></span>
-          <div>
-            <h4 className="text-sm font-semibold">Gmail Inbox Monitor</h4>
+        <div className="flex min-w-0 items-start gap-2.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground"><Mail className="size-4" /></span>
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold text-foreground">Gmail Inbox Monitor</h4>
             <p className="text-xs text-muted-foreground">Cek email terbaru dan kode verifikasi tanpa membuka banyak akun.</p>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <Badge variant={connected ? "success" : "muted"}>
                 {connected ? "Gmail terhubung" : connectionStatus === "reauth_required" ? "Perlu hubungkan ulang" : "Belum terhubung"}
               </Badge>
-              {connectedEmail && <span className="text-xs text-muted-foreground">{connectedEmail}</span>}
+              {connectedEmail && <span className="break-all text-xs text-muted-foreground">{connectedEmail}</span>}
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           {connected ? (
             <>
               <Button size="sm" onClick={checkLatest} disabled={!!busy}>
@@ -130,27 +131,30 @@ export function GmailInboxMonitor({ emailAccountId, email }: { emailAccountId: s
           )}
         </div>
       </div>
+
+      {/* Email terbaru: area inset (tanpa border); kode verifikasi dipisah garis, bukan kotak lagi. */}
       {message && (
-        <div className="mt-4 rounded-lg border border-border p-3">
+        <div className="rounded-lg bg-muted/60 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-medium">{message.subject || "(Tanpa subjek)"}</p>
+            <p className="min-w-0 break-words text-sm font-medium text-foreground">{message.subject || "(Tanpa subjek)"}</p>
             <span className="text-xs text-muted-foreground">{formatDate(message.receivedAt)}</span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Dari: {message.from || "—"}</p>
+          <p className="mt-1 break-all text-xs text-muted-foreground">Dari: {message.from || "—"}</p>
           {message.verificationCode ? (
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-primary/5 p-3">
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
               <div>
-                <p className="text-[11px] text-muted-foreground">Kode verifikasi terdeteksi</p>
-                <p className="font-mono text-2xl font-bold tracking-[0.2em]">{message.verificationCode}</p>
+                <p className="text-xs text-muted-foreground">Kode verifikasi terdeteksi</p>
+                <p className="font-mono text-2xl font-bold tracking-[0.2em] text-foreground">{message.verificationCode}</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => { void navigator.clipboard.writeText(message.verificationCode!); toast.success("Kode disalin."); }}>
                 <Copy className="mr-1.5 size-3.5" /> Salin
               </Button>
             </div>
-          ) : <p className="mt-3 text-xs text-muted-foreground">Tidak ditemukan pola kode verifikasi pada email terbaru.</p>}
+          ) : <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">Tidak ditemukan pola kode verifikasi pada email terbaru.</p>}
         </div>
       )}
-      <p className="mt-3 text-[11px] text-muted-foreground">
+
+      <p className="text-xs text-muted-foreground">
         <Check className="mr-1 inline size-3" /> Akses hanya-baca. Isi email dan kode tidak disimpan permanen. {checkedAt ? `Terakhir dicek: ${formatDate(checkedAt)}.` : "Pengecekan hanya berjalan saat tombol ditekan."}
       </p>
     </section>

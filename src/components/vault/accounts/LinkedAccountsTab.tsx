@@ -34,6 +34,12 @@ type Draft = {
 const EMPTY: Draft = { provider: "", displayName: "", username: "", loginEmail: "", phone: "", ownerName: "", accountReference: "", recoveryContact: "", securityMethod: "", websiteUrl: "", loginUrl: "", password: "", secret: "", status: "manual", note: "" };
 const KEY = (id: string) => ["vault", "linked-assets", id] as const;
 
+const STATUS_LABEL: Record<string, string> = {
+  connected: "Ditandai terhubung",
+  needs_attention: "Perlu perhatian",
+  disabled: "Nonaktif",
+};
+
 export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }) {
   const listFn = useServerFn(vaultListLinkedAssets);
   const saveFn = useServerFn(vaultSaveLinkedAsset);
@@ -99,45 +105,47 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold">Akun Digital Terkait</h3>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground">Akun digital terkait</h3>
           <p className="text-sm text-muted-foreground">Kelola akun sosial, developer, pembayaran, kontak, hiburan, dan AI yang terkait dengan email induk ini.</p>
         </div>
         <Button size="sm" onClick={startAdd}><Plus className="size-4" /> Tambah Akun</Button>
       </div>
 
+      {/* Navigasi kategori: gaya pil (berbeda dari tab garis-bawah di level atas, supaya jelas ini tingkat kedua) */}
       <Tabs value={category} onValueChange={(value) => { setCategory(value as Category); closeForm(); setShown(null); }}>
         <div className="overflow-x-auto">
           <TabsList className="h-auto min-w-max flex-wrap justify-start">
             {CATEGORIES.map((item) => <TabsTrigger key={item.key} value={item.key} className="text-xs">
-              {item.label} <span className="ml-1 text-muted-foreground">{rows.filter((row) => row.category === item.key).length}</span>
+              {item.label} <span className="ml-1 tabular-nums text-muted-foreground">{rows.filter((row) => row.category === item.key).length}</span>
             </TabsTrigger>)}
           </TabsList>
         </div>
         {CATEGORIES.map((item) => <TabsContent key={item.key} value={item.key} className="mt-4 space-y-3">
           {adding && category === item.key && (
-            <form onSubmit={submit} className="space-y-4 rounded-xl border bg-card p-4">
+            // Form = area inset (tanpa border), bukan card di dalam card.
+            <form onSubmit={submit} className="space-y-4 rounded-lg bg-muted/60 p-4">
               <div className="flex items-center justify-between">
-                <div className="font-semibold">{editing ? "Edit akun" : "Tambah akun baru"} · {item.label}</div>
-                <Button type="button" variant="ghost" size="icon-sm" onClick={closeForm}><X /></Button>
+                <div className="text-sm font-semibold text-foreground">{editing ? "Edit akun" : "Tambah akun baru"} · {item.label}</div>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label="Tutup formulir" onClick={closeForm}><X /></Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5"><Label>Platform / Provider *</Label><Input required value={draft.provider} onChange={(e) => patch("provider", e.target.value)} placeholder="Instagram, GitHub, BCA..." /></div>
-                <div className="space-y-1.5"><Label>Nama akun / Label *</Label><Input required value={draft.displayName} onChange={(e) => patch("displayName", e.target.value)} placeholder="Nama akun atau identitas" /></div>
-                <div className="space-y-1.5"><Label>Username / ID</Label><Input value={draft.username} onChange={(e) => patch("username", e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Email login</Label><Input type="email" value={draft.loginEmail} onChange={(e) => patch("loginEmail", e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Nomor telepon</Label><Input value={draft.phone} onChange={(e) => patch("phone", e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Nama pemilik / pemegang</Label><Input value={draft.ownerName} onChange={(e) => patch("ownerName", e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Referensi akun (nomor tersamarkan / 4 digit akhir)</Label><Input value={draft.accountReference} onChange={(e) => patch("accountReference", e.target.value)} placeholder="Contoh: •••• 1234" /></div>
-                <div className="space-y-1.5"><Label>Kontak pemulihan</Label><Input value={draft.recoveryContact} onChange={(e) => patch("recoveryContact", e.target.value)} placeholder="Email / nomor pemulihan" /></div>
-                <div className="space-y-1.5"><Label>Metode keamanan / 2FA</Label><Input value={draft.securityMethod} onChange={(e) => patch("securityMethod", e.target.value)} placeholder="Authenticator, SMS, passkey..." /></div>
-                <div className="space-y-1.5"><Label>Website</Label><Input value={draft.websiteUrl} onChange={(e) => patch("websiteUrl", e.target.value)} placeholder="https://..." /></div>
-                <div className="space-y-1.5"><Label>URL Login</Label><Input value={draft.loginUrl} onChange={(e) => patch("loginUrl", e.target.value)} placeholder="https://..." /></div>
-                <div className="space-y-1.5"><Label>Status</Label><Select value={draft.status} onValueChange={(value) => patch("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="manual">Dicatat manual</SelectItem><SelectItem value="connected">Ditandai terhubung</SelectItem><SelectItem value="needs_attention">Perlu perhatian</SelectItem><SelectItem value="disabled">Nonaktif</SelectItem></SelectContent></Select></div>
-                <div className="space-y-1.5"><Label>Password {editing ? "(kosongkan jika tidak diganti)" : ""}</Label><Input type="password" autoComplete="new-password" value={draft.password} onChange={(e) => patch("password", e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>API Key / Token / Secret {editing ? "(kosongkan jika tidak diganti)" : ""}</Label><Input type="password" autoComplete="new-password" value={draft.secret} onChange={(e) => patch("secret", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Platform / Provider *</Label><Input className="bg-card" required value={draft.provider} onChange={(e) => patch("provider", e.target.value)} placeholder="Instagram, GitHub, BCA..." /></div>
+                <div className="space-y-1.5"><Label>Nama akun / Label *</Label><Input className="bg-card" required value={draft.displayName} onChange={(e) => patch("displayName", e.target.value)} placeholder="Nama akun atau identitas" /></div>
+                <div className="space-y-1.5"><Label>Username / ID</Label><Input className="bg-card" value={draft.username} onChange={(e) => patch("username", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Email login</Label><Input className="bg-card" type="email" value={draft.loginEmail} onChange={(e) => patch("loginEmail", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Nomor telepon</Label><Input className="bg-card" value={draft.phone} onChange={(e) => patch("phone", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Nama pemilik / pemegang</Label><Input className="bg-card" value={draft.ownerName} onChange={(e) => patch("ownerName", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Referensi akun (nomor tersamarkan / 4 digit akhir)</Label><Input className="bg-card" value={draft.accountReference} onChange={(e) => patch("accountReference", e.target.value)} placeholder="Contoh: •••• 1234" /></div>
+                <div className="space-y-1.5"><Label>Kontak pemulihan</Label><Input className="bg-card" value={draft.recoveryContact} onChange={(e) => patch("recoveryContact", e.target.value)} placeholder="Email / nomor pemulihan" /></div>
+                <div className="space-y-1.5"><Label>Metode keamanan / 2FA</Label><Input className="bg-card" value={draft.securityMethod} onChange={(e) => patch("securityMethod", e.target.value)} placeholder="Authenticator, SMS, passkey..." /></div>
+                <div className="space-y-1.5"><Label>Website</Label><Input className="bg-card" value={draft.websiteUrl} onChange={(e) => patch("websiteUrl", e.target.value)} placeholder="https://..." /></div>
+                <div className="space-y-1.5"><Label>URL Login</Label><Input className="bg-card" value={draft.loginUrl} onChange={(e) => patch("loginUrl", e.target.value)} placeholder="https://..." /></div>
+                <div className="space-y-1.5"><Label>Status</Label><Select value={draft.status} onValueChange={(value) => patch("status", value)}><SelectTrigger className="bg-card"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="manual">Dicatat manual</SelectItem><SelectItem value="connected">Ditandai terhubung</SelectItem><SelectItem value="needs_attention">Perlu perhatian</SelectItem><SelectItem value="disabled">Nonaktif</SelectItem></SelectContent></Select></div>
+                <div className="space-y-1.5"><Label>Password {editing ? "(kosongkan jika tidak diganti)" : ""}</Label><Input className="bg-card" type="password" autoComplete="new-password" value={draft.password} onChange={(e) => patch("password", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>API Key / Token / Secret {editing ? "(kosongkan jika tidak diganti)" : ""}</Label><Input className="bg-card" type="password" autoComplete="new-password" value={draft.secret} onChange={(e) => patch("secret", e.target.value)} /></div>
               </div>
-              <div className="space-y-1.5"><Label>Catatan</Label><Textarea rows={3} value={draft.note} onChange={(e) => patch("note", e.target.value)} /></div>
+              <div className="space-y-1.5"><Label>Catatan</Label><Textarea className="bg-card" rows={3} value={draft.note} onChange={(e) => patch("note", e.target.value)} /></div>
               <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeForm}>Batal</Button><Button type="submit" disabled={busy}>{busy && <LoaderCircle className="animate-spin" />} Simpan Akun</Button></div>
               <p className="text-xs text-muted-foreground">Password dan API secret dienkripsi di server. Untuk kartu, simpan hanya nama pemegang dan 4 digit terakhir; jangan masukkan nomor kartu lengkap, CVV, PIN, atau OTP.</p>
             </form>
@@ -145,25 +153,28 @@ export function LinkedAccountsTab({ emailAccountId }: { emailAccountId: string }
 
           {query.isPending ? <div className="py-8 text-center text-sm text-muted-foreground"><LoaderCircle className="mr-2 inline size-4 animate-spin" />Memuat akun terkait…</div> :
            query.isError ? <div className="py-8 text-center text-sm text-destructive">{errorMessage(query.error)} <Button variant="outline" size="sm" onClick={() => query.refetch()}>Coba lagi</Button></div> :
-           filtered.length === 0 && !adding ? <div className="rounded-xl border border-dashed p-8 text-center"><ShieldCheck className="mx-auto mb-2 size-7 text-muted-foreground" /><p className="font-medium">Belum ada akun di kategori {item.label}</p><p className="mt-1 text-sm text-muted-foreground">Tambahkan akun menggunakan formulir standar Ebran.</p><Button className="mt-3" variant="outline" size="sm" onClick={startAdd}><Plus className="size-4" /> Tambah Akun</Button></div> :
-           filtered.map((row) => <div key={row.id} className="rounded-xl border bg-card p-4">
-             <div className="flex flex-wrap items-start justify-between gap-3">
-               <div className="min-w-0 space-y-1">
-                 <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{row.displayName}</span><Badge variant={row.status === "connected" ? "success" : row.status === "needs_attention" ? "warning" : "muted"}>{row.status === "connected" ? "Ditandai terhubung" : row.status === "needs_attention" ? "Perlu perhatian" : row.status === "disabled" ? "Nonaktif" : "Manual"}</Badge><Badge variant="outline">{row.provider}</Badge></div>
-                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                   {row.username && <span>@{row.username}</span>}{row.loginEmail && <span>{row.loginEmail}</span>}{row.phone && <span>{row.phone}</span>}{row.ownerName && <span>{row.ownerName}</span>}{row.accountReference && <span>{row.accountReference}</span>}{row.recoveryContact && <span>Recovery: {row.recoveryContact}</span>}{row.securityMethod && <span>2FA: {row.securityMethod}</span>}
+           filtered.length === 0 && !adding ? <div className="rounded-lg border border-dashed border-border-strong/60 p-8 text-center"><ShieldCheck className="mx-auto mb-2 size-7 text-muted-foreground" /><p className="text-sm font-medium text-foreground">Belum ada akun di kategori {item.label}</p><p className="mt-1 text-sm text-muted-foreground">Tambahkan akun menggunakan formulir standar Ebran.</p><Button className="mt-3" variant="outline" size="sm" onClick={startAdd}><Plus className="size-4" /> Tambah Akun</Button></div> :
+           // Daftar akun: baris dipisah garis (divide-y), bukan card bergaris per akun.
+           <div className="divide-y divide-border">
+             {filtered.map((row) => <div key={row.id} className="py-3 first:pt-0 last:pb-0">
+               <div className="flex flex-wrap items-start justify-between gap-3">
+                 <div className="min-w-0 flex-1 space-y-1">
+                   <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-foreground">{row.displayName}</span><Badge variant={row.status === "connected" ? "success" : row.status === "needs_attention" ? "warning" : "muted"}>{STATUS_LABEL[row.status] ?? "Manual"}</Badge><Badge variant="outline">{row.provider}</Badge></div>
+                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                     {row.username && <span>@{row.username}</span>}{row.loginEmail && <span className="break-all">{row.loginEmail}</span>}{row.phone && <span>{row.phone}</span>}{row.ownerName && <span>{row.ownerName}</span>}{row.accountReference && <span>{row.accountReference}</span>}{row.recoveryContact && <span>Recovery: {row.recoveryContact}</span>}{row.securityMethod && <span>2FA: {row.securityMethod}</span>}
+                   </div>
+                   {row.loginUrl && <a href={row.loginUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-primary hover:underline">{row.loginUrl}</a>}
+                   {row.note && <p className="pt-1 text-sm text-muted-foreground">{row.note}</p>}
+                   {shown && shown.id === row.id && <div className="mt-2 rounded-md bg-muted p-2 font-mono text-xs break-all">{shown.password && <div>Password: {shown.password}</div>}{shown.secret && <div>Secret: {shown.secret}</div>}{!shown.password && !shown.secret && "Tidak ada kredensial tersimpan."}<p className="mt-1 font-sans text-muted-foreground">Otomatis disembunyikan setelah 30 detik.</p></div>}
                  </div>
-                 {row.loginUrl && <a href={row.loginUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{row.loginUrl}</a>}
-                 {row.note && <p className="pt-1 text-sm text-muted-foreground">{row.note}</p>}
-                 {shown && shown.id === row.id && <div className="mt-2 rounded-md bg-muted p-2 font-mono text-xs break-all">{shown.password && <div>Password: {shown.password}</div>}{shown.secret && <div>Secret: {shown.secret}</div>}{!shown.password && !shown.secret && "Tidak ada kredensial tersimpan."}<p className="mt-1 font-sans text-muted-foreground">Otomatis disembunyikan setelah 30 detik.</p></div>}
+                 <div className="flex shrink-0 items-center gap-1">
+                   {(row.hasPassword || row.hasSecret) && <Button size="icon-sm" variant="ghost" aria-label="Tampilkan kredensial" onClick={() => reveal(row)}>{shown?.id === row.id ? <EyeOff /> : <Eye />}</Button>}
+                   <Button size="icon-sm" variant="ghost" aria-label="Edit akun" onClick={() => startEdit(row)}><Pencil /></Button>
+                   <Button size="icon-sm" variant="ghost-danger" aria-label="Hapus akun" onClick={() => remove(row)}><Trash2 /></Button>
+                 </div>
                </div>
-               <div className="flex items-center gap-1">
-                 {(row.hasPassword || row.hasSecret) && <Button size="icon-sm" variant="outline" aria-label="Tampilkan kredensial" onClick={() => reveal(row)}>{shown?.id === row.id ? <EyeOff /> : <Eye />}</Button>}
-                 <Button size="icon-sm" variant="outline" aria-label="Edit akun" onClick={() => startEdit(row)}><Pencil /></Button>
-                 <Button size="icon-sm" variant="ghost-danger" aria-label="Hapus akun" onClick={() => remove(row)}><Trash2 /></Button>
-               </div>
-             </div>
-           </div>)}
+             </div>)}
+           </div>}
         </TabsContent>)}
       </Tabs>
     </section>
