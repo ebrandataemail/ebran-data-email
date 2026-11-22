@@ -60,7 +60,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       if (accountResult.error) throw accountResult.error;
       if (connectionResult.error) throw connectionResult.error;
       const connectedIds = new Set((connectionResult.data ?? []).filter((item) => item.status === "connected").map((item) => item.email_account_id));
-      const availableAccounts = (accountResult.data ?? []).filter((account) => ["gmail","google"].includes(String(account.provider).toLowerCase()) && connectedIds.has(account.id));
+      // A connected gmail_mailbox_connections row is the authoritative signal that this email account has Gmail OAuth. Do not additionally depend on email_accounts.provider naming, which varies across legacy account records.\n      const availableAccounts = (accountResult.data ?? []).filter((account) => connectedIds.has(account.id));
       setGmailAccounts(availableAccounts);
       setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
       setSuggestions(nextSuggestions as Suggestion[]);
