@@ -1,5 +1,4 @@
-// Server-only, provider-agnostic AI adapter.
-// No Lovable gateway or Lovable API key is used.
+// Server-only OpenAI adapter. No Lovable gateway or Lovable API key is used.
 import { createOpenAI } from "@ai-sdk/openai";
 import { APICallError } from "ai";
 
@@ -13,22 +12,19 @@ export class AiError extends Error {
 }
 
 export function createAiModel() {
-  const baseURL = process.env["AI_BASE_URL"]?.trim();
+  // OpenAI is the default provider; deployments may override the endpoint/model.
+  const baseURL = process.env["AI_BASE_URL"]?.trim() || "https://api.openai.com/v1";
   const apiKey = process.env["AI_API_KEY"]?.trim();
-  const modelId = process.env["AI_MODEL"]?.trim();
+  const modelId = process.env["AI_MODEL"]?.trim() || "gpt-4.1";
 
-  if (!baseURL || !apiKey || !modelId) {
+  if (!apiKey) {
     throw new AiError(
       503,
-      "AI provider belum dikonfigurasi. Hubungkan provider eksternal melalui AI_BASE_URL, AI_API_KEY, dan AI_MODEL di server.",
+      "AI belum dikonfigurasi. Tambahkan AI_API_KEY sebagai secret server-side.",
     );
   }
 
-  const provider = createOpenAI({
-    baseURL,
-    apiKey,
-  });
-
+  const provider = createOpenAI({ baseURL, apiKey });
   return { model: provider.chat(modelId) };
 }
 
