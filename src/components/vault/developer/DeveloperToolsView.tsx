@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   CodeXml,
   Database,
+  FileText,
   KeyRound,
   LayoutGrid,
   List,
@@ -20,7 +21,6 @@ import {
   Webhook,
   Sparkles,
   ChevronDown,
-  ChevronUp,
   Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -45,15 +45,23 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/vault/AppSidebar";
-import { CopyButton, RevealButton, StatusDot } from "@/components/vault/primitives";
+import {
+  CopyButton,
+  FieldRow,
+  RevealButton,
+  StatusDot,
+  VaultTabTrigger,
+} from "@/components/vault/primitives";
 import { errorMessage } from "@/components/vault/use-ai";
 import { devDeleteAsset, devRevealAsset } from "@/lib/developer/developer.functions";
 import type { DevAsset } from "@/lib/developer/developer.server";
 import { DEV_ASSETS_KEY, useDevAssets } from "./use-dev-assets";
 import { DevAssetDialog } from "./DevAssetDialog";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Panel, FieldRow } from "@/components/vault/primitives";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
+
+/** L1 — satu bahasa card, sama dengan halaman Accounts dan Proyek. */
+const stateCard = "rounded-xl border border-border bg-card shadow-soft";
 
 const TYPE_ICONS: Record<string, typeof CodeXml> = {
   api_key: KeyRound,
@@ -139,23 +147,18 @@ export function DeveloperToolsView() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
         <header className="z-20 border-b border-border bg-background/90 backdrop-blur-md sm:sticky sm:top-0">
           <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div className="flex items-center gap-3">
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
-                <CodeXml className="size-5" />
-              </span>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                  Developer Tools
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Kelola akun aplikasi, website, API, AI, Agent, Bot, dan kredensial developer.
-                </p>
-              </div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                Developer Tools
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Kelola akun aplikasi, website, API, AI, Agent, Bot, dan kredensial developer.
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button onClick={() => setEditing({ open: true, asset: null })}>
@@ -166,20 +169,20 @@ export function DeveloperToolsView() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          {/* Toolbar */}
+        <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-6 pb-16 sm:px-8">
+          {/* Toolbar: datar di atas canvas, sama dengan halaman Accounts */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Cari nama aset, deskripsi..."
-                className="pl-9"
+                className="bg-card pl-9"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="sm:w-48">
+              <SelectTrigger className="w-full bg-card sm:w-48">
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>
@@ -191,54 +194,75 @@ export function DeveloperToolsView() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+            <div className="flex items-center rounded-lg border border-border bg-card p-0.5 shadow-soft">
               <button
+                type="button"
                 onClick={() => setViewMode("card")}
+                aria-pressed={viewMode === "card"}
                 className={cn(
-                  "p-1.5 rounded-md transition-all",
+                  "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                   viewMode === "card"
-                    ? "bg-background shadow-soft text-foreground"
-                    : "text-muted-foreground",
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
+                title="Tampilan Kartu"
               >
-                <LayoutGrid className="size-4" />
+                <LayoutGrid className="size-3.5" />
+                <span className="hidden sm:inline">Kartu</span>
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("table")}
+                aria-pressed={viewMode === "table"}
                 className={cn(
-                  "p-1.5 rounded-md transition-all",
+                  "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                   viewMode === "table"
-                    ? "bg-background shadow-soft text-foreground"
-                    : "text-muted-foreground",
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
+                title="Tampilan Tabel"
               >
-                <List className="size-4" />
+                <List className="size-3.5" />
+                <span className="hidden sm:inline">Tabel</span>
               </button>
             </div>
+            <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+              {filtered.length} / {assets.length} aset
+            </span>
           </div>
 
           {isPending ? (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-              <LoaderCircle className="size-8 animate-spin mb-4" />
+            <div
+              className={cn(
+                stateCard,
+                "flex flex-col items-center justify-center py-20 text-sm text-muted-foreground",
+              )}
+            >
+              <LoaderCircle className="mb-3 size-6 animate-spin" />
               <p>Memuat aset developer...</p>
             </div>
           ) : isError ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <p className="text-destructive mb-4">{errorMessage(error)}</p>
+            <div className={cn(stateCard, "flex flex-col items-center justify-center py-20 text-center")}>
+              <p className="mb-4 text-sm text-destructive">{errorMessage(error)}</p>
               <Button variant="outline" onClick={() => refetch()}>
                 Coba Lagi
               </Button>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-24 text-center">
-              <CodeXml className="size-12 text-muted-foreground/20 mb-4" />
+            <div
+              className={cn(
+                stateCard,
+                "flex flex-col items-center justify-center border-dashed py-20 text-center shadow-none",
+              )}
+            >
+              <CodeXml className="mb-3 size-10 text-muted-foreground/30" />
               <p className="text-sm font-medium text-foreground">Tidak ada aset ditemukan</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Coba sesuaikan pencarian atau tambah aset baru.
               </p>
             </div>
           ) : viewMode === "card" ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((a) => (
                 <DevAssetCard
                   key={a.id}
@@ -249,7 +273,7 @@ export function DeveloperToolsView() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className={cn(stateCard, "overflow-hidden")}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -259,7 +283,7 @@ export function DeveloperToolsView() {
                     <TableHead>Environment / Status</TableHead>
                     <TableHead>Proyek / Client</TableHead>
                     <TableHead>Terakhir Update</TableHead>
-                    <TableHead className="text-right pr-6">Aksi</TableHead>
+                    <TableHead className="pr-6 text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -271,7 +295,7 @@ export function DeveloperToolsView() {
                           {TYPE_LABELS[a.type]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
+                      <TableCell className="text-xs text-muted-foreground">
                         {a.provider ?? "—"}
                       </TableCell>
                       <TableCell className="text-xs">
@@ -279,18 +303,19 @@ export function DeveloperToolsView() {
                         <span className="text-muted-foreground"> · </span>
                         <span className="capitalize">{a.status}</span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
+                      <TableCell className="text-xs text-muted-foreground">
                         {a.projectName ?? "—"}
                         {a.clientName ? ` · ${a.clientName}` : ""}
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
+                      <TableCell className="text-xs text-muted-foreground">
                         {new Date(a.updatedAt).toLocaleDateString("id-ID")}
                       </TableCell>
-                      <TableCell className="text-right pr-6">
+                      <TableCell className="pr-6 text-right">
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon-sm"
+                            aria-label={`Edit ${a.name}`}
                             onClick={() => setEditing({ open: true, asset: a })}
                           >
                             <Pencil />
@@ -298,6 +323,7 @@ export function DeveloperToolsView() {
                           <Button
                             variant="ghost-danger"
                             size="icon-sm"
+                            aria-label={`Hapus ${a.name}`}
                             onClick={() => confirmDelete(a.id)}
                           >
                             <Trash2 />
@@ -322,6 +348,11 @@ export function DeveloperToolsView() {
   );
 }
 
+/**
+ * Anatomi kartu sama dengan AccountVaultCard (satu level elevasi):
+ *  header (ikon · nama + tipe · aksi) → isi (deskripsi, nilai rahasia, badge) → detail (tab, baris dipisah garis)
+ * Nama, tipe, status, dan environment tampil sekali (di header/badge), tidak diulang di tab detail.
+ */
 function DevAssetCard({
   asset,
   onEdit,
@@ -353,83 +384,29 @@ function DevAssetCard({
   };
 
   return (
-    <div className="group flex flex-col rounded-xl border border-border bg-card shadow-card transition-all hover:border-border-strong">
-      <div className="p-5">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-              <Icon className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="line-clamp-1 text-sm font-semibold text-foreground">{asset.name}</h3>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {TYPE_LABELS[asset.type]}
-              </span>
-            </div>
-          </div>
-          <div className="flex shrink-0 gap-1">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setExpanded((current) => !current)}
-              title={expanded ? "Tutup Detail" : "Lihat Detail"}
-              aria-label={expanded ? "Tutup detail aset" : "Lihat detail aset"}
-            >
-              {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Edit aset">
-                  <Pencil className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit aset</TooltipContent>
-            </Tooltip>
-            <Button
-              variant="ghost-danger"
-              size="icon-sm"
-              onClick={onDelete}
-              title="Hapus"
-              aria-label="Hapus aset"
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
+    <article className="group min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-colors hover:border-border-strong">
+      {/* Header */}
+      <header className="flex items-start justify-between gap-3 px-4 pb-3 pt-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
+            <Icon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold text-foreground">{asset.name}</h3>
+            <span className="text-xs text-muted-foreground">{TYPE_LABELS[asset.type]}</span>
           </div>
         </div>
-
-        <p className="mb-3 line-clamp-2 min-h-8 text-xs text-muted-foreground">
-          {asset.description || "Tidak ada deskripsi."}
-        </p>
-        <div className="flex items-center justify-between gap-3 overflow-hidden rounded-lg bg-subtle p-3">
-          <code className="flex-1 truncate font-mono text-xs text-foreground/80">
-            {busy ? "Mendekripsi..." : (revealedValue ?? "••••••••••••••••")}
-          </code>
-          <div className="flex shrink-0 items-center gap-1">
-            <RevealButton shown={revealedValue !== null} onToggle={toggleReveal} />
-            {revealedValue !== null && <CopyButton value={revealedValue} label="Kredensial" />}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-2 border-t border-border pt-4 mt-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Badge
-              variant={asset.status === "active" ? "default" : "muted"}
-              className="text-[10px] capitalize"
-            >
-              {asset.status}
-            </Badge>
-            <Badge variant="outline" className="text-[10px] capitalize">
-              {asset.environment}
-            </Badge>
-            {asset.projectName ? (
-              <Badge variant="muted" className="max-w-full gap-1 px-1.5 py-0 text-[10px]">
-                <StatusDot className="size-1" />
-                <span className="truncate">{asset.projectName}</span>
-              </Badge>
-            ) : (
-              <span className="text-[10px] italic text-muted-foreground">Belum ditautkan</span>
-            )}
-          </div>
+        <div className="flex shrink-0 gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((current) => !current)}
+            title={expanded ? "Tutup Detail" : "Lihat Detail"}
+            aria-label={expanded ? "Tutup detail aset" : "Lihat detail aset"}
+          >
+            <ChevronDown className={cn("transition-transform", expanded && "rotate-180")} />
+          </Button>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ai-ghost" size="icon-sm" asChild>
@@ -440,96 +417,118 @@ function DevAssetCard({
             </TooltipTrigger>
             <TooltipContent>Tanya AI</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Edit aset">
+                <Pencil />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit aset</TooltipContent>
+          </Tooltip>
+          <Button
+            variant="ghost-danger"
+            size="icon-sm"
+            onClick={onDelete}
+            title="Hapus"
+            aria-label="Hapus aset"
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      </header>
+
+      {/* Isi: deskripsi, nilai rahasia (inset), badge */}
+      <div className="space-y-3 px-4 pb-4">
+        <p className="line-clamp-2 min-h-8 text-xs leading-relaxed text-muted-foreground">
+          {asset.description || "Tidak ada deskripsi."}
+        </p>
+
+        <div className="flex items-center justify-between gap-3 overflow-hidden rounded-lg bg-muted/70 py-1.5 pl-3 pr-1.5">
+          <code className="flex-1 truncate font-mono text-xs text-foreground/80">
+            {busy ? "Mendekripsi..." : (revealedValue ?? "••••••••••••••••")}
+          </code>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <RevealButton shown={revealedValue !== null} onToggle={toggleReveal} />
+            {revealedValue !== null && <CopyButton value={revealedValue} label="Kredensial" />}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant={asset.status === "active" ? "success" : "muted"} className="capitalize">
+            {asset.status}
+          </Badge>
+          <Badge variant="outline" className="capitalize">
+            {asset.environment}
+          </Badge>
+          {asset.projectName ? (
+            <Badge variant="muted" className="max-w-full gap-1">
+              <StatusDot className="size-1" />
+              <span className="truncate">{asset.projectName}</span>
+            </Badge>
+          ) : (
+            <span className="text-xs italic text-muted-foreground">Belum ditautkan</span>
+          )}
         </div>
       </div>
 
+      {/* Detail: tab garis-bawah yang sama dengan kartu akun, baris dipisah garis (tanpa Panel bergaris) */}
       {expanded && (
-        <div className="animate-in fade-in slide-in-from-top-1 border-t border-border bg-subtle/30 p-4 duration-200">
+        <div className="animate-in fade-in border-t border-border duration-150">
           <Tabs defaultValue="info">
-            <TabsList className="mb-4 h-8 w-full justify-start gap-4 rounded-none border-b border-border bg-transparent p-0">
-              <TabsTrigger
-                value="info"
-                className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
-              >
-                Info Aset
-              </TabsTrigger>
-              <TabsTrigger
-                value="catatan"
-                className="h-8 rounded-none border-b-2 border-transparent px-2 pb-2 pt-0 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
-              >
-                Catatan
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="info" className="mt-0">
-              <Panel
-                title="Konfigurasi Teknis"
-                description="Identitas, akses, dan relasi aset developer."
-              >
-                <div className="divide-y divide-border">
-                  <FieldRow icon={<Terminal />} label="Nama Aset">
-                    {asset.name}
-                  </FieldRow>
-                  <FieldRow icon={<Database />} label="Tipe Aset">
-                    {TYPE_LABELS[asset.type]}
-                  </FieldRow>
-                  <FieldRow icon={<CodeXml />} label="Provider / Platform">
-                    {asset.provider || "—"}
-                  </FieldRow>
-                  <FieldRow icon={<CodeXml />} label="Website / Dashboard">
-                    {safeAccountUrl(asset.websiteUrl) ? (
-                      <a
-                        className="break-all text-primary hover:underline"
-                        href={safeAccountUrl(asset.websiteUrl) ?? undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {asset.websiteUrl}
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </FieldRow>
-                  <FieldRow icon={<Terminal />} label="Username / Account ID">
-                    {asset.username || "—"}
-                  </FieldRow>
-                  <FieldRow icon={<ShieldCheck />} label="Environment">
-                    {asset.environment}
-                  </FieldRow>
-                  <FieldRow icon={<ShieldCheck />} label="Status">
-                    {asset.status}
-                  </FieldRow>
-                  <FieldRow icon={<Calendar />} label="Kedaluwarsa">
-                    {asset.expiresAt
-                      ? new Date(asset.expiresAt).toLocaleDateString("id-ID")
-                      : "Tidak ditentukan"}
-                  </FieldRow>
-                  <FieldRow icon={<Folder />} label="Proyek Workspace">
-                    {asset.projectName || "—"}
-                  </FieldRow>
-                  <FieldRow icon={<Folder />} label="Client">
-                    {asset.clientName || "—"}
-                  </FieldRow>
-                  <FieldRow icon={<Calendar />} label="Dibuat Pada">
-                    {new Date(asset.createdAt).toLocaleDateString("id-ID")}
-                  </FieldRow>
-                </div>
-              </Panel>
+            <div className="overflow-x-auto border-b border-border bg-subtle px-2">
+              <TabsList className="h-auto gap-0 rounded-none bg-transparent p-0">
+                <VaultTabTrigger value="info" icon={<CodeXml />}>
+                  Info aset
+                </VaultTabTrigger>
+                <VaultTabTrigger value="catatan" icon={<FileText />}>
+                  Catatan
+                </VaultTabTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="info" className="mt-0 divide-y divide-border">
+              <FieldRow icon={<CodeXml />} label="Provider / Platform">
+                {asset.provider || "—"}
+              </FieldRow>
+              <FieldRow icon={<CodeXml />} label="Website / Dashboard">
+                {safeAccountUrl(asset.websiteUrl) ? (
+                  <a
+                    className="break-all text-primary hover:underline"
+                    href={safeAccountUrl(asset.websiteUrl) ?? undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {asset.websiteUrl}
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </FieldRow>
+              <FieldRow icon={<Terminal />} label="Username / Account ID">
+                {asset.username || "—"}
+              </FieldRow>
+              <FieldRow icon={<Calendar />} label="Kedaluwarsa">
+                {asset.expiresAt
+                  ? new Date(asset.expiresAt).toLocaleDateString("id-ID")
+                  : "Tidak ditentukan"}
+              </FieldRow>
+              <FieldRow icon={<Folder />} label="Proyek Workspace">
+                {asset.projectName || "—"}
+              </FieldRow>
+              <FieldRow icon={<Folder />} label="Client">
+                {asset.clientName || "—"}
+              </FieldRow>
+              <FieldRow icon={<Calendar />} label="Dibuat Pada">
+                {new Date(asset.createdAt).toLocaleDateString("id-ID")}
+              </FieldRow>
             </TabsContent>
-            <TabsContent value="catatan" className="mt-0">
-              <Panel
-                title="Deskripsi & Catatan"
-                description="Konteks teknis dan cara penggunaan aset."
-              >
-                <div className="p-4">
-                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
-                    {asset.description || "Tidak ada deskripsi."}
-                  </p>
-                </div>
-              </Panel>
+            <TabsContent value="catatan" className="mt-0 px-4 py-4">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                {asset.description || "Tidak ada deskripsi."}
+              </p>
             </TabsContent>
           </Tabs>
         </div>
       )}
-    </div>
+    </article>
   );
 }
