@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { aiExtractDocument } from "@/lib/assistant/assistant.functions";
 import { cn } from "@/lib/utils";
-import { CopyButton, Panel } from "./primitives";
+import { CopyButton } from "./primitives";
 import { errorMessage } from "./use-ai";
 
 type OcrResult = Awaited<ReturnType<typeof aiExtractDocument>>;
@@ -160,7 +160,8 @@ export function AssetAttachments({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Area unggah: satu-satunya kotak di tab ini (garis putus-putus = "taruh sesuatu di sini"). */}
       <div
         role="button"
         tabIndex={0}
@@ -192,7 +193,7 @@ export function AssetAttachments({
             e.target.value = "";
           }}
         />
-        <div className="relative flex size-11 items-center justify-center rounded-xl border border-border bg-background shadow-soft transition-transform group-hover:-translate-y-0.5">
+        <div className="relative flex size-11 items-center justify-center rounded-xl bg-background ring-1 ring-border transition-transform group-hover:-translate-y-0.5">
           <CloudUpload className="size-5 text-muted-foreground group-hover:text-ai-foreground" />
           <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-gradient-ai shadow-ai">
             <Sparkles className="size-2.5 text-ai-contrast" />
@@ -207,26 +208,30 @@ export function AssetAttachments({
             data kredensial / dokumen (OCR).
           </p>
         </div>
-        <span className="text-[11px] text-muted-foreground/80">
+        <span className="text-xs text-muted-foreground/80">
           PDF, JPG, PNG · maks. 8 MB per file
         </span>
       </div>
 
-      <Panel title="File & Dokumen Terlampir" description={`${files.length} dokumen tersimpan`}>
-        <ul className="divide-y divide-border">
+      {/* Daftar file: judul biasa + baris dipisah garis, tanpa card (tab ini sudah ada di dalam kartu akun). */}
+      <section>
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-semibold text-foreground">File & dokumen terlampir</h3>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {files.length} dokumen tersimpan
+          </span>
+        </div>
+        <ul className="divide-y divide-border border-t border-border">
           {files.map((f) => {
             const Icon = f.type === "image" ? FileImage : FileText;
             return (
-              <li
-                key={f.id}
-                className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-subtle"
-              >
+              <li key={f.id} className="group flex items-center gap-3.5 py-3">
                 <div
                   className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-lg border",
+                    "flex size-9 shrink-0 items-center justify-center rounded-lg",
                     f.type === "image"
-                      ? "border-success/25 bg-success-soft text-success-foreground"
-                      : "border-destructive/20 bg-destructive-soft text-destructive",
+                      ? "bg-success-soft text-success-foreground"
+                      : "bg-destructive-soft text-destructive",
                   )}
                 >
                   <Icon className="size-4" />
@@ -240,7 +245,7 @@ export function AssetAttachments({
                     {f.size} · {f.error ?? f.result?.summary ?? "Lampiran akun"}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                <div className="flex shrink-0 items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100">
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -267,16 +272,16 @@ export function AssetAttachments({
             );
           })}
           {files.length === 0 && (
-            <li className="flex flex-col items-center justify-center px-5 py-8 text-center text-xs text-muted-foreground">
-              <Paperclip className="size-5 text-muted-foreground/40 mb-1" />
+            <li className="flex flex-col items-center justify-center py-8 text-center text-xs text-muted-foreground">
+              <Paperclip className="mb-1 size-5 text-muted-foreground/40" />
               <span>Belum ada lampiran untuk akun ini.</span>
-              <span className="text-[11px] mt-0.5">
+              <span className="mt-0.5 text-xs">
                 Unggah invoice, KTP verifikasi, tangkapan layar, atau dokumen terkait di atas.
               </span>
             </li>
           )}
         </ul>
-      </Panel>
+      </section>
 
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
         <DialogContent className="max-w-lg">
