@@ -40,7 +40,7 @@ export const createTaskWebhookEndpoint = createServerFn({ method: "POST" })
     if (!supabaseUrl) throw new Error("SUPABASE_URL belum dikonfigurasi di server.");
     const isWhatsApp = data.sourceType === "whatsapp";
     const webhookUrl = isWhatsApp
-      ? supabaseUrl + "/functions/v1/whatsapp-cloud-webhook?endpoint_id=" + endpoint.id
+      ? supabaseUrl + "/functions/v1/whatsapp-cloud-webhook?endpoint_id=" + endpoint.id + "&token=" + token
       : supabaseUrl + "/functions/v1/task-intake-webhook";
     return { ...endpoint, webhookUrl,
       authorizationHeader: isWhatsApp ? null : "Bearer " + token,

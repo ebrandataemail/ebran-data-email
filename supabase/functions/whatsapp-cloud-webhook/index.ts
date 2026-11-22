@@ -63,8 +63,10 @@ Deno.serve(async (req: Request) => {
   }
 
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const endpointId = new URL(req.url).searchParams.get("endpoint_id") ?? "";
-  if (!endpointId) return json(400, { error: "Missing endpoint_id" });
+  const postUrl = new URL(req.url);
+  const endpointId = postUrl.searchParams.get("endpoint_id") ?? "";
+  const endpointToken = postUrl.searchParams.get("token") ?? "";
+  if (!endpointId || !/^[a-f0-9]{64}$/i.test(endpointToken)) return json(401, { error: "Missing endpoint credentials" });
 
   const contentLength = Number(req.headers.get("content-length") ?? 0);
   if (contentLength > 1024 * 1024) return json(413, { error: "Payload exceeds 1 MB" });
@@ -91,7 +93,8 @@ Deno.serve(async (req: Request) => {
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: endpoint, error: endpointError } = await db.from("task_integration_endpoints")
     .select("id,user_id,client_id,project_id,endpoint_name")
-    .eq("id", endpointId).eq("source_type", "whatsapp").eq("enabled", true).maybeSingle();
+    .eq("id", endpointId).eq("source_type", "whatsapp").eq("enabled", true)
+    .eq("token_hash", await sha256(endpointToken)).maybeSingle();
   if (endpointError || !endpoint) return json(404, { error: "WhatsApp endpoint not found or disabled" });
 
   const incoming: Array<{ message: Record<string, any>; contact?: Record<string, any>; phoneNumberId?: string }> = [];
