@@ -1,5 +1,6 @@
 // Server-only AI prompts and external AI provider calls for every AI feature.
 import { Output, streamText, type ModelMessage } from "ai";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { asset } from "@/data/asset";
@@ -14,9 +15,19 @@ function briefText(brief?: unknown) {
   return `Data aset (JSON, rahasia sudah disamarkan):\n${JSON.stringify(data, null, 2)}`;
 }
 
+function getAuthenticatedAiAccessToken() {
+  const authorization = getRequest()?.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) {
+    throw new Error("Sesi login tidak tersedia untuk mengakses AI melalui Supabase.");
+  }
+  const token = authorization.slice("Bearer ".length).trim();
+  if (!token) throw new Error("Sesi login tidak valid untuk mengakses AI melalui Supabase.");
+  return token;
+}
+
 async function runText(instructions: string, prompt: string, _effort: "low" | "medium") {
   try {
-    const { model } = createAiModel();
+    const { model } = createAiModel(getAuthenticatedAiAccessToken());
     const result = streamText({
       model,
       instructions,
@@ -38,7 +49,7 @@ export async function runObject<T>(
   _effort: "low" | "medium",
 ): Promise<T> {
   try {
-    const { model } = createAiModel();
+    const { model } = createAiModel(getAuthenticatedAiAccessToken());
     const result = streamText({
       model,
       instructions,
