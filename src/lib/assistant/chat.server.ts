@@ -64,6 +64,7 @@ async function authenticate(request: Request) {
   return {
     supabase,
     userId: data.claims.sub,
+    accessToken: token,
   };
 }
 
@@ -386,7 +387,7 @@ export async function handleAiChat(request: Request) {
   const messages = [...history, message];
 
   try {
-    const { model } = createAiModel();
+    const { model } = createAiModel(auth.accessToken);
 
     const result = streamText({
       model,
