@@ -13,8 +13,10 @@ import {
   Pencil,
   Plus,
   Search,
+  ShieldCheck,
   Sparkles,
   Trash2,
+  TriangleAlert,
   Youtube,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,13 +30,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/vault/AppSidebar";
 import { CopyButton, RevealButton } from "@/components/vault/primitives";
+import { StatStrip } from "@/components/vault/StatStrip";
 import { errorMessage } from "@/components/vault/use-ai";
 import { adsDeleteAsset, adsRevealAsset } from "@/lib/ads/ads.functions";
 import type { AdsAsset, AdsPlatform } from "@/lib/ads/ads.server";
+import { cn } from "@/lib/utils";
 import { ADS_ASSETS_KEY, useAdsAssets } from "./use-ads-assets";
 import { AdsAssetDialog } from "./AdsAssetDialog";
+
+/** L1 — satu bahasa card, sama dengan halaman Accounts, Developer, dan Proyek. */
+const stateCard = "rounded-xl border border-border bg-card shadow-soft";
+
 const PLATFORM_LABELS: Record<AdsPlatform, string> = {
   meta: "Meta Ads",
   google: "Google Ads",
@@ -109,21 +118,18 @@ export function AdsToolsView() {
       (a.expiresAt && a.expiresAt <= new Date().toISOString().slice(0, 10)),
   ).length;
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
         <header className="z-20 border-b border-border bg-background/90 backdrop-blur-md sm:sticky sm:top-0">
           <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div className="flex items-center gap-3">
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
-                <Megaphone className="size-5" />
-              </span>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">Ads & Marketing</h1>
-                <p className="text-sm text-muted-foreground">
-                  Kelola akun iklan, token platform, dan relasi kampanye per proyek.
-                </p>
-              </div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                Ads & Marketing
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Kelola akun iklan, token platform, dan relasi kampanye per proyek.
+              </p>
             </div>
             <Button onClick={() => setDialog({ open: true, asset: null })}>
               <Plus />
@@ -131,21 +137,20 @@ export function AdsToolsView() {
             </Button>
           </div>
         </header>
-        <section className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-2xl font-semibold tabular-nums">{assets.length}</p>
-              <p className="text-xs text-muted-foreground">Total aset iklan</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-2xl font-semibold tabular-nums">{activeCount}</p>
-              <p className="text-xs text-muted-foreground">Aset aktif</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-2xl font-semibold tabular-nums">{expiredCount}</p>
-              <p className="text-xs text-muted-foreground">Token kedaluwarsa / perlu diperiksa</p>
-            </div>
-          </div>
+        <section className="mx-auto max-w-[1280px] space-y-4 px-4 py-6 pb-16 sm:px-8">
+          {/* Ringkasan: satu card dengan pemisah garis (bukan tiga card identik) */}
+          <StatStrip
+            items={[
+              { icon: <Megaphone />, value: assets.length, label: "Total aset iklan" },
+              { icon: <ShieldCheck />, value: activeCount, label: "Aset aktif" },
+              {
+                icon: <TriangleAlert />,
+                value: expiredCount,
+                label: "Token kedaluwarsa / perlu diperiksa",
+                attention: true,
+              },
+            ]}
+          />
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -153,11 +158,11 @@ export function AdsToolsView() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nama, account ID, platform, proyek, client..."
-                className="pl-9"
+                className="bg-card pl-9"
               />
             </div>
             <Select value={platformFilter} onValueChange={setPlatformFilter}>
-              <SelectTrigger className="sm:w-44">
+              <SelectTrigger className="w-full bg-card sm:w-44">
                 <SelectValue placeholder="Semua platform" />
               </SelectTrigger>
               <SelectContent>
@@ -170,7 +175,7 @@ export function AdsToolsView() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="sm:w-40">
+              <SelectTrigger className="w-full bg-card sm:w-40">
                 <SelectValue placeholder="Semua status" />
               </SelectTrigger>
               <SelectContent>
@@ -182,23 +187,31 @@ export function AdsToolsView() {
                 ))}
               </SelectContent>
             </Select>
+            <span className="self-center whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+              {filtered.length} / {assets.length} aset
+            </span>
           </div>
           {isPending ? (
-            <div className="flex items-center justify-center gap-3 py-24 text-sm text-muted-foreground">
+            <div
+              className={cn(
+                stateCard,
+                "flex items-center justify-center gap-3 py-20 text-sm text-muted-foreground",
+              )}
+            >
               <LoaderCircle className="size-5 animate-spin" />
               Memuat aset iklan...
             </div>
           ) : isError ? (
-            <div className="py-20 text-center">
+            <div className={cn(stateCard, "py-16 text-center")}>
               <p className="mb-4 text-sm text-destructive">{errorMessage(error)}</p>
               <Button variant="outline" onClick={() => refetch()}>
                 Coba Lagi
               </Button>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border py-20 text-center">
+            <div className={cn(stateCard, "border-dashed py-16 text-center shadow-none")}>
               <Megaphone className="mx-auto mb-3 size-10 text-muted-foreground/30" />
-              <p className="font-medium">
+              <p className="text-sm font-medium text-foreground">
                 {assets.length ? "Tidak ada aset yang cocok" : "Belum ada aset Ads & Marketing"}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -212,7 +225,7 @@ export function AdsToolsView() {
               )}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((item) => (
                 <AdsAssetCard
                   key={item.id}
@@ -233,6 +246,8 @@ export function AdsToolsView() {
     </div>
   );
 }
+
+/** Anatomi kartu sama dengan DevAssetCard dan AccountVaultCard: header · isi · footer satu garis pemisah. */
 function AdsAssetCard({
   asset,
   onEdit,
@@ -261,32 +276,40 @@ function AdsAssetCard({
     }
   };
   return (
-    <article className="rounded-xl border border-border bg-card shadow-card transition-colors hover:border-border-strong">
-      <div className="space-y-4 p-5">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <Icon className="size-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-semibold">{asset.name}</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {PLATFORM_LABELS[asset.platform]}
-            </p>
-          </div>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon-sm" aria-label="Edit aset" onClick={onEdit}>
-              <Pencil />
-            </Button>
-            <Button
-              variant="ghost-danger"
-              size="icon-sm"
-              aria-label="Hapus aset"
-              onClick={onDelete}
-            >
-              <Trash2 />
-            </Button>
-          </div>
+    <article className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-colors hover:border-border-strong">
+      {/* Header: ikon · nama + platform · aksi (AI, edit, hapus) */}
+      <header className="flex items-start gap-3 px-4 pb-3 pt-4">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
+          <Icon className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-sm font-semibold text-foreground">{asset.name}</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {PLATFORM_LABELS[asset.platform]}
+          </p>
         </div>
+        <div className="flex shrink-0 gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ai-ghost" size="icon-sm" asChild>
+                <a href={`/ai?assetId=${asset.id}`} aria-label={`Tanya AI tentang ${asset.name}`}>
+                  <Sparkles className="size-3.5" />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Tanya AI</TooltipContent>
+          </Tooltip>
+          <Button variant="ghost" size="icon-sm" aria-label="Edit aset" onClick={onEdit}>
+            <Pencil />
+          </Button>
+          <Button variant="ghost-danger" size="icon-sm" aria-label="Hapus aset" onClick={onDelete}>
+            <Trash2 />
+          </Button>
+        </div>
+      </header>
+
+      {/* Isi */}
+      <div className="space-y-3 px-4 pb-4">
         <div className="flex flex-wrap gap-1.5">
           <Badge variant={asset.status === "active" ? "success" : "muted"}>
             {STATUS_LABELS[asset.status] ?? asset.status}
@@ -294,11 +317,11 @@ function AdsAssetCard({
           <Badge variant="outline">{asset.environment}</Badge>
           {asset.expiresAt && <Badge variant="outline">Exp: {asset.expiresAt}</Badge>}
         </div>
-        <div className="space-y-2 text-xs">
+        <div className="space-y-1.5 text-xs">
           {asset.accountIdentifier && (
-            <p>
+            <p className="break-all">
               <span className="text-muted-foreground">Account ID: </span>
-              <span className="font-mono">{asset.accountIdentifier}</span>
+              <span className="font-mono text-foreground">{asset.accountIdentifier}</span>
             </p>
           )}
           {safeAccountUrl(asset.websiteUrl) && (
@@ -316,8 +339,8 @@ function AdsAssetCard({
             {asset.clientName ? ` · ${asset.clientName}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-subtle p-3">
-          <code className="min-w-0 flex-1 truncate text-xs">
+        <div className="flex items-center gap-1 rounded-lg bg-muted/70 py-1.5 pl-3 pr-1.5">
+          <code className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/80">
             {busy ? "Mendekripsi..." : (revealed ?? "••••••••••••••••")}
           </code>
           <RevealButton shown={revealed !== null} onToggle={reveal} />
@@ -328,19 +351,14 @@ function AdsAssetCard({
             {asset.description}
           </p>
         )}
-        <div className="flex items-center justify-between border-t border-border pt-3">
-          <span className="text-[11px] text-muted-foreground">
-            Diperbarui {new Date(asset.updatedAt).toLocaleDateString("id-ID")}
-          </span>
-          <a
-            href={`/ai?assetId=${asset.id}`}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-primary hover:bg-accent"
-          >
-            <Sparkles className="size-3.5" />
-            Tanya AI
-          </a>
-        </div>
       </div>
+
+      {/* Footer: satu garis pemisah */}
+      <footer className="border-t border-border bg-subtle px-4 py-2.5">
+        <span className="text-xs text-muted-foreground">
+          Diperbarui {new Date(asset.updatedAt).toLocaleDateString("id-ID")}
+        </span>
+      </footer>
     </article>
   );
 }
