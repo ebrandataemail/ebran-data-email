@@ -239,9 +239,10 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
         <Button className="mt-3" size="sm" onClick={() => void createEndpoint()} disabled={busy || !clients.length}>
           {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Webhook className="mr-2 size-4" />} Buat endpoint
         </Button>
-        {gmailAccounts.length > 0 && <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+        <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
           <p className="text-xs font-semibold text-foreground">Otomatisasi Gmail → Task Workboard</p>
           <p className="mt-1 text-[11px] text-muted-foreground">Supabase Cron memeriksa inbox tiap 5 menit setelah Vault dikonfigurasi. Saat Workboard terbuka, AI otomatis menganalisis email cocok menjadi draft Task; jika aplikasi tertutup, draft akan dianalisis saat Workboard dibuka kembali.</p>
+          {gmailAccounts.length === 0 && <p className="mt-2 text-xs text-warning-foreground">Belum ada akun Gmail yang terbaca oleh sesi ini. Periksa koneksi Gmail dan muat ulang Workboard.</p>}
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <label className="space-y-1 text-[11px] text-muted-foreground sm:col-span-2">Akun Gmail
               <select value={emailAccountId} onChange={(e) => setEmailAccountId(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground">
@@ -278,8 +279,8 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
               <Button size="sm" variant={rule.enabled ? "outline" : "secondary"} onClick={() => void toggleGmailRule(rule)}>{rule.enabled ? "Jeda" : "Aktifkan"}</Button>
             </div>)}
           </div>}
-        </div>}
-        {gmailAccounts.length > 0 && <div className="mt-3 rounded-lg border border-border p-3">
+        </div>
+        <div className="mt-3 rounded-lg border border-border p-3">
           <p className="text-xs font-semibold text-foreground">Ambil email Gmail terbaru</p>
           <p className="mt-1 text-[11px] text-muted-foreground">Gunakan koneksi Gmail yang sudah ada dengan izin baca. Email masuk akan menjadi sumber draft, bukan task otomatis.</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -290,7 +291,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
               {busy ? <Loader2 className="mr-1 size-3 animate-spin" /> : <RefreshCw className="mr-1 size-3" />} Ambil 10 email
             </Button>
           </div>
-        </div>}
+        </div>
         {endpoint && <div className="mt-3 space-y-2 rounded-lg border border-warning/40 bg-warning-soft p-3">
           <p className="text-xs font-semibold text-warning-foreground">Secret ditampilkan sekali — simpan dengan aman. Jangan masukkan secret ke kode frontend atau repository.</p>
           <div className="space-y-1"><p className="text-[11px] text-muted-foreground">Callback URL</p><code className="block break-all text-xs text-foreground">{endpoint.webhookUrl}</code>
