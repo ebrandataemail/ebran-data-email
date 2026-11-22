@@ -125,8 +125,8 @@ export function TaskIntakeAssistant({ clients, projects, onCreated }: {
   }
 
   async function generate() {
-    if (!clientId) return toast.error("Pilih client terlebih dahulu.");
-    if (!sourceText.trim() && !sourceUrl.trim() && !file) return toast.error("Masukkan sumber task.");
+    if (!clientId) { toast.error("Pilih client terlebih dahulu."); return; }
+    if (!sourceText.trim() && !sourceUrl.trim() && !file) { toast.error("Masukkan sumber task."); return; }
     setBusy(true);
     try {
       let filePayload: { fileName: string; mediaType: string; base64: string } | null = null;

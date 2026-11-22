@@ -75,7 +75,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   useEffect(() => { void load(); }, [load]);
 
   async function createEndpoint() {
-    if (!clientId) return toast.error("Pilih client terlebih dahulu.");
+    if (!clientId) { toast.error("Pilih client terlebih dahulu."); return; }
     setBusy(true);
     try {
       const result = await createTaskWebhookEndpoint({ data: { clientId, projectId: projectId || null, sourceType, endpointName: "Workboard · " + sourceType } });
@@ -89,7 +89,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const parseTerms = (value: string) => value.split(/[\n,;]/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
 
   async function saveGmailRule() {
-    if (!clientId || !emailAccountId) return toast.error("Pilih akun Gmail dan client terlebih dahulu.");
+    if (!clientId || !emailAccountId) { toast.error("Pilih akun Gmail dan client terlebih dahulu."); return; }
     setBusy(true);
     try {
       await createGmailTaskAutomationRule({ data: {
@@ -113,7 +113,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   }
 
   async function syncGmail() {
-    if (!clientId || !emailAccountId) return toast.error("Pilih akun Gmail dan client terlebih dahulu.");
+    if (!clientId || !emailAccountId) { toast.error("Pilih akun Gmail dan client terlebih dahulu."); return; }
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("gmail-oauth", {
