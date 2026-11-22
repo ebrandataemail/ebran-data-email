@@ -1,17 +1,14 @@
 # External AI provider configuration
 
-Ebran does not use `LOVABLE_API_KEY` or the Lovable AI Gateway.
+Ebran uses the OpenAI API directly from its server-side AI adapter. It does not use `LOVABLE_API_KEY`, a Lovable token, or the Lovable AI Gateway.
 
-The server-side AI adapter accepts an OpenAI-compatible endpoint selected by the project owner. It has no default provider and never falls back to OpenAI or Lovable.
+OpenAI is the default provider:
+- `AI_BASE_URL=https://api.openai.com/v1`
+- `AI_MODEL=gpt-4.1`
+- `AI_API_KEY`: required private API key
 
-Configure these as **server-only environment variables** in the hosting runtime:
+The endpoint and model can be overridden for another OpenAI-compatible Chat Completions provider. Keep all values server-side. Never prefix them with `VITE_`, put them in browser code, or commit real credentials to Git.
 
-- `AI_BASE_URL`: provider API base URL, including the version path when required (for example, `https://provider.example/v1`).
-- `AI_API_KEY`: private API key issued by the selected provider.
-- `AI_MODEL`: model identifier supported by that provider.
+Add `AI_API_KEY` to the production hosting environment as a secret, then redeploy/restart the server runtime so it reads the new value. If the key is missing, AI endpoints return HTTP 503. Invalid credentials return HTTP 401; exhausted provider quota may return HTTP 402 or 429.
 
-Do not prefix these with `VITE_`, do not put them in frontend code, and do not commit real values to Git.
-
-If one of these variables is missing, AI endpoints return HTTP 503 with a configuration message. Client database, client profile, task, timeline, and file features remain available.
-
-This adapter is provider-neutral at the application layer, but the selected endpoint must implement the OpenAI-compatible Chat Completions API. It does not imply that the provider is OpenAI.
+The AI adapter uses the Chat Completions API. Other application features such as database, client profiles, tasks, timelines, and files remain available even when AI is not configured.
