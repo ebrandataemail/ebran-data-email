@@ -28,11 +28,11 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [projectId, setProjectId] = useState("");
   const [sourceType, setSourceType] = useState("webhook");
   const [endpoint, setEndpoint] = useState<{ webhookUrl: string; authorizationHeader: string | null; verificationToken?: string | null; provider?: string; endpoint_name: string } | null>(null);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [intakes, setIntakes] = useState<Intake[]>([]);
+  const [suggestions = [], setSuggestions] = useState<Suggestion[]>([]);
+  const [intakes = [], setIntakes] = useState<Intake[]>([]);
   const [gmailAccounts, setGmailAccounts] = useState<{ id: string; email: string; provider: string }[]>([]);
   const [emailAccountId, setEmailAccountId] = useState("");
-  const [gmailRules, setGmailRules] = useState<GmailRule[]>([]);
+  const [gmailRules = [], setGmailRules] = useState<GmailRule[]>([]);
   const [ruleName, setRuleName] = useState("Email masuk → Workboard Task");
   const [matchMode, setMatchMode] = useState<"any" | "all">("any");
   const [subjectIncludes, setSubjectIncludes] = useState("");
@@ -41,7 +41,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const autoSyncRunning = useRef(false);
   const autoProcessedSources = useRef(new Set<string>());
   const [draft, setDraft] = useState<DraftResult | null>(null);
-  const [pendingDrafts, setPendingDrafts] = useState<DraftResult[]>([]);
+  const [pendingDrafts = [], setPendingDrafts] = useState<DraftResult[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -66,10 +66,10 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       );
       setGmailAccounts(availableAccounts);
       setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
-      setSuggestions(nextSuggestions as Suggestion[]);
-      setIntakes(nextIntakes as Intake[]);
-      setGmailRules(nextRules as GmailRule[]);
-      setPendingDrafts(nextDraftReviews as DraftResult[]);
+      setSuggestions(Array.isArray(nextSuggestions) ? nextSuggestions as Suggestion[] : []);
+      setIntakes(Array.isArray(nextIntakes) ? nextIntakes as Intake[] : []);
+      setGmailRules(Array.isArray(nextRules) ? nextRules as GmailRule[] : []);
+      setPendingDrafts(Array.isArray(nextDraftReviews) ? nextDraftReviews as DraftResult[] : []);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gagal memuat Copilot.");
     } finally { setLoading(false); }

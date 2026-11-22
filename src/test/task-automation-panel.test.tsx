@@ -4,6 +4,7 @@ import { TaskAutomationPanel } from "@/components/workboard/TaskAutomationPanel"
 
 const mocks = vi.hoisted(() => ({
   rules: vi.fn(), reviews: vi.fn(), approve: vi.fn(), order: vi.fn(),
+  suggestions: vi.fn().mockResolvedValue([]), intakes: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({
@@ -11,8 +12,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 vi.mock("@/lib/workboard/task-automation.functions", () => ({
   refreshTaskCopilotSuggestions: vi.fn().mockResolvedValue({}),
-  listTaskCopilotSuggestions: vi.fn().mockResolvedValue([]),
-  listPendingTaskIntakes: vi.fn().mockResolvedValue([]),
+  listTaskCopilotSuggestions: mocks.suggestions,
+  listPendingTaskIntakes: mocks.intakes,
   listGmailTaskAutomationRules: mocks.rules,
   listPendingGmailTaskDraftReviews: mocks.reviews,
   createTaskWebhookEndpoint: vi.fn(), createGmailTaskAutomationRule: vi.fn(),
@@ -25,6 +26,19 @@ vi.mock("@/lib/workboard/task-generator.functions", () => ({
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe("task automation response mapping", () => {
+  it.each([undefined, null])("can refresh after list responses contain %s", async (missing) => {
+    mocks.order.mockResolvedValue({ data: null, error: null });
+    for (const list of [mocks.rules, mocks.reviews, mocks.suggestions, mocks.intakes]) {
+      list.mockResolvedValueOnce(missing).mockResolvedValue([]);
+    }
+    render(<TaskAutomationPanel clients={[]} projects={[]} tasks={[]} onTaskCreated={vi.fn()} onSelectTask={vi.fn()} />);
+    const refresh = screen.getByRole("button", { name: "Refresh saran" });
+    await waitFor(() => expect(refresh).not.toBeDisabled());
+    fireEvent.click(refresh);
+    await waitFor(() => expect(mocks.reviews).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(refresh).not.toBeDisabled());
+  });
+
   it("loads five responses and approves the selected review's task IDs", async () => {
     mocks.order.mockResolvedValue({ data: [], error: null });
     mocks.rules.mockResolvedValue([{ id: "rule-1", name: "Rule", enabled: false, trigger_config: {} }]);
