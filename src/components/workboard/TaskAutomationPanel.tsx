@@ -51,7 +51,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
     setLoading(true);
     try {
       await refreshTaskCopilotSuggestions({});
-      const [nextSuggestions, nextIntakes, accountResult, connectionResult, nextRules, nextDraftReviews] = await Promise.all([
+      const [nextSuggestions, nextIntakes, accountResult, nextRules, nextDraftReviews] = await Promise.all([
         listTaskCopilotSuggestions({}), listPendingTaskIntakes({}),
         supabase.from("email_accounts").select("id,email,provider").order("email"),
         listGmailTaskAutomationRules({}), listPendingGmailTaskDraftReviews({}),
