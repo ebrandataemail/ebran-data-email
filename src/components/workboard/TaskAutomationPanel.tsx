@@ -54,13 +54,16 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       const [nextSuggestions, nextIntakes, accountResult, connectionResult, nextRules, nextDraftReviews] = await Promise.all([
         listTaskCopilotSuggestions({}), listPendingTaskIntakes({}),
         supabase.from("email_accounts").select("id,email,provider").order("email"),
-        supabase.from("gmail_mailbox_connections").select("email_account_id,status"),
         listGmailTaskAutomationRules({}), listPendingGmailTaskDraftReviews({}),
       ]);
       if (accountResult.error) throw accountResult.error;
-      if (connectionResult.error) throw connectionResult.error;
-      const connectedIds = new Set((connectionResult.data ?? []).filter((item) => item.status === "connected").map((item) => item.email_account_id));
-      // A connected gmail_mailbox_connections row is the authoritative signal that this email account has Gmail OAuth. Do not additionally depend on email_accounts.provider naming, which varies across legacy account records.\n      const availableAccounts = (accountResult.data ?? []).filter((account) => connectedIds.has(account.id));
+      // gmail_mailbox_connections is intentionally not queried from the browser: its RLS
+      // does not expose mailbox tokens/connection rows to authenticated clients. The
+      // email_accounts row is user-scoped and provider identifies Gmail accounts.
+      // The Edge Function remains responsible for validating the live OAuth connection.
+      const availableAccounts = (accountResult.data ?? []).filter((account) =>
+        ["gmail", "google"].includes(String(account.provider ?? "").toLowerCase())
+      );
       setGmailAccounts(availableAccounts);
       setEmailAccountId((current) => availableAccounts.some((account: any) => account.id === current) ? current : (availableAccounts[0]?.id ?? ""));
       setSuggestions(nextSuggestions as Suggestion[]);
