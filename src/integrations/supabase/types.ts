@@ -2365,6 +2365,7 @@ export type Database = {
       }
       task_generation_runs: {
         Row: {
+          analysis_result: Json
           completed_at: string | null
           created_at: string
           error_code: string | null
@@ -2380,6 +2381,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          analysis_result?: Json
           completed_at?: string | null
           created_at?: string
           error_code?: string | null
@@ -2395,6 +2397,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          analysis_result?: Json
           completed_at?: string | null
           created_at?: string
           error_code?: string | null
@@ -2781,6 +2784,10 @@ export type Database = {
       approve_task_draft_items: {
         Args: { p_draft_id: string; p_item_ids: string[] }
         Returns: string[]
+      }
+      complete_task_intake_analysis: {
+        Args: { p_analysis: Json; p_run_id: string }
+        Returns: Json
       }
       dispatch_due_task_reminders: { Args: never; Returns: number }
       get_or_create_my_ntfy_topic: {

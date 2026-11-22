@@ -27,3 +27,4 @@
 - Revealed vault credentials use useTransientSecret with a 20-second lifetime and blur/visibility cleanup; reveal responses are private/no-store to prevent persistent exposure and response caching.
 - AppSidebar owns the shared mobile navigation and closes its drawer on navigation; page headers must not add separate mobile menus, so every authenticated view has the same navigation.
 - Workspace layouts use zero-minimum grid tracks and local table/tab scrolling; multi-column panels expand only when the available content width supports them, so mobile and tablet pages stay contained.
+- Inbox analysis reuses the configured external AI adapter; conditional source claims prevent concurrent runs, and an owner-scoped invoker RPC atomically persists drafts and analysis results so reloads retain the full review.

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Set up Inbox AI analysis using the existing provider, durable results, safe retries, review and task creation; verify tests and database wiring
+
 - [ ] Review and align mobile navigation, page headers, forms, and workspace layouts; verify phone/tablet widths without changing data access
 
 - [x] Review password storage, owner access, and login-link handling; block unsafe links, mask inputs, expire reveals, disable reveal caching, redact database errors, and add regression tests

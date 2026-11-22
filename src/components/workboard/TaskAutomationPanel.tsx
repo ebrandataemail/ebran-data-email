@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- TanStack server function response types are generated dynamically for this app. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BellRing, Check, Clipboard, Loader2, RefreshCw, Webhook, X } from "lucide-react";
+import { BellRing, Check, Clipboard, Loader2, RefreshCw, Sparkles, Webhook, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,10 +15,10 @@ import {
 } from "@/lib/workboard/task-generator.functions";
 
 type Suggestion = { id: string; task_id: string | null; client_id: string | null; suggestion_type: string; title: string; description: string; evidence: Record<string, unknown> };
-type Intake = { id: string; client_id: string; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; created_at: string; metadata?: Record<string, any> };
+type Intake = { id: string; client_id: string | null; project_id: string | null; source_type: string; source_label: string; source_uri: string | null; extracted_text: string | null; status?: string; created_at: string; metadata?: Record<string, any> };
 type GmailRule = { id: string; name: string; trigger_config: Record<string, any>; enabled: boolean; last_checked_at: string | null; last_triggered_at: string | null };
 type DraftItem = { id: string; title: string; description: string; priority: string; dueDate: string | null; assignee: string | null; confidence: number; missingInformation: string[]; parentDraftItemId: string | null };
-type DraftResult = { draftId: string; title?: string; summary: string; questions: string[]; duplicateWarnings: string[]; items: DraftItem[] };
+type DraftResult = { draftId: string; title?: string; summary: string; questions: string[]; duplicateWarnings: string[]; sourceClassification?: string; items: DraftItem[] };
 
 export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, onSelectTask }: {
   clients: WorkboardClient[]; projects: WorkboardProject[]; tasks: WorkboardTask[];
@@ -45,6 +45,9 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<{ sourceId: string; message: string } | null>(null);
+  const analysisRunning = useRef(false);
   const clientProjects = useMemo(() => projects.filter((p) => p.client_id === clientId), [projects, clientId]);
 
   const load = useCallback(async () => {
@@ -135,6 +138,13 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   }
 
   async function processIntake(source: Intake) {
+    if (analysisRunning.current) return;
+    if (!source.client_id || !source.extracted_text?.trim()) {
+      setAnalysisError({ sourceId: source.id, message: !source.client_id ? "Client sumber ini sudah tidak tersedia." : "Isi sumber belum tersedia untuk dianalisis." });
+      return;
+    }
+    analysisRunning.current = true;
+    setAnalyzingId(source.id); setAnalysisError(null);
     setBusy(true);
     try {
       const result = await generateTasksFromSource({ data: {
@@ -144,10 +154,14 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       } }) as DraftResult;
       setDraft(result);
       setSelectedItems(result.items.map((item) => item.id));
-      toast.success("Email berhasil dianalisis AI. Periksa draft Task sebelum disetujui.");
+      toast.success(result.items.length ? "Hasil analisis AI tersimpan. Draft siap diperiksa." : "Analisis tersimpan; tidak ada pekerjaan teridentifikasi.");
       await load();
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal memproses webhook."); }
-    finally { setBusy(false); }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Analisis AI gagal. Coba kembali.";
+      setAnalysisError({ sourceId: source.id, message });
+      await load();
+    }
+    finally { analysisRunning.current = false; setAnalyzingId(null); setBusy(false); }
   }
 
   async function approveDraft() {
@@ -170,6 +184,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
       await rejectTaskDraft({ data: { draftId: draft.draftId, note: "Ditolak dari Inbox Integrasi Workboard." } });
       setDraft(null); setSelectedItems([]);
       toast.success("Draft ditolak.");
+      await load();
     } catch (error) { toast.error(error instanceof Error ? error.message : "Gagal menolak draft."); }
     finally { setBusy(false); }
   }
@@ -208,7 +223,7 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
   useEffect(() => {
     if (busy) return;
     const next = intakes.find((item) =>
-      item.source_type === "email" && item.metadata?.integration_source === "gmail" &&
+      (item.status === "received" || !item.status) && item.source_type === "email" && item.metadata?.integration_source === "gmail" &&
       Boolean(item.metadata?.automation_rule_id) && !autoProcessedSources.current.has(item.id));
     if (!next) return;
     autoProcessedSources.current.add(next.id);
@@ -307,28 +322,38 @@ export function TaskAutomationPanel({ clients, projects, tasks, onTaskCreated, o
             <Button size="sm" variant="outline" onClick={() => void copy(endpoint.authorizationHeader ?? "")}><Clipboard className="mr-1 size-3" /> Salin secret</Button></div>}
         </div>}
         <div className="mt-3 border-t border-border pt-3">
-          <div className="flex items-center justify-between gap-2"><h3 className="text-xs font-semibold text-foreground">Inbox integrasi tertunda</h3><span className="text-xs text-muted-foreground">{intakes.length} masuk</span></div>
-          {intakes.length ? <ul className="mt-2 space-y-2">{intakes.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-2">
-            <span className="min-w-0"><span className="block truncate text-xs font-medium text-foreground">{item.source_label}</span><span className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString("id-ID")}</span></span>
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => void processIntake(item)}>Analisis</Button>
-          </li>)}</ul> : <p className="mt-2 text-xs text-muted-foreground">Belum ada event webhook yang menunggu diproses.</p>}
+          <div className="flex items-center justify-between gap-2"><h3 className="text-xs font-semibold text-foreground">Inbox integrasi tertunda</h3><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{intakes.length} masuk</span><Button size="icon" variant="ghost" aria-label="Muat ulang Inbox" disabled={loading || busy} onClick={() => void load()}><RefreshCw className={"size-4 " + (loading ? "animate-spin" : "")} /></Button></div></div>
+          {intakes.length ? <ul className="mt-2 space-y-2">{intakes.map((item) => <li key={item.id} className="space-y-2 rounded-lg border border-border p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0 flex-1"><p className="break-words text-xs font-semibold text-foreground">{item.source_label}</p><p className="mt-1 text-[11px] text-muted-foreground">{item.metadata?.integration_source || item.source_type} · {clients.find((client) => client.id === item.client_id)?.name || "Client tidak tersedia"}</p><p className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString("id-ID")}</p></div>
+              <span className="text-[11px] text-muted-foreground">{analyzingId === item.id || item.status === "processing" ? "Sedang dianalisis" : item.status === "failed" ? "Analisis gagal" : "Menunggu analisis"}</span>
+            </div>
+            <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Isi sumber</summary><p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words">{item.extracted_text || "Isi sumber belum tersedia."}</p></details>
+            {analysisError?.sourceId === item.id && <p role="alert" className="break-words text-xs text-destructive">{analysisError.message}</p>}
+            <Button size="sm" variant="ai-outline" disabled={busy || item.status === "processing" || !item.client_id || !item.extracted_text?.trim()} onClick={() => void processIntake(item)}>
+              {analyzingId === item.id ? <Loader2 className="mr-1 size-3 animate-spin" /> : <Sparkles className="mr-1 size-3" />}{analyzingId === item.id ? "Menganalisis…" : item.status === "failed" ? "Coba analisis AI lagi" : "Analisis AI"}
+            </Button>
+          </li>)}</ul> : <p className="mt-2 text-xs text-muted-foreground">{loading ? "Memuat Inbox…" : "Tidak ada sumber integrasi yang menunggu analisis."}</p>}
         </div>
         {pendingDrafts.length > 0 && <div className="mt-3 space-y-2 border-t border-border pt-3">
           <div className="flex items-center justify-between"><h3 className="text-xs font-semibold text-foreground">Draft Task menunggu persetujuan</h3><span className="text-[11px] text-muted-foreground">{pendingDrafts.length} draft</span></div>
           {pendingDrafts.map((item) => <div key={item.draftId} className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 p-2">
             <div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{item.title || "Draft dari email"}</p><p className="text-[11px] text-muted-foreground">{item.items.length} task · {item.summary.slice(0, 110)}</p></div>
-            <Button size="sm" variant="outline" onClick={() => { setDraft(item); setSelectedItems(item.items.map((task) => task.id)); }}>Review</Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => { setDraft(item); setSelectedItems(item.items.map((task) => task.id)); }}>Review</Button>
           </div>)}
         </div>}
         {draft && <div className="mt-3 space-y-2 border-t border-border pt-3">
           <p className="text-xs font-semibold text-foreground">Review hasil analisis AI</p>
           <p className="rounded-lg bg-muted/50 p-2 text-xs text-foreground">{draft.summary}</p>
+          {draft.sourceClassification && <p className="text-[11px] text-muted-foreground">Klasifikasi: {draft.sourceClassification}</p>}
+          {draft.questions.length > 0 && <div className="space-y-1"><p className="text-xs font-semibold text-foreground">Perlu dikonfirmasi</p>{draft.questions.map((question, index) => <p key={index} className="text-xs text-muted-foreground">• {question}</p>)}</div>}
+          {!draft.items.length && <p className="text-xs text-muted-foreground">Tidak ada pekerjaan teridentifikasi dari sumber ini.</p>}
           {draft.duplicateWarnings.map((warning, index) => <p key={index} className="text-xs text-warning-foreground">Periksa duplikat: {warning}</p>)}
           {draft.items.map((item) => <label key={item.id} className="flex gap-2 rounded-lg border border-border p-2">
-            <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={(e) => setSelectedItems((old) => e.target.checked ? [...old,item.id] : old.filter((id) => id !== item.id))} />
-            <span className="min-w-0 text-xs"><strong>{item.parentDraftItemId ? "↳ " : ""}{item.title}</strong><span className="block text-muted-foreground">{item.dueDate || "Tanpa deadline"} · {item.assignee || "PIC belum ditentukan"}</span></span>
+            <input type="checkbox" disabled={busy} checked={selectedItems.includes(item.id)} onChange={(e) => setSelectedItems((old) => e.target.checked ? [...old,item.id] : old.filter((id) => id !== item.id))} />
+            <span className="min-w-0 break-words text-xs"><strong>{item.parentDraftItemId ? "↳ " : ""}{item.title}</strong><span className="mt-1 block text-muted-foreground">{item.description}</span><span className="mt-1 block text-muted-foreground">{item.dueDate || "Tanpa deadline"} · {item.assignee || "PIC belum ditentukan"} · {item.priority} · Keyakinan {Math.round(item.confidence * 100)}%</span>{item.missingInformation.length > 0 && <span className="mt-1 block text-warning-foreground">Belum lengkap: {item.missingInformation.join("; ")}</span>}</span>
           </label>)}
-          <div className="flex justify-between gap-2"><Button size="sm" variant="ghost" onClick={() => void rejectDraft()}><X className="mr-1 size-3" /> Tolak</Button>
+          <div className="flex flex-wrap justify-between gap-2"><Button size="sm" variant="ghost" disabled={busy} onClick={() => void rejectDraft()}><X className="mr-1 size-3" /> {draft.items.length ? "Tolak" : "Tutup hasil"}</Button>
             <Button size="sm" onClick={() => void approveDraft()} disabled={busy || !selectedItems.length}><Check className="mr-1 size-3" /> Setujui {selectedItems.length}</Button></div>
         </div>}
         <p className="mt-3 text-[11px] text-muted-foreground">WhatsApp Cloud API memakai challenge Verify Token dan HMAC SHA-256 signature Meta. Pesan masuk hanya menjadi sumber Inbox; analisis dan persetujuan task tetap dilakukan manual. Audio/media belum diunduh otomatis.</p>

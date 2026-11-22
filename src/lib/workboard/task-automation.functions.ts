@@ -52,8 +52,9 @@ export const listPendingTaskIntakes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await (context.supabase as any).from("task_intake_sources")
-      .select("id,client_id,project_id,source_type,source_label,source_uri,extracted_text,created_at,metadata")
-      .eq("user_id", context.userId).eq("status", "received")
+      .select("id,client_id,project_id,source_type,source_label,source_uri,extracted_text,status,created_at,metadata")
+      .eq("user_id", context.userId).in("status", ["received", "processing", "failed"])
+      .not("metadata->>integration_source", "is", null)
       .order("created_at", { ascending: false }).limit(30);
     if (error) throw error;
     return (data ?? []).filter((source: any) => Boolean(source.metadata?.integration_source));
@@ -230,7 +231,7 @@ export const listPendingGmailTaskDraftReviews = createServerFn({ method: "POST" 
   .handler(async ({ context }) => {
     const db = context.supabase as any;
     const { data: drafts, error } = await db.from("task_drafts")
-      .select("id,title,summary,status,created_at,source_id")
+      .select("id,title,summary,status,created_at,source_id,run_id")
       .eq("user_id", context.userId).in("status", ["pending_review","partially_approved"])
       .order("created_at", { ascending: false }).limit(20);
     if (error) throw error;
@@ -242,14 +243,19 @@ export const listPendingGmailTaskDraftReviews = createServerFn({ method: "POST" 
       .eq("status", "pending_review")
       .order("sort_order", { ascending: true });
     if (itemError) throw itemError;
+    const { data: runs, error: runError } = await db.from("task_generation_runs")
+      .select("id,analysis_result").eq("user_id", context.userId).in("id", drafts.map((draft: any) => draft.run_id));
+    if (runError) throw runError;
     return drafts.map((draft: any) => ({
       draftId: draft.id, title: draft.title, summary: draft.summary,
-      questions: [], duplicateWarnings: [],
+      questions: runs?.find((run: any) => run.id === draft.run_id)?.analysis_result?.questions ?? [],
+      duplicateWarnings: runs?.find((run: any) => run.id === draft.run_id)?.analysis_result?.duplicateWarnings ?? [],
+      sourceClassification: runs?.find((run: any) => run.id === draft.run_id)?.analysis_result?.sourceClassification ?? "other",
       items: (items ?? []).filter((item: any) => item.draft_id === draft.id).map((item: any) => ({
         id: item.id, title: item.title, description: item.description,
         priority: item.priority, dueDate: item.due_date, assignee: item.assignee,
         confidence: Number(item.confidence ?? 0), missingInformation: item.missing_information ?? [],
         parentDraftItemId: item.parent_draft_item_id,
       })),
-    })).filter((draft: any) => draft.items.length > 0);
+    }));
   });
