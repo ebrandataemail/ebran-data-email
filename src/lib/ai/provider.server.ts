@@ -1,4 +1,4 @@
-// Server-only OpenAI adapter. No Lovable gateway or Lovable API key is used.
+// Server-only OpenAI adapter. OpenAI credentials live only in Supabase Edge Function Secrets.
 import { createOpenAI } from "@ai-sdk/openai";
 import { APICallError } from "ai";
 
@@ -11,19 +11,39 @@ export class AiError extends Error {
   }
 }
 
-export function createAiModel() {
-  // OpenAI is the default provider; deployments may override the endpoint/model.
-  const baseURL = process.env["AI_BASE_URL"]?.trim() || "https://api.openai.com/v1";
-  const apiKey = process.env["AI_API_KEY"]?.trim();
+const SUPABASE_URL =
+  process.env["SUPABASE_URL"] || "https://trqneozkhcswmiwhtdvc.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+  process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+  "sb_publishable_vsctG36gRKl4B9WU8eQqwg_Z3IxU5_y";
+
+export function createAiModel(userAccessToken?: string) {
   const modelId = process.env["AI_MODEL"]?.trim() || "gpt-4.1";
 
-  if (!apiKey) {
-    throw new AiError(
-      503,
-      "AI belum dikonfigurasi. Tambahkan AI_API_KEY sebagai secret server-side.",
-    );
+  // User-facing chat uses the authenticated Supabase Edge Function proxy.
+  // The OpenAI key is never sent to this server or browser.
+  if (userAccessToken) {
+    const provider = createOpenAI({
+      baseURL: `${SUPABASE_URL}/functions/v1/ai-gateway/v1`,
+      apiKey: "supabase-edge-proxy",
+      fetch: async (input, init) => {
+        const headers = new Headers(init?.headers);
+        headers.set("Authorization", `Bearer ${userAccessToken}`);
+        headers.set("apikey", SUPABASE_PUBLISHABLE_KEY);
+        return fetch(input, { ...init, headers });
+      },
+    });
+    return { model: provider.chat(modelId) };
   }
 
+  // Legacy server-only path retained temporarily for internal AI helpers until
+  // their authenticated server-function context is threaded into this adapter.
+  const baseURL = process.env["AI_BASE_URL"]?.trim() || "https://api.openai.com/v1";
+  const apiKey = process.env["AI_API_KEY"]?.trim();
+  if (!apiKey) {
+    throw new AiError(503, "AI belum dikonfigurasi. Jalur AI utama menggunakan Supabase Edge Function.");
+  }
   const provider = createOpenAI({ baseURL, apiKey });
   return { model: provider.chat(modelId) };
 }
@@ -47,7 +67,7 @@ export function toAiError(error: unknown): AiError {
     case 400:
       return new AiError(400, "Permintaan ke AI tidak valid. Periksa prompt dan konteks.");
     case 401:
-      return new AiError(401, "Kredensial provider AI eksternal tidak valid.");
+      return new AiError(401, "Sesi login atau kredensial provider AI tidak valid.");
     case 402:
       return new AiError(402, "Kuota atau kredit provider AI eksternal tidak mencukupi.");
     case 403:
