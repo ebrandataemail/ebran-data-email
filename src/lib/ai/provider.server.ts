@@ -61,8 +61,13 @@ function findApiCallError(error: unknown, depth = 0): APICallError | undefined {
 
 export function toAiError(error: unknown): AiError {
   if (error instanceof AiError) return error;
-  console.error("[AI provider]", error);
-  const status = findApiCallError(error)?.statusCode ?? 500;
+  const apiError = findApiCallError(error);
+  // Plain app errors (validation, missing data) keep their readable message.
+  if (!apiError && error instanceof Error && error.name === "Error" && error.message && error.message.length < 300) {
+    return new AiError(400, error.message);
+  }
+  console.error("[AI provider]", apiError?.statusCode ?? "unknown");
+  const status = apiError?.statusCode ?? 500;
   switch (status) {
     case 400:
       return new AiError(400, "Permintaan ke AI tidak valid. Periksa prompt dan konteks.");

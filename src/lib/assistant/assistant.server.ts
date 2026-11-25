@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- zod internals are untyped */
 // Server-only AI prompts and external AI provider calls for every AI feature.
 import { Output, streamText, type ModelMessage } from "ai";
 import { getRequest } from "@tanstack/react-start/server";
@@ -42,14 +43,33 @@ async function runText(instructions: string, prompt: string, _effort: "low" | "m
   }
 }
 
+function extractJson(text: string): unknown {
+  const cleaned = text.replace(/```(?:json)?/gi, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("AI tidak mengembalikan JSON.");
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+function isFatalProviderError(error: unknown) {
+  const status = toAiError(error).status;
+  return status === 401 || status === 402 || status === 403 || status === 429;
+}
+
 export async function runObject<T>(
   schema: z.ZodType<T>,
   instructions: string,
   messages: ModelMessage[],
   _effort: "low" | "medium",
 ): Promise<T> {
+  const { model } = (() => {
+    try {
+      return createAiModel(getAuthenticatedAiAccessToken());
+    } catch (error) {
+      throw toAiError(error);
+    }
+  })();
   try {
-    const { model } = createAiModel(getAuthenticatedAiAccessToken());
     const result = streamText({
       model,
       instructions,
@@ -59,7 +79,39 @@ export async function runObject<T>(
     });
     return (await result.output) as T;
   } catch (error) {
+    if (isFatalProviderError(error)) throw toAiError(error);
+    console.warn("[AI structured output] fallback to JSON text");
+  }
+  // Fallback: some proxies/models reject structured output; ask for plain JSON and validate locally.
+  try {
+    const result = streamText({
+      model,
+      instructions: `${instructions}\n\nBalas HANYA dengan satu objek JSON valid (tanpa markdown) yang cocok dengan skema berikut:\n${JSON.stringify(zodShapeHint(schema))}`,
+      messages,
+      maxRetries: 1,
+    });
+    const parsed = schema.safeParse(extractJson(await result.text));
+    if (!parsed.success) throw new Error("Format jawaban AI tidak sesuai.");
+    return parsed.data;
+  } catch (error) {
     throw toAiError(error);
+  }
+}
+
+function zodShapeHint(schema: z.ZodTypeAny): unknown {
+  const def = (schema as any)._def;
+  switch (def?.typeName) {
+    case "ZodObject": {
+      const shape = def.shape();
+      return Object.fromEntries(Object.entries(shape).map(([k, v]) => [k, zodShapeHint(v as z.ZodTypeAny)]));
+    }
+    case "ZodArray": return [zodShapeHint(def.type)];
+    case "ZodEnum": return def.values.join(" | ");
+    case "ZodNullable": return `${JSON.stringify(zodShapeHint(def.innerType))} | null`;
+    case "ZodOptional": case "ZodDefault": return zodShapeHint(def.innerType);
+    case "ZodNumber": return "number";
+    case "ZodBoolean": return "boolean";
+    default: return "string";
   }
 }
 
