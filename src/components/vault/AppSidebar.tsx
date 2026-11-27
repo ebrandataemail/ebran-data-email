@@ -3,7 +3,6 @@ import { Link, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
   AtSign,
   CodeXml,
-  LayoutDashboard,
   ListTodo,
   Inbox,
   CalendarDays,
