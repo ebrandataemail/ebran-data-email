@@ -2,10 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { toAiError } from "@/lib/ai/provider.server";
-import type { ClientAiCard, ClientAiMode, SocialPlatform } from "./client-ai-shared";
+import type { ClientAiCard, ClientAiField, ClientAiMode, SocialPlatform } from "./client-ai-shared";
 import {
   buildClientProfile,
   generateClientCard,
+  generateClientField,
   loadClientBrief,
   saveClientProfile,
 } from "./client-ai.server";
@@ -107,5 +108,29 @@ export const aiClientCard = createServerFn({ method: "POST" })
       const result = await generateClientCard(data.card, brief);
       await saveClientProfile(context.supabase, context.userId, data.clientId, result.fields, false);
       return { card: data.card, sources: result.sources };
+    }),
+  );
+
+
+const CLIENT_FIELDS: ClientAiField[] = [
+  "company_overview", "tone_of_voice", "pain_points", "agency_goals",
+  "do_rules", "dont_rules", "important_notes", "vault_notes",
+  "primary_color", "secondary_color", "tags",
+];
+
+/** Generate one Brand Profile field and return it for review before saving. */
+export const aiClientField = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { clientId: string; field: ClientAiField }) => {
+    const clientId = uuidOrNull(input?.clientId);
+    if (!clientId) throw new Error("ID client tidak valid.");
+    if (!CLIENT_FIELDS.includes(input?.field)) throw new Error("Kolom profil tidak dikenal.");
+    return { clientId, field: input.field };
+  })
+  .handler(async ({ data, context }) =>
+    safely(async () => {
+      const brief = await loadClientBrief(context.supabase, context.userId, data.clientId);
+      if (!brief) throw new Error("Client tidak ditemukan.");
+      return { field: data.field, ...(await generateClientField(data.field, brief)) };
     }),
   );
