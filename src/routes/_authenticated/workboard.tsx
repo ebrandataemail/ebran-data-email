@@ -3,12 +3,14 @@ import { WorkboardView } from "@/components/workboard/WorkboardView";
 
 function WorkboardRouteView() {
   const { view } = Route.useSearch();
-  return <WorkboardView section={view} />;
+  const { taskId } = Route.useSearch();
+  return <WorkboardView section={view} taskId={taskId} />;
 }
 
 export const Route = createFileRoute("/_authenticated/workboard")({
   validateSearch: (search: Record<string, unknown>) => ({
-    view: search.view === "inbox" || search.view === "calendar" ? search.view : "tasks",
+    view: search.view === "manager" || search.view === "inbox" || search.view === "calendar" ? search.view : "board",
+    taskId: typeof search.taskId === "string" ? search.taskId : undefined,
   }),
   head: () => ({
     meta: [
