@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { WorkboardView } from "@/components/workboard/WorkboardView";
 
+function WorkboardRouteView() {
+  const { view } = Route.useSearch();
+  return <WorkboardView section={view} />;
+}
+
 export const Route = createFileRoute("/_authenticated/workboard")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: search.view === "inbox" || search.view === "calendar" ? search.view : "tasks",
+  }),
   head: () => ({
     meta: [
       { title: "Papan Kerja · Ebran Aset Digital" },
@@ -20,5 +28,5 @@ export const Route = createFileRoute("/_authenticated/workboard")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: WorkboardView,
+  component: WorkboardRouteView,
 });
