@@ -3,6 +3,10 @@
 
 export type ClientAiMode = "file" | "url" | "social" | "prompt";
 export type ClientAiCard = "brand" | "about" | "rules" | "notes";
+export type ClientAiField =
+  | "company_overview" | "tone_of_voice" | "pain_points" | "agency_goals"
+  | "do_rules" | "dont_rules" | "important_notes" | "vault_notes"
+  | "primary_color" | "secondary_color" | "tags";
 export type SocialPlatform = "instagram" | "tiktok" | "facebook";
 
 /** Structured client profile the AI produces. Empty string / empty list = unknown. */
