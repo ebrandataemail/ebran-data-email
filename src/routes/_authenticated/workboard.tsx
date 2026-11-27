@@ -2,8 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { WorkboardView } from "@/components/workboard/WorkboardView";
 
 function WorkboardRouteView() {
-  const { view } = Route.useSearch();
-  const { taskId } = Route.useSearch();
+  const { view, taskId } = Route.useSearch();
   return <WorkboardView section={view} taskId={taskId} />;
 }
 
@@ -14,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/workboard")({
   }),
   head: () => ({
     meta: [
-      { title: "Papan Kerja · Ebran Aset Digital" },
+      { title: "Task Board / Kanban · Ebran Aset Digital" },
       {
         name: "description",
         content:
