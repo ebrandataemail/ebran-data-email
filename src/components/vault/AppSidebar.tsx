@@ -4,6 +4,7 @@ import {
   AtSign,
   CodeXml,
   ListTodo,
+  FolderKanban,
   Inbox,
   CalendarDays,
   Mail,
@@ -83,10 +84,10 @@ function WorkboardNavItem({
 }: {
   label: string;
   icon: React.ReactNode;
-  view: "tasks" | "inbox" | "calendar";
+  view: "board" | "manager" | "inbox" | "calendar";
 }) {
   const location = useRouterState({ select: (s) => s.location });
-  const active = location.pathname === "/workboard" && ((location.search as { view?: string }).view ?? "tasks") === view;
+  const active = location.pathname === "/workboard" && ((location.search as { view?: string }).view ?? "board") === view;
   return (
     <Link
       to="/workboard"
@@ -190,7 +191,8 @@ export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}
         </div>
         <div>
           <div className="space-y-0.5">
-            <WorkboardNavItem icon={<ListTodo />} label="Task Manager" view="tasks" />
+            <WorkboardNavItem icon={<ListTodo />} label="Task Board / Kanban" view="board" />
+            <WorkboardNavItem icon={<FolderKanban />} label="Task Manager" view="manager" />
             <WorkboardNavItem icon={<Inbox />} label="Inbox & AI Integrations" view="inbox" />
             <WorkboardNavItem icon={<CalendarDays />} label="Kalender & Aktivitas" view="calendar" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
