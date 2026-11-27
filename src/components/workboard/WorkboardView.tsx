@@ -60,8 +60,10 @@ export function WorkboardContent({ section = "board", taskId }: { section?: Work
     duplicateTask,
   } = useWorkboardData();
   useEffect(() => {
-    if (!selectedClientId && clients.length) setSelectedClientId(clients[0].id);
-  }, [clients, selectedClientId]);
+    if (section === "manager" && !selectedClientId && clients.length) {
+      setSelectedClientId(clients[0].id);
+    }
+  }, [clients, selectedClientId, section]);
   useEffect(() => {
     if (taskId) setSelectedTaskId(taskId);
   }, [taskId]);
@@ -157,7 +159,13 @@ export function WorkboardContent({ section = "board", taskId }: { section?: Work
       {section === "board" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">Papan Kanban seluruh pekerjaan. Pilih kartu untuk membuka detailnya di Task Manager.</p>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+              <p className="text-sm text-muted-foreground">Pilih kartu untuk membuka detailnya di Task Manager.</p>
+              <label className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+                <Search className="size-4" />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari task…" className="min-w-0 bg-transparent text-sm text-foreground outline-none" />
+              </label>
+            </div>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               Client
               <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground">
