@@ -149,3 +149,15 @@ The global sidebar exposes all three as separate navigation entries. Existing di
 ### Verification notes
 
 The database/table and cron inspection was performed against the connected Supabase project. Application build and authenticated browser end-to-end checks must still complete in the deployment pipeline before the UI change is considered fully runtime-verified.
+
+
+## Task Board / Kanban separation — 2026-11-28
+
+The Workboard now has four focused sections, with Task Board / Kanban first and as the default route:
+
+- `/workboard` or `?view=board`: **Task Board / Kanban** — task status columns, search, client filter, and create/update/move/duplicate/delete actions.
+- `?view=manager`: **Task Manager** — task selector and Graphic Workspace detail. Selecting a Kanban card navigates here with its task ID in the URL, so the selected task can be linked/bookmarked.
+- `?view=inbox`: **Inbox & AI Integrations** — manual/AI intake, draft approval, Gmail automation.
+- `?view=calendar`: **Kalender & Aktivitas** — calendar, work list, AI Secretary, recent activity.
+
+The Kanban view starts with all clients visible; filtering by client is optional. Task Manager selects a client and task for the Graphic Workspace. The route keeps the same Supabase data hook and task mutation functions; no duplicate database tables or migrations were introduced. Existing old `?view=tasks` links fall back to the new default Kanban view.
