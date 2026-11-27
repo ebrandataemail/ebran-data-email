@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Bell,
   Calendar,
   CheckCircle2,
   Clock,
@@ -18,6 +17,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type {
   WorkboardActivity,
   WorkboardClient,
@@ -29,10 +32,23 @@ import type {
   WorkboardDesignReview,
 } from "./useWorkboardData";
 import { supabase } from "@/integrations/supabase/client";
+import { statusMeta, taskPriorities } from "./status";
 import { TaskBriefWorkspace } from "./TaskBriefWorkspace";
 import { TaskDeliverableWorkspace } from "./TaskDeliverableWorkspace";
 
 type PinDraft = { x: number; y: number } | null;
+
+/** Titik status versi desain: semantik yang sama dengan papan (hijau = disetujui, ungu = review). */
+const versionDot: Record<string, string> = {
+  approved: "bg-success",
+  revision: "bg-wb-purple",
+  pending: "bg-muted-foreground/50",
+};
+const versionLabel: Record<string, string> = {
+  approved: "Approved",
+  revision: "Revisi",
+  pending: "Pending",
+};
 
 export function GraphicWorkspace({
   clients,
@@ -64,9 +80,14 @@ export function GraphicWorkspace({
   const clientTasks = tasks.filter((item) => item.client_id === client?.id);
   const clientDocs = documents.filter((item) => item.client_id === client?.id);
   const clientActivities = activities.filter((item) => item.client_id === client?.id).slice(0, 3);
+  // selectedTask ikut dependency: tanpa itu daftar versi tidak berganti saat task lain dipilih.
   const versions = useMemo(
-    () => designVersions.filter((item) => item.client_id === client?.id && (selectedTask ? item.task_id === selectedTask.id : true)),
-    [designVersions, client?.id],
+    () =>
+      designVersions.filter(
+        (item) =>
+          item.client_id === client?.id && (selectedTask ? item.task_id === selectedTask.id : true),
+      ),
+    [designVersions, client?.id, selectedTask?.id],
   );
   const [selectedVersionId, setSelectedVersionId] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
@@ -236,406 +257,456 @@ export function GraphicWorkspace({
     );
   }
 
+  const isDesign = !selectedTask || selectedTask.task_type === "design";
+
   return (
-    <section className="rounded-xl border border-border bg-card shadow-soft">
-      <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="flex size-6 items-center justify-center rounded-md bg-wb-blue-strong text-[10px] font-bold text-brand-contrast">
-            GW
-          </span>
-          <h2 className="text-sm font-bold text-wb-ink">Graphic Workspace</h2>
-        </div>
-        <Bell className="size-4 text-muted-foreground" />
+    // Satu kartu (L1). Di dalamnya TIDAK ada kartu lagi: tiga kolom dipisah garis tipis,
+    // bagian di tiap kolom dipisah divide-y.
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+        <h2 className="text-sm font-semibold text-foreground">Graphic Workspace</h2>
+        {client && <span className="truncate text-xs text-muted-foreground">{client.name}</span>}
       </header>
 
       {selectedTask && (
-        <section id="graphic-task-detail" className="border-b border-border bg-wb-blue/10 p-4 sm:p-5" aria-live="polite">
-          <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="min-w-0 flex-1">
+        <section
+          id="graphic-task-detail"
+          className="border-b border-border bg-subtle p-4 sm:p-5"
+          aria-live="polite"
+        >
+          <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="min-w-0">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-wb-blue-strong px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-brand-contrast">Task terpilih</span>
-                {selectedTask.id.startsWith("demo-task-") && <span className="rounded-full border border-wb-blue-strong/30 px-2.5 py-1 text-[9px] font-semibold text-wb-blue-strong">Data contoh · belum tersimpan</span>}
+                <Badge variant="secondary">Task terpilih</Badge>
+                {selectedTask.id.startsWith("demo-task-") && (
+                  <Badge variant="warning">Data contoh · belum tersimpan</Badge>
+                )}
               </div>
-              <h3 className="text-base font-extrabold text-wb-ink">{selectedTask.title}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{clients.find((item) => item.id === selectedTask.client_id)?.name ?? "Client tidak ditemukan"}</p>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-wb-ink">{selectedTask.description || "Belum ada deskripsi task."}</p>
+              <h3 className="text-base font-semibold text-foreground">{selectedTask.title}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {clients.find((item) => item.id === selectedTask.client_id)?.name ??
+                  "Client tidak ditemukan"}
+              </p>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                {selectedTask.description || "Belum ada deskripsi task."}
+              </p>
             </div>
-            <dl className="grid min-w-0 grid-cols-2 gap-2 text-xs sm:w-64">
-              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Status</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.status}</dd></div>
-              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Prioritas</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.priority}</dd></div>
-              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Deadline</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.due_date ? new Date(selectedTask.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Belum ditentukan"}</dd></div>
-              <div className="rounded-lg border border-border bg-card p-2"><dt className="text-muted-foreground">Penanggung jawab</dt><dd className="mt-1 font-bold text-wb-ink">{selectedTask.assignee || "Belum ditentukan"}</dd></div>
+            {/* Empat fakta task: teks polos dua kolom (sebelumnya empat kotak bergaris) */}
+            <dl className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3 text-sm sm:w-72">
+              <div>
+                <dt className="text-xs text-muted-foreground">Status</dt>
+                <dd className="mt-0.5 font-medium text-foreground">
+                  {statusMeta(selectedTask.status)?.title ?? selectedTask.status}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Prioritas</dt>
+                <dd className="mt-0.5 font-medium text-foreground">
+                  {taskPriorities.find((p) => p.id === selectedTask.priority)?.label ??
+                    selectedTask.priority}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Deadline</dt>
+                <dd className="mt-0.5 font-medium text-foreground">
+                  {selectedTask.due_date
+                    ? new Date(selectedTask.due_date + "T00:00:00").toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "Belum ditentukan"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Penanggung jawab</dt>
+                <dd className="mt-0.5 font-medium text-foreground">
+                  {selectedTask.assignee || "Belum ditentukan"}
+                </dd>
+              </div>
             </dl>
           </div>
         </section>
       )}
 
-      <div className="grid min-w-0 gap-3 p-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.85fr)_minmax(0,0.85fr)]">
-        <div className="min-w-0 space-y-3">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <h3 className="text-[13px] font-bold leading-snug text-wb-ink">
+      <div className="grid min-w-0 divide-y divide-border xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.85fr)_minmax(0,0.85fr)] xl:divide-x xl:divide-y-0">
+        {/* ───────── Kolom kiri: overview, brief, dokumen, aktivitas ───────── */}
+        <div className="min-w-0 divide-y divide-border">
+          <section className="p-4">
+            <h3 className="text-sm font-semibold leading-snug text-foreground">
               {client?.legal_name || client?.name || "Pilih client"} — Project &amp; Account
               Overview
             </h3>
-            <dl className="mt-4 space-y-3 text-[11px]">
+            <dl className="mt-4 space-y-3">
               <Row icon={<Clock />} label="Created time">
-                <span className="font-semibold text-wb-ink">
-                  {project
-                    ? new Date(project.created_at).toLocaleString("id-ID")
-                    : client
-                      ? new Date(client.created_at).toLocaleDateString("id-ID")
-                      : "—"}
-                </span>
+                {project
+                  ? new Date(project.created_at).toLocaleString("id-ID")
+                  : client
+                    ? new Date(client.created_at).toLocaleDateString("id-ID")
+                    : "—"}
               </Row>
               <Row icon={<Calendar />} label="Project">
-                <span className="font-semibold text-wb-ink">
-                  {project?.name ?? "Belum ada proyek"}
-                </span>
+                {project?.name ?? "Belum ada proyek"}
               </Row>
               <Row icon={<Tag />} label="Status">
-                <span className="font-semibold text-wb-ink">
-                  {project?.status ?? client?.client_status ?? "—"}
-                </span>
+                {project?.status ?? client?.client_status ?? "—"}
               </Row>
-              <Row icon={<CheckCircle2 />} label="Open Tasks">
-                <span className="font-semibold text-wb-ink">
-                  {
-                    clientTasks.filter((task) => !["finished", "cancel"].includes(task.status))
-                      .length
-                  }{" "}
-                  task
-                </span>
+              <Row icon={<CheckCircle2 />} label="Open tasks">
+                {clientTasks.filter((task) => !["finished", "cancel"].includes(task.status)).length}{" "}
+                task
               </Row>
               <Row icon={<Tag />} label="Industri">
-                <span className="font-semibold text-wb-ink">{client?.industry ?? "—"}</span>
+                {client?.industry ?? "—"}
               </Row>
               <Row icon={<User />} label="PIC">
-                <span className="font-semibold text-wb-ink">{client?.contact_name ?? "—"}</span>
+                {client?.contact_name ?? "—"}
               </Row>
             </dl>
+          </section>
+
+          <div className="p-4">
+            <TaskBriefWorkspace
+              client={client}
+              project={project}
+              task={selectedTask}
+              documents={clientDocs}
+              onDataChanged={onDataChanged}
+            />
           </div>
-          <TaskBriefWorkspace
-            client={client}
-            project={project}
-            task={selectedTask}
-            documents={clientDocs}
-            onDataChanged={onDataChanged}
-          />
-          <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
-            <h4 className="flex items-center gap-1.5 text-[12px] font-bold text-wb-ink">
-              <Paperclip className="size-3.5 text-wb-blue-strong" />
-              Dokumen Client
+
+          <section className="p-4">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Paperclip className="size-4 text-muted-foreground" />
+              Dokumen client
             </h4>
-            <div className="mt-3 space-y-2">
+            <div className="mt-2 -mx-2">
               {clientDocs.map((doc) => (
                 <button
                   key={doc.id}
                   type="button"
                   onClick={() => void openDocument(doc.file_path)}
-                  className="flex w-full items-center gap-2 rounded-lg border border-border bg-card p-2 text-left hover:bg-muted"
+                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted"
                 >
-                  <FileText className="size-4 text-wb-blue-strong" />
+                  <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[10px] font-semibold text-wb-ink">
+                    <span className="block truncate text-sm font-medium text-foreground">
                       {doc.title || doc.file_name}
                     </span>
-                    <span className="block text-[9px] text-muted-foreground">
+                    <span className="block truncate text-xs text-muted-foreground">
                       {doc.document_type} · {doc.file_name}
                     </span>
                   </span>
-                  <CloudDownload className="size-3.5 text-muted-foreground" />
+                  <CloudDownload className="size-4 shrink-0 text-muted-foreground" />
                 </button>
               ))}
-              {!clientDocs.length && (
-                <p className="rounded-lg border border-dashed p-3 text-center text-[10px] text-muted-foreground">
-                  Belum ada dokumen untuk client ini.
-                </p>
-              )}
             </div>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
-            <h4 className="text-[11px] font-semibold text-wb-ink">Aktivitas Terbaru</h4>
-            <div className="mt-2 space-y-2">
+            {!clientDocs.length && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Belum ada dokumen untuk client ini.
+              </p>
+            )}
+          </section>
+
+          <section className="p-4">
+            <h4 className="text-sm font-semibold text-foreground">Aktivitas terbaru</h4>
+            <div className="mt-2 space-y-2.5">
               {clientActivities.map((activity) => (
-                <div key={activity.id} className="border-l-2 border-wb-blue pl-2">
-                  <p className="text-[10px] font-semibold text-wb-ink">{activity.title}</p>
-                  <p className="text-[9px] text-muted-foreground">
+                <div key={activity.id} className="border-l-2 border-border-strong pl-2.5">
+                  <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                  <p className="text-xs text-muted-foreground">
                     {new Date(activity.occurred_at).toLocaleString("id-ID")} · {activity.event_type}
                   </p>
                 </div>
               ))}
               {!clientActivities.length && (
-                <p className="text-[9px] text-muted-foreground">Belum ada aktivitas client.</p>
+                <p className="text-xs text-muted-foreground">Belum ada aktivitas client.</p>
               )}
             </div>
-          </div>
+          </section>
         </div>
 
-        {(!selectedTask || selectedTask.task_type === "design") ? (
-        <div className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 shadow-soft">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-[12px] font-bold text-wb-ink">
-              Design Preview &amp; Version History
-            </h3>
-            <label
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-wb-blue-strong px-3 py-1.5 text-[10px] font-semibold text-brand-contrast",
-                uploading && "pointer-events-none opacity-60",
-              )}
-            >
-              <Upload className="size-3.5" />
-              {uploading ? "Mengunggah…" : "Upload desain"}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,application/pdf"
-                className="hidden"
-                disabled={uploading || !client}
-                onChange={(event) => {
-                  void uploadDesign(event.target.files?.[0]);
-                  event.currentTarget.value = "";
-                }}
-              />
-            </label>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {versions.map((version) => (
-              <button
-                key={version.id}
-                type="button"
-                onClick={() => setSelectedVersionId(version.id)}
-                className={cn(
-                  "rounded-md border px-2.5 py-1 text-[10px] font-semibold",
-                  selectedVersion?.id === version.id
-                    ? "border-wb-blue-strong bg-wb-blue/20 text-wb-ink"
-                    : "border-border text-muted-foreground",
-                )}
-              >
-                {version.version_label} ·{" "}
-                {version.status === "approved"
-                  ? "Approved"
-                  : version.status === "revision"
-                    ? "Revisi"
-                    : "Pending"}
-              </button>
-            ))}
-            {!versions.length && (
-              <p className="text-[10px] text-muted-foreground">
-                Belum ada versi desain. Upload file pertama untuk memulai riwayat.
-              </p>
-            )}
-          </div>
-          <div className="mt-3 flex min-h-[420px] flex-1 flex-col rounded-lg bg-muted/60 p-2">
-            {selectedVersion && previewUrl ? (
-              <>
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[9px] text-muted-foreground">
-                  <span>
-                    {selectedVersion.file_name} ·{" "}
-                    {new Date(selectedVersion.created_at).toLocaleString("id-ID")}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="size-3" />
-                    Klik gambar untuk menaruh pinpoint
-                  </span>
-                </div>
-                {selectedVersion.mime_type === "application/pdf" ? (
-                  <iframe
-                    title={selectedVersion.file_name}
-                    src={previewUrl}
-                    className="min-h-[390px] w-full flex-1 rounded bg-white"
-                  />
-                ) : (
-                  <div
-                    className="relative mx-auto mt-2 w-full max-w-3xl cursor-crosshair"
-                    onClick={(event) => {
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      setPinDraft({
-                        x: Math.round(((event.clientX - rect.left) / rect.width) * 10000) / 100,
-                        y: Math.round(((event.clientY - rect.top) / rect.height) * 10000) / 100,
-                      });
+        {isDesign ? (
+          <>
+            {/* ───────── Kolom tengah: preview & riwayat versi ───────── */}
+            <div className="flex min-w-0 flex-col p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Design preview &amp; version history
+                </h3>
+                <label
+                  className={cn(
+                    "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90",
+                    (uploading || !client) && "pointer-events-none opacity-60",
+                  )}
+                >
+                  <Upload className="size-3.5" />
+                  {uploading ? "Mengunggah…" : "Upload desain"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,application/pdf"
+                    className="hidden"
+                    disabled={uploading || !client}
+                    onChange={(event) => {
+                      void uploadDesign(event.target.files?.[0]);
+                      event.currentTarget.value = "";
                     }}
+                  />
+                </label>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {versions.map((version) => (
+                  <button
+                    key={version.id}
+                    type="button"
+                    onClick={() => setSelectedVersionId(version.id)}
+                    aria-pressed={selectedVersion?.id === version.id}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                      selectedVersion?.id === version.id
+                        ? "border-primary bg-secondary text-foreground"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
                   >
-                    <img
-                      src={previewUrl}
-                      alt={selectedVersion.file_name}
-                      className="block max-h-[560px] w-full object-contain shadow-card"
+                    <i
+                      className={cn("size-2 rounded-full", versionDot[version.status] ?? versionDot.pending)}
                     />
-                    {versionComments
-                      .filter((comment) => comment.x !== null && comment.y !== null)
-                      .map((comment, index) => (
-                        <span
-                          key={comment.id}
-                          title={comment.comment}
-                          style={{ left: `${comment.x}%`, top: `${comment.y}%` }}
-                          className="absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-wb-blue-strong text-[9px] font-bold text-white shadow"
-                        >
-                          {index + 1}
-                        </span>
-                      ))}
-                    {pinDraft && (
-                      <span
-                        style={{ left: `${pinDraft.x}%`, top: `${pinDraft.y}%` }}
-                        className="absolute flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-wb-orange text-[9px] font-bold text-white shadow"
-                      >
-                        +
-                      </span>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-muted-foreground">
-                <ImagePlus className="size-10 opacity-40" />
-                <p className="text-[11px] font-semibold">
-                  {versions.length
-                    ? "Memuat preview desain…"
-                    : "Preview desain akan tampil di sini"}
-                </p>
-                <p className="max-w-xs text-[9px]">
-                  Upload PNG, JPG, WEBP, atau PDF. Setiap upload menjadi versi baru yang tersimpan
-                  di Storage privat.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-
-        ) : (
-          <TaskDeliverableWorkspace task={selectedTask} />
-        )}
-        {(!selectedTask || selectedTask.task_type === "design") && (
-        <div className="flex flex-col gap-3">
-          <div className="rounded-xl border border-border bg-card p-3 shadow-soft">
-            <h4 className="text-[11px] font-semibold text-wb-ink">Approval &amp; Revisi</h4>
-            <p className="mt-1 text-[9px] text-muted-foreground">
-              Status versi aktif: <b>{selectedVersion?.status ?? "Belum ada desain"}</b>
-            </p>
-            <textarea
-              value={reviewNote}
-              onChange={(event) => setReviewNote(event.target.value)}
-              placeholder="Catatan approval / alasan revisi…"
-              rows={3}
-              className="mt-2 w-full rounded-md border border-border bg-muted/30 p-2 text-[10px] text-wb-ink outline-none"
-              disabled={!selectedVersion || saving}
-            />
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={!selectedVersion || saving}
-                onClick={() => void recordDecision("approved")}
-                className="flex items-center justify-center gap-1 rounded-md bg-wb-green-strong px-2 py-2 text-[10px] font-semibold text-brand-contrast disabled:opacity-50"
-              >
-                <CheckCircle2 className="size-3.5" />
-                Approve
-              </button>
-              <button
-                type="button"
-                disabled={!selectedVersion || saving}
-                onClick={() => void recordDecision("revision")}
-                className="flex items-center justify-center gap-1 rounded-md border border-border px-2 py-2 text-[10px] font-semibold text-wb-ink disabled:opacity-50"
-              >
-                <MessageSquare className="size-3.5" />
-                Revisi
-              </button>
-            </div>
-            <div className="mt-3 border-t border-border pt-2">
-              <h5 className="flex items-center gap-1 text-[10px] font-semibold text-wb-ink">
-                <History className="size-3" />
-                Riwayat keputusan
-              </h5>
-              <div className="mt-2 space-y-2">
-                {versionReviews.map((review) => (
-                  <div key={review.id} className="rounded-md bg-muted/50 p-2">
-                    <p className="text-[9px] font-semibold text-wb-ink">
-                      {review.decision === "approved" ? "Disetujui" : "Diminta revisi"} ·{" "}
-                      {new Date(review.created_at).toLocaleString("id-ID")}
-                    </p>
-                    {review.note && (
-                      <p className="mt-1 whitespace-pre-wrap text-[9px] text-muted-foreground">
-                        {review.note}
-                      </p>
-                    )}
-                  </div>
+                    {version.version_label} · {versionLabel[version.status] ?? "Pending"}
+                  </button>
                 ))}
-                {!versionReviews.length && (
-                  <p className="text-[9px] text-muted-foreground">Belum ada keputusan.</p>
+                {!versions.length && (
+                  <p className="text-xs text-muted-foreground">
+                    Belum ada versi desain. Upload file pertama untuk memulai riwayat.
+                  </p>
+                )}
+              </div>
+              <div className="mt-3 flex min-h-[420px] flex-1 flex-col rounded-lg bg-muted/60 p-2.5">
+                {selectedVersion && previewUrl ? (
+                  <>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span className="min-w-0 truncate">
+                        {selectedVersion.file_name} ·{" "}
+                        {new Date(selectedVersion.created_at).toLocaleString("id-ID")}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="size-3.5" />
+                        Klik gambar untuk menaruh pinpoint
+                      </span>
+                    </div>
+                    {selectedVersion.mime_type === "application/pdf" ? (
+                      <iframe
+                        title={selectedVersion.file_name}
+                        src={previewUrl}
+                        className="min-h-[390px] w-full flex-1 rounded bg-white"
+                      />
+                    ) : (
+                      <div
+                        className="relative mx-auto mt-2 w-full max-w-3xl cursor-crosshair"
+                        onClick={(event) => {
+                          const rect = event.currentTarget.getBoundingClientRect();
+                          setPinDraft({
+                            x: Math.round(((event.clientX - rect.left) / rect.width) * 10000) / 100,
+                            y: Math.round(((event.clientY - rect.top) / rect.height) * 10000) / 100,
+                          });
+                        }}
+                      >
+                        <img
+                          src={previewUrl}
+                          alt={selectedVersion.file_name}
+                          className="block max-h-[560px] w-full object-contain shadow-soft ring-1 ring-border"
+                        />
+                        {versionComments
+                          .filter((comment) => comment.x !== null && comment.y !== null)
+                          .map((comment, index) => (
+                            <span
+                              key={comment.id}
+                              title={comment.comment}
+                              style={{ left: `${comment.x}%`, top: `${comment.y}%` }}
+                              className="absolute flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-xs font-semibold text-primary-foreground shadow"
+                            >
+                              {index + 1}
+                            </span>
+                          ))}
+                        {pinDraft && (
+                          <span
+                            style={{ left: `${pinDraft.x}%`, top: `${pinDraft.y}%` }}
+                            className="absolute flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-ai text-xs font-semibold text-foreground shadow"
+                          >
+                            +
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+                    <ImagePlus className="size-10 opacity-40" />
+                    <p className="text-sm font-medium">
+                      {versions.length
+                        ? "Memuat preview desain…"
+                        : "Preview desain akan tampil di sini"}
+                    </p>
+                    <p className="max-w-xs text-xs">
+                      Upload PNG, JPG, WEBP, atau PDF. Setiap upload menjadi versi baru yang
+                      tersimpan di Storage privat.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
-          </div>
 
-          <div className="flex min-h-[360px] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <h4 className="flex items-center gap-1.5 border-b border-border px-3 py-2 text-[11px] font-semibold text-wb-ink">
-              <MessageSquare className="size-3.5 text-wb-blue-strong" />
-              Komentar &amp; Pinpoint
-            </h4>
-            <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
-              {versionComments.map((comment, index) => (
-                <div key={comment.id} className="rounded-lg border border-border bg-muted/30 p-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[9px] font-bold text-wb-ink">
-                      {comment.x !== null && comment.y !== null
-                        ? `Pinpoint #${index + 1}`
-                        : "Komentar umum"}
-                    </span>
-                    <span className="text-[8px] text-muted-foreground">
-                      {new Date(comment.created_at).toLocaleString("id-ID")}
-                    </span>
+            {/* ───────── Kolom kanan: approval & komentar ───────── */}
+            <div className="flex min-w-0 flex-col divide-y divide-border">
+              <section className="p-4">
+                <h4 className="text-sm font-semibold text-foreground">Approval &amp; revisi</h4>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Status versi aktif:{" "}
+                  <b className="font-semibold text-foreground">
+                    {selectedVersion
+                      ? (versionLabel[selectedVersion.status] ?? selectedVersion.status)
+                      : "Belum ada desain"}
+                  </b>
+                </p>
+                <Textarea
+                  value={reviewNote}
+                  onChange={(event) => setReviewNote(event.target.value)}
+                  placeholder="Catatan approval / alasan revisi…"
+                  rows={3}
+                  className="mt-2 text-sm"
+                  disabled={!selectedVersion || saving}
+                />
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!selectedVersion || saving}
+                    onClick={() => void recordDecision("approved")}
+                    className="gap-1.5 bg-success text-brand-contrast hover:bg-success/90"
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    Approve
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!selectedVersion || saving}
+                    onClick={() => void recordDecision("revision")}
+                    className="gap-1.5"
+                  >
+                    <MessageSquare className="size-3.5" />
+                    Revisi
+                  </Button>
+                </div>
+                <div className="mt-4">
+                  <h5 className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <History className="size-3.5 text-muted-foreground" />
+                    Riwayat keputusan
+                  </h5>
+                  {/* Baris dipisah garis, bukan kotak abu-abu per keputusan */}
+                  <div className="mt-1 divide-y divide-border">
+                    {versionReviews.map((review) => (
+                      <div key={review.id} className="py-2">
+                        <p className="text-xs font-medium text-foreground">
+                          {review.decision === "approved" ? "Disetujui" : "Diminta revisi"} ·{" "}
+                          <span className="font-normal text-muted-foreground">
+                            {new Date(review.created_at).toLocaleString("id-ID")}
+                          </span>
+                        </p>
+                        {review.note && (
+                          <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">
+                            {review.note}
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap text-[9.5px] leading-relaxed text-wb-ink">
-                    {comment.comment}
-                  </p>
-                  {comment.x !== null && comment.y !== null && (
-                    <p className="mt-1 text-[8px] text-muted-foreground">
-                      Posisi {comment.x.toFixed(1)}%, {comment.y.toFixed(1)}%
+                  {!versionReviews.length && (
+                    <p className="mt-1 text-xs text-muted-foreground">Belum ada keputusan.</p>
+                  )}
+                </div>
+              </section>
+
+              <section className="flex min-h-[360px] flex-1 flex-col">
+                <h4 className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-semibold text-foreground">
+                  <MessageSquare className="size-4 text-muted-foreground" />
+                  Komentar &amp; pinpoint
+                </h4>
+                <div className="flex-1 divide-y divide-border overflow-y-auto px-4">
+                  {versionComments.map((comment, index) => (
+                    <div key={comment.id} className="py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-foreground">
+                          {comment.x !== null && comment.y !== null
+                            ? `Pinpoint #${index + 1}`
+                            : "Komentar umum"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(comment.created_at).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                        {comment.comment}
+                      </p>
+                      {comment.x !== null && comment.y !== null && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Posisi {comment.x.toFixed(1)}%, {comment.y.toFixed(1)}%
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  {!versionComments.length && (
+                    <p className="py-8 text-center text-xs text-muted-foreground">
+                      Belum ada komentar untuk versi ini.
                     </p>
                   )}
                 </div>
-              ))}
-              {!versionComments.length && (
-                <p className="py-8 text-center text-[10px] text-muted-foreground">
-                  Belum ada komentar untuk versi ini.
-                </p>
-              )}
-            </div>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                void sendComment();
-              }}
-              className="border-t border-border p-2"
-            >
-              {pinDraft && (
-                <div className="mb-2 flex items-center justify-between rounded bg-wb-orange/10 px-2 py-1 text-[9px] text-wb-ink">
-                  <span>
-                    Pinpoint baru · {pinDraft.x.toFixed(1)}%, {pinDraft.y.toFixed(1)}%
-                  </span>
-                  <button type="button" onClick={() => setPinDraft(null)} className="font-bold">
-                    Batal
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1.5">
-                <input
-                  value={commentDraft}
-                  onChange={(event) => setCommentDraft(event.target.value)}
-                  placeholder={pinDraft ? "Tulis catatan pinpoint…" : "Tulis komentar versi ini…"}
-                  disabled={!selectedVersion || saving}
-                  className="min-w-0 flex-1 bg-transparent text-[10px] text-wb-ink outline-none placeholder:text-muted-foreground"
-                />
-                <button
-                  type="submit"
-                  aria-label="Kirim komentar"
-                  disabled={!selectedVersion || !commentDraft.trim() || saving}
-                  className="text-wb-blue-strong disabled:opacity-40"
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void sendComment();
+                  }}
+                  className="border-t border-border p-3"
                 >
-                  <Send className="size-3.5" />
-                </button>
-              </div>
-            </form>
+                  {pinDraft && (
+                    <div className="mb-2 flex items-center justify-between rounded-md bg-ai-soft px-2.5 py-1.5 text-xs text-ai-foreground">
+                      <span>
+                        Pinpoint baru · {pinDraft.x.toFixed(1)}%, {pinDraft.y.toFixed(1)}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPinDraft(null)}
+                        className="font-semibold hover:underline"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={commentDraft}
+                      onChange={(event) => setCommentDraft(event.target.value)}
+                      placeholder={pinDraft ? "Tulis catatan pinpoint…" : "Tulis komentar versi ini…"}
+                      disabled={!selectedVersion || saving}
+                      className="h-9 text-sm"
+                    />
+                    <Button
+                      type="submit"
+                      size="icon-sm"
+                      aria-label="Kirim komentar"
+                      disabled={!selectedVersion || !commentDraft.trim() || saving}
+                    >
+                      <Send />
+                    </Button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          </>
+        ) : (
+          // Task non-desain: deliverable memakai dua kolom (sebelumnya kolom ketiga dibiarkan kosong)
+          <div className="min-w-0 p-4 xl:col-span-2">
+            <TaskDeliverableWorkspace task={selectedTask} />
           </div>
-        </div>
-
         )}
       </div>
     </section>
@@ -652,14 +723,14 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[78px_1fr] items-start gap-2">
-      <dt className="flex items-start gap-1.5 text-muted-foreground">
-        <span className="mt-px flex shrink-0 items-center justify-center [&_svg]:size-3">
+    <div className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-2 text-sm">
+      <dt className="flex items-start gap-1.5 text-xs text-muted-foreground">
+        <span className="mt-px flex shrink-0 items-center justify-center [&_svg]:size-3.5">
           {icon}
         </span>
         <span className="leading-tight">{label}</span>
       </dt>
-      <dd>{children}</dd>
+      <dd className="min-w-0 break-words font-medium text-foreground">{children}</dd>
     </div>
   );
 }
