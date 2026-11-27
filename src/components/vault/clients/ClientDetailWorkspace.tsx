@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
   AlertTriangle,
@@ -54,6 +55,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ClientData } from "./ClientDialog";
+import { aiClientField } from "@/lib/clients/client-ai.functions";
+import type { ClientAiField } from "@/lib/clients/client-ai-shared";
 
 type DBRow = Record<string, any>;
 
@@ -98,6 +101,7 @@ export function ClientDetailWorkspace({
   onEdit: () => void;
 }) {
   const qc = useQueryClient();
+  const generateClientField = useServerFn(aiClientField);
   const [activeTab, setActiveTab] = useState<"profile" | "timeline" | "assets" | "documents">(
     "profile",
   );
@@ -129,6 +133,7 @@ export function ClientDetailWorkspace({
   const [brandSourceFile, setBrandSourceFile] = useState<File | null>(null);
   const [editingBrandProfile, setEditingBrandProfile] = useState(false);
   const [brandProfileForm, setBrandProfileForm] = useState<DBRow>({});
+  const [generatingBrandField, setGeneratingBrandField] = useState<ClientAiField | null>(null);
 
   // Digital Assets & Kredensial Form State
   const [masterEmail, setMasterEmail] = useState("");
@@ -364,6 +369,24 @@ export function ClientDetailWorkspace({
 
   const removeAttachedFile = (index: number) => {
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGenerateBrandField = async (field: ClientAiField) => {
+    setGeneratingBrandField(field);
+    try {
+      const result = await generateClientField({ data: { clientId: client.id, field } });
+      const value = result.value ?? "";
+      if (!value.trim()) {
+        toast.info("AI belum menemukan sumber yang cukup untuk mengisi kolom ini.");
+        return;
+      }
+      setBrandProfileForm((current) => ({ ...current, [field]: value }));
+      toast.success("Draf AI sudah dimasukkan. Periksa dan edit sebelum menyimpan.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Gagal membuat isi kolom dengan AI.");
+    } finally {
+      setGeneratingBrandField(null);
+    }
   };
 
   const handleSaveBrandProfile = async (event: FormEvent) => {
@@ -884,31 +907,38 @@ export function ClientDetailWorkspace({
                   </div>
                   {editingBrandProfile ? (
                     <form onSubmit={handleSaveBrandProfile} className="grid gap-3 sm:grid-cols-2">
-                      {[
-                        ["company_overview", "Overview"],
-                        ["tone_of_voice", "Tone of Voice"],
-                        ["pain_points", "Pain Points"],
-                        ["agency_goals", "Agency Goals"],
-                        ["do_rules", "DOs"],
-                        ["dont_rules", "DONTs"],
-                        ["important_notes", "Catatan Penting"],
-                        ["vault_notes", "Catatan Vault"],
-                      ].map(([key, label]) => (
+                      {([
+                        ["company_overview", "Overview"], ["tone_of_voice", "Tone of Voice"],
+                        ["pain_points", "Pain Points"], ["agency_goals", "Agency Goals"],
+                        ["do_rules", "DOs"], ["dont_rules", "DONTs"],
+                        ["important_notes", "Catatan Penting"], ["vault_notes", "Catatan Vault"],
+                      ] as const).map(([key, label]) => (
                         <label key={key} className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
-                          {label}
+                          <span className="flex items-center justify-between gap-2">
+                            {label}
+                            <button type="button" onClick={() => void handleGenerateBrandField(key)} disabled={generatingBrandField !== null} className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold normal-case text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
+                              <Sparkles className="size-3" />{generatingBrandField === key ? "Generating..." : "Generate AI"}
+                            </button>
+                          </span>
                           <textarea rows={3} value={String(brandProfileForm[key] || "")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, [key]: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700" />
                         </label>
                       ))}
                       <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
-                        Warna Utama
+                        <span className="flex items-center justify-between gap-2">Warna Utama
+                          <button type="button" onClick={() => void handleGenerateBrandField("primary_color")} disabled={generatingBrandField !== null} className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold normal-case text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"><Sparkles className="size-3" />{generatingBrandField === "primary_color" ? "Generating..." : "Generate AI"}</button>
+                        </span>
                         <input type="color" value={String(brandProfileForm.primary_color || "#C9A75D")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, primary_color: event.target.value }))} className="h-9 w-full rounded border border-slate-200" />
                       </label>
                       <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
-                        Warna Sekunder
+                        <span className="flex items-center justify-between gap-2">Warna Sekunder
+                          <button type="button" onClick={() => void handleGenerateBrandField("secondary_color")} disabled={generatingBrandField !== null} className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold normal-case text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"><Sparkles className="size-3" />{generatingBrandField === "secondary_color" ? "Generating..." : "Generate AI"}</button>
+                        </span>
                         <input type="color" value={String(brandProfileForm.secondary_color || "#003837")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, secondary_color: event.target.value }))} className="h-9 w-full rounded border border-slate-200" />
                       </label>
                       <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
-                        Tags (pisahkan koma)
+                        <span className="flex items-center justify-between gap-2">Tags (pisahkan koma)
+                          <button type="button" onClick={() => void handleGenerateBrandField("tags")} disabled={generatingBrandField !== null} className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold normal-case text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"><Sparkles className="size-3" />{generatingBrandField === "tags" ? "Generating..." : "Generate AI"}</button>
+                        </span>
                         <input value={String(brandProfileForm.tags || "")} onChange={(event) => setBrandProfileForm((current) => ({ ...current, tags: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs font-normal normal-case text-slate-700" />
                       </label>
                       <label className="space-y-1 text-[10px] font-semibold uppercase text-slate-500">
