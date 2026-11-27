@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ClipboardCheck, Download, FileText, History, Loader2, Plus, Save, Share2, Sparkles, Trash2, Wand2, X,
+  ClipboardCheck, Download, FileText, History, Loader2, Plus, Save, Share2, Sparkles, Trash2, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { generateTaskBrief, summarizeTaskBrief } from "@/lib/workboard/task-brief.functions";
+import { cn } from "@/lib/utils";
 import type { WorkboardClient, WorkboardDocument, WorkboardProject, WorkboardTask } from "./useWorkboardData";
 
 type BriefSection = { key: string; title: string; content: string; status: "confirmed" | "needs_confirmation" | "missing" };
@@ -35,6 +41,10 @@ const EMPTY_BRIEF: BriefRow = {
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const splitLines = (value: string) => value.split("\n").map((line) => line.trim()).filter(Boolean);
+
+/** Kontrol form native: satu gaya untuk semua input/select/textarea di editor (sama dengan Input design system). */
+const control =
+  "w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
 export function TaskBriefWorkspace({
   client, project, task, documents, onDataChanged,
@@ -507,169 +517,297 @@ export function TaskBriefWorkspace({
 
   return (
     <>
-      <section className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/50 px-3 py-2">
-          <h3 className="flex items-center gap-1.5 text-[12px] font-bold text-wb-ink"><FileText className="size-3.5 text-wb-blue-strong" /> Client Brief &amp; Scope</h3>
-          <span className="rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize">{brief.status.replaceAll("_", " ")}</span>
+      {/* ───────── Ringkasan (di kolom kiri GraphicWorkspace): bagian datar, tanpa kotak bergaris ───────── */}
+      <section>
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <FileText className="size-4 text-muted-foreground" /> Client Brief &amp; Scope
+          </h4>
+          <Badge variant="muted" className="capitalize">{brief.status.replaceAll("_", " ")}</Badge>
         </div>
-        <div className="space-y-3 p-3">
-          {loading ? <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Memuat brief…</div> : (
+        <div className="mt-3 space-y-3">
+          {loading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Memuat brief…</div>
+          ) : (
             <>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-[12px] font-semibold text-wb-ink">{brief.title || task?.title || "Brief belum dibuat"}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">{brief.id ? "Version " + brief.current_version : "Belum ada brief tersimpan"} · {confirmedCount}/{brief.sections.length} bagian confirmed</p>
+                  <p className="truncate text-sm font-medium text-foreground">{brief.title || task?.title || "Brief belum dibuat"}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{brief.id ? "Version " + brief.current_version : "Belum ada brief tersimpan"} · {confirmedCount}/{brief.sections.length} bagian confirmed</p>
                 </div>
-                {brief.id && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold text-emerald-700">{completeness}% lengkap</span>}
+                {brief.id && <Badge variant="success" className="shrink-0 tabular-nums">{completeness}% lengkap</Badge>}
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-emerald-600" style={{ width: completeness + "%" }} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Effort</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.estimated_hours != null ? brief.estimated_hours + " jam" : "Belum dihitung"}</p></div>
-                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Durasi kalender</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.estimated_days != null ? brief.estimated_days + " hari" : "—"}</p></div>
-                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Prioritas AI</p><p className="mt-1 text-sm font-bold capitalize text-wb-ink">{brief.priority_suggestion || "—"}</p></div>
-                <div className="rounded-lg bg-muted/50 p-2"><p className="text-[9px] text-muted-foreground">Budget AI</p><p className="mt-1 text-sm font-bold text-wb-ink">{brief.budget_min != null || brief.budget_max != null ? (brief.currency || "IDR") + " " + Number(brief.budget_min ?? brief.budget_max).toLocaleString("id-ID") + " – " + Number(brief.budget_max ?? brief.budget_min).toLocaleString("id-ID") : "Belum dihitung"}</p></div>
-              </div>
-              {brief.ai_summary && <p className="line-clamp-4 text-[10px] leading-relaxed text-muted-foreground">{brief.ai_summary}</p>}
-              {brief.open_questions.length > 0 && <p className="text-[10px] text-amber-700">{brief.open_questions.length} pertanyaan perlu dikonfirmasi</p>}
-              {latestApproval && <p className="text-[10px] text-emerald-700">Approval internal terakhir: {latestApproval.decision} · {new Date(latestApproval.created_at).toLocaleDateString("id-ID")}</p>}
-              <button type="button" onClick={() => setEditorOpen(true)} disabled={!task} className="w-full rounded-lg bg-wb-blue-strong px-3 py-2 text-[10px] font-semibold text-brand-contrast hover:opacity-90 disabled:opacity-50">Open Full Brief Editor</button>
-              {!isPersistedTask && <p className="text-[9px] text-amber-700">Task contoh belum tersimpan. Buat task permanen untuk menyimpan brief.</p>}
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-success" style={{ width: completeness + "%" }} /></div>
+              {/* Empat ukuran: teks polos dua kolom (sebelumnya empat kotak abu-abu) */}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div><dt className="text-xs text-muted-foreground">Effort</dt><dd className="mt-0.5 text-sm font-medium text-foreground">{brief.estimated_hours != null ? brief.estimated_hours + " jam" : "Belum dihitung"}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Durasi kalender</dt><dd className="mt-0.5 text-sm font-medium text-foreground">{brief.estimated_days != null ? brief.estimated_days + " hari" : "—"}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Prioritas AI</dt><dd className="mt-0.5 text-sm font-medium capitalize text-foreground">{brief.priority_suggestion || "—"}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Budget AI</dt><dd className="mt-0.5 break-words text-sm font-medium text-foreground">{brief.budget_min != null || brief.budget_max != null ? (brief.currency || "IDR") + " " + Number(brief.budget_min ?? brief.budget_max).toLocaleString("id-ID") + " – " + Number(brief.budget_max ?? brief.budget_min).toLocaleString("id-ID") : "Belum dihitung"}</dd></div>
+              </dl>
+              {brief.ai_summary && <p className="line-clamp-4 text-xs leading-relaxed text-muted-foreground">{brief.ai_summary}</p>}
+              {brief.open_questions.length > 0 && <p className="text-xs text-warning-foreground">{brief.open_questions.length} pertanyaan perlu dikonfirmasi</p>}
+              {latestApproval && <p className="text-xs text-success-foreground">Approval internal terakhir: {latestApproval.decision} · {new Date(latestApproval.created_at).toLocaleDateString("id-ID")}</p>}
+              <Button type="button" size="sm" className="w-full" onClick={() => setEditorOpen(true)} disabled={!task}>Open Full Brief Editor</Button>
+              {!isPersistedTask && <p className="text-xs text-warning-foreground">Task contoh belum tersimpan. Buat task permanen untuk menyimpan brief.</p>}
             </>
           )}
         </div>
       </section>
 
-      {editorOpen && (
-        <div className="fixed inset-0 z-[100] flex items-stretch justify-center bg-black/50 p-0 sm:items-center sm:p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setEditorOpen(false); }}>
-          <section role="dialog" aria-modal="true" aria-label="Client Brief & Scope Editor" className="flex h-full w-full max-w-7xl flex-col overflow-hidden bg-background shadow-2xl sm:h-[92vh] sm:rounded-2xl">
-            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <div className="min-w-0"><h2 className="text-sm font-bold text-foreground">Client Brief &amp; Scope</h2><p className="truncate text-[10px] text-muted-foreground">{client?.name} · {task?.title} · v{brief.current_version}</p></div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] text-muted-foreground">{saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}</span>
-                <button type="button" onClick={() => setEditorOpen(false)} className="rounded-lg border border-border p-2 hover:bg-muted" aria-label="Close editor"><X className="size-4" /></button>
+      {/* ───────── Editor penuh: Dialog design system (Escape, fokus, klik luar ditangani Dialog) ───────── */}
+      <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
+        <DialogContent className="flex h-[92vh] w-full max-w-7xl flex-col gap-0 overflow-hidden p-0 sm:max-w-7xl">
+          <DialogHeader className="space-y-0 border-b border-border px-4 py-3 pr-12 text-left sm:px-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <DialogTitle className="text-sm font-semibold">Client Brief &amp; Scope</DialogTitle>
+                <DialogDescription className="truncate text-xs">{client?.name} · {task?.title} · v{brief.current_version}</DialogDescription>
               </div>
-            </header>
-            <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-              <aside className="flex gap-1 overflow-x-auto border-b border-border p-2 lg:w-56 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r">
-                {brief.sections.map((section) => (
-                  <button key={section.key} type="button" onClick={() => setActiveSection(section.key)} className={"flex shrink-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-[10px] " + (activeSection === section.key ? "bg-wb-blue/15 font-bold text-wb-ink" : "text-muted-foreground hover:bg-muted")}>
-                    <span>{section.title}</span><span className={"size-2 shrink-0 rounded-full " + (section.status === "confirmed" ? "bg-emerald-500" : section.status === "needs_confirmation" ? "bg-amber-500" : "bg-rose-500")} />
-                  </button>
-                ))}
-                <div className="mt-auto hidden border-t border-border pt-3 text-[10px] text-muted-foreground lg:block">{confirmedCount} confirmed · {brief.sections.filter((s) => s.status === "missing").length} missing</div>
-              </aside>
-              <main className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div><p className="text-[10px] font-bold uppercase tracking-wider text-wb-blue-strong">Task Brief · {selectedSection?.key}</p><h3 className="mt-1 text-lg font-bold text-foreground">{selectedSection?.title}</h3></div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setAiOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-wb-blue-strong/30 px-3 py-2 text-[10px] font-semibold text-wb-blue-strong"><Sparkles className="size-3.5" /> Generate with AI</button>
-                    <button type="button" onClick={() => void runSummary()} disabled={summaryLoading} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold hover:bg-muted"><Wand2 className="size-3.5" /> {summaryLoading ? "Meringkas…" : "AI Summary"}</button>
-                  </div>
+              <span className="text-xs text-muted-foreground">{saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}</span>
+            </div>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+            <aside className="flex gap-1 overflow-x-auto border-b border-border p-2 lg:w-60 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r">
+              {brief.sections.map((section) => (
+                <button
+                  key={section.key}
+                  type="button"
+                  onClick={() => setActiveSection(section.key)}
+                  aria-current={activeSection === section.key ? "true" : undefined}
+                  className={cn(
+                    "flex shrink-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                    activeSection === section.key ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <span>{section.title}</span>
+                  <span className={cn("size-2 shrink-0 rounded-full", section.status === "confirmed" ? "bg-success" : section.status === "needs_confirmation" ? "bg-warning" : "bg-destructive")} />
+                </button>
+              ))}
+              <div className="mt-auto hidden border-t border-border pt-3 text-xs text-muted-foreground lg:block">{confirmedCount} confirmed · {brief.sections.filter((s) => s.status === "missing").length} missing</div>
+            </aside>
+            <main className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Task Brief · {selectedSection?.key}</p>
+                  <h3 className="mt-0.5 text-lg font-semibold text-foreground">{selectedSection?.title}</h3>
                 </div>
-                {selectedSection && (
-                  <div className="space-y-3 rounded-xl border border-border p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="text-xs font-semibold text-foreground">Isi brief</label>
-                      <select value={selectedSection.status} onChange={(e) => patchSection(selectedSection.key, { status: e.target.value as BriefSection["status"] })} className="rounded-md border border-border bg-background px-2 py-1 text-[10px]">
-                        <option value="confirmed">Confirmed</option><option value="needs_confirmation">Needs confirmation</option><option value="missing">Missing</option>
-                      </select>
-                    </div>
-                    <textarea value={selectedSection.content} onChange={(e) => patchSection(selectedSection.key, { content: e.target.value })} rows={10} placeholder="Tuliskan informasi, batasan, spesifikasi, atau kesepakatan untuk bagian ini…" className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
-                    <p className="text-[10px] text-muted-foreground">Status Confirmed hanya dipilih setelah informasi diverifikasi dari sumber atau keputusan internal.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setAiOpen(true)} className="gap-1.5"><Sparkles className="size-3.5 text-ai-foreground" /> Generate with AI</Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void runSummary()} disabled={summaryLoading} className="gap-1.5"><Wand2 className="size-3.5" /> {summaryLoading ? "Meringkas…" : "AI Summary"}</Button>
+                </div>
+              </div>
+
+              {selectedSection && (
+                <section className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-sm font-medium text-foreground">Isi brief</label>
+                    <select value={selectedSection.status} onChange={(e) => patchSection(selectedSection.key, { status: e.target.value as BriefSection["status"] })} className={cn(control, "w-auto py-1.5 text-xs")}>
+                      <option value="confirmed">Confirmed</option><option value="needs_confirmation">Needs confirmation</option><option value="missing">Missing</option>
+                    </select>
                   </div>
-                )}
-                {activeSection === "deliverables" && (
-                  <section className="space-y-3">
-                    <div className="flex items-center justify-between"><h4 className="text-sm font-bold">Deliverables &amp; Scope Register</h4><button type="button" onClick={addDeliverable} className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[10px]"><Plus className="size-3" /> Add item</button></div>
-                    {deliverables.map((item) => (
-                      <article key={item.id} className="space-y-3 rounded-xl border border-border p-3">
-                        <div className="flex items-start gap-2"><input value={item.title} onChange={(e) => patchDeliverable(item.id, { title: e.target.value })} placeholder="Nama deliverable" className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs" /><button type="button" onClick={() => { setDeliverables((current) => current.filter((d) => d.id !== item.id)); setDirty(true); }} className="rounded-md p-2 text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button></div>
-                        <textarea value={item.description} onChange={(e) => patchDeliverable(item.id, { description: e.target.value })} placeholder="Deskripsi dan ruang lingkup deliverable" rows={2} className="w-full rounded-md border border-border bg-background p-2 text-xs" />
-                        <div className="grid gap-2 sm:grid-cols-4">
-                          <select value={item.scope_type} onChange={(e) => patchDeliverable(item.id, { scope_type: e.target.value as Deliverable["scope_type"] })} className="rounded-md border border-border bg-background p-2 text-xs"><option value="in_scope">In Scope</option><option value="out_of_scope">Out of Scope</option><option value="optional">Optional</option></select>
-                          <input type="number" min="1" value={item.quantity} onChange={(e) => patchDeliverable(item.id, { quantity: Number(e.target.value) })} className="rounded-md border border-border bg-background p-2 text-xs" aria-label="Quantity" />
-                          <input value={item.format} onChange={(e) => patchDeliverable(item.id, { format: e.target.value })} placeholder="Format" className="rounded-md border border-border bg-background p-2 text-xs" />
-                          <input type="number" min="0" value={item.revision_quota} onChange={(e) => patchDeliverable(item.id, { revision_quota: Number(e.target.value) })} className="rounded-md border border-border bg-background p-2 text-xs" aria-label="Revision quota" />
-                        </div>
-                        <textarea value={item.specifications} onChange={(e) => patchDeliverable(item.id, { specifications: e.target.value })} placeholder="Spesifikasi teknis (ukuran, warna, platform, file source, dll.)" rows={2} className="w-full rounded-md border border-border bg-background p-2 text-xs" />
-                        <textarea value={item.acceptance_criteria.join("\n")} onChange={(e) => patchDeliverable(item.id, { acceptance_criteria: splitLines(e.target.value) })} placeholder="Acceptance criteria — satu kriteria per baris" rows={3} className="w-full rounded-md border border-border bg-background p-2 text-xs" />
-                      </article>
-                    ))}
-                    {!deliverables.length && <p className="rounded-lg border border-dashed p-5 text-center text-xs text-muted-foreground">Belum ada deliverable. Tambahkan manual atau generate dengan AI.</p>}
-                  </section>
-                )}
-                {activeSection === "resources" && (
-                  <section className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-xs">Estimasi jam kerja<input type="number" min="0" step="0.5" value={brief.estimated_hours ?? ""} onChange={(e) => patchBrief({ estimated_hours: e.target.value === "" ? null : Number(e.target.value) })} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs">Estimasi hari kalender<input type="number" min="0" step="0.5" value={brief.estimated_days ?? ""} onChange={(e) => patchBrief({ estimated_days: e.target.value === "" ? null : Number(e.target.value) })} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs">Prioritas AI<select value={brief.priority_suggestion} onChange={(e) => patchBrief({ priority_suggestion: e.target.value })} className="w-full rounded-md border border-border bg-background p-2"><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
-                    <label className="space-y-1 text-xs">Mata uang<input value={brief.currency} onChange={(e) => patchBrief({ currency: e.target.value.toUpperCase().slice(0, 3) })} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs">Budget minimum<input type="number" min="0" value={brief.budget_min ?? ""} onChange={(e) => patchBrief({ budget_min: e.target.value === "" ? null : Number(e.target.value) })} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs">Budget maksimum<input type="number" min="0" value={brief.budget_max ?? ""} onChange={(e) => patchBrief({ budget_max: e.target.value === "" ? null : Number(e.target.value) })} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs sm:col-span-2">Tools yang disarankan<textarea value={brief.suggested_tools.join("\n")} onChange={(e) => patchBrief({ suggested_tools: splitLines(e.target.value) })} rows={3} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs sm:col-span-2">Langkah pengerjaan (3–5 poin)<textarea value={brief.work_steps.join("\n")} onChange={(e) => patchBrief({ work_steps: splitLines(e.target.value) })} rows={4} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs sm:col-span-2">Asumsi<textarea value={brief.assumptions.join("\n")} onChange={(e) => patchBrief({ assumptions: splitLines(e.target.value) })} rows={3} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                    <label className="space-y-1 text-xs sm:col-span-2">Pertanyaan terbuka<textarea value={brief.open_questions.join("\n")} onChange={(e) => patchBrief({ open_questions: splitLines(e.target.value) })} rows={3} className="w-full rounded-md border border-border bg-background p-2" /></label>
-                  </section>
-                )}
-                {activeSection === "references" && (
-                  <section className="space-y-3 rounded-xl border border-border p-4">
-                    <h4 className="text-sm font-bold">Source Library</h4>
-                    <div className="flex flex-col gap-2 sm:flex-row"><input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://website-atau-dokumen.com" className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs" /><button type="button" onClick={() => void addUrlSource()} className="rounded-md border px-3 py-2 text-xs">Add link</button></div>
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs"><Plus className="size-3" /> Upload file<input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.webp,.txt,.csv" onChange={(e) => { void addFileSource(e.target.files?.[0]); e.currentTarget.value = ""; }} /></label>
-                    {sources.map((source) => <div key={source.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-xs"><span className="min-w-0 truncate">{source.title}</span><span className="shrink-0 text-[9px] text-muted-foreground">{source.source_status}</span></div>)}
-                    {documents.length > 0 && <div className="border-t border-border pt-3"><p className="mb-2 text-[10px] font-semibold text-muted-foreground">Client Documents yang tersedia ({documents.length})</p>{documents.slice(0, 6).map((doc) => <p key={doc.id} className="truncate py-1 text-[10px]">{doc.title || doc.file_name}</p>)}</div>}
-                    <p className="text-[10px] text-muted-foreground">File disimpan di Storage privat. Link yang ditambahkan menjadi referensi dan perlu diperiksa; konektor Email, WhatsApp, Telegram, Trello, Canva, Teams, dan Google Workspace memerlukan autentikasi/integrasi terpisah.</p>
-                  </section>
-                )}
-                {activeSection === "revisions" && (
-                  <section className="space-y-3 rounded-xl border border-border p-4">
-                    <h4 className="text-sm font-bold">Revision Quota per Deliverable</h4>
+                  <textarea value={selectedSection.content} onChange={(e) => patchSection(selectedSection.key, { content: e.target.value })} rows={10} placeholder="Tuliskan informasi, batasan, spesifikasi, atau kesepakatan untuk bagian ini…" className={control} />
+                  <p className="text-xs text-muted-foreground">Status Confirmed hanya dipilih setelah informasi diverifikasi dari sumber atau keputusan internal.</p>
+                </section>
+              )}
+
+              {activeSection === "deliverables" && (
+                <section className="space-y-3 border-t border-border pt-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-semibold text-foreground">Deliverables &amp; Scope Register</h4>
+                    <Button type="button" size="sm" variant="outline" onClick={addDeliverable} className="gap-1"><Plus className="size-3.5" /> Add item</Button>
+                  </div>
+                  {deliverables.map((item) => (
+                    // Tiap item = area inset (tanpa border), bukan kartu bergaris
+                    <article key={item.id} className="space-y-3 rounded-lg bg-muted/50 p-3">
+                      <div className="flex items-start gap-2">
+                        <input value={item.title} onChange={(e) => patchDeliverable(item.id, { title: e.target.value })} placeholder="Nama deliverable" className={cn(control, "min-w-0 flex-1")} />
+                        <Button type="button" size="icon-sm" variant="ghost-danger" aria-label="Hapus deliverable" onClick={() => { setDeliverables((current) => current.filter((d) => d.id !== item.id)); setDirty(true); }}><Trash2 /></Button>
+                      </div>
+                      <textarea value={item.description} onChange={(e) => patchDeliverable(item.id, { description: e.target.value })} placeholder="Deskripsi dan ruang lingkup deliverable" rows={2} className={control} />
+                      <div className="grid gap-2 sm:grid-cols-4">
+                        <select value={item.scope_type} onChange={(e) => patchDeliverable(item.id, { scope_type: e.target.value as Deliverable["scope_type"] })} className={control}><option value="in_scope">In Scope</option><option value="out_of_scope">Out of Scope</option><option value="optional">Optional</option></select>
+                        <input type="number" min="1" value={item.quantity} onChange={(e) => patchDeliverable(item.id, { quantity: Number(e.target.value) })} className={control} aria-label="Quantity" />
+                        <input value={item.format} onChange={(e) => patchDeliverable(item.id, { format: e.target.value })} placeholder="Format" className={control} />
+                        <input type="number" min="0" value={item.revision_quota} onChange={(e) => patchDeliverable(item.id, { revision_quota: Number(e.target.value) })} className={control} aria-label="Revision quota" />
+                      </div>
+                      <textarea value={item.specifications} onChange={(e) => patchDeliverable(item.id, { specifications: e.target.value })} placeholder="Spesifikasi teknis (ukuran, warna, platform, file source, dll.)" rows={2} className={control} />
+                      <textarea value={item.acceptance_criteria.join("\n")} onChange={(e) => patchDeliverable(item.id, { acceptance_criteria: splitLines(e.target.value) })} placeholder="Acceptance criteria — satu kriteria per baris" rows={3} className={control} />
+                    </article>
+                  ))}
+                  {!deliverables.length && <p className="rounded-lg border border-dashed border-border-strong/60 p-5 text-center text-sm text-muted-foreground">Belum ada deliverable. Tambahkan manual atau generate dengan AI.</p>}
+                </section>
+              )}
+
+              {activeSection === "resources" && (
+                <section className="grid gap-3 border-t border-border pt-6 sm:grid-cols-2">
+                  <label className="space-y-1 text-sm font-medium text-foreground">Estimasi jam kerja<input type="number" min="0" step="0.5" value={brief.estimated_hours ?? ""} onChange={(e) => patchBrief({ estimated_hours: e.target.value === "" ? null : Number(e.target.value) })} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground">Estimasi hari kalender<input type="number" min="0" step="0.5" value={brief.estimated_days ?? ""} onChange={(e) => patchBrief({ estimated_days: e.target.value === "" ? null : Number(e.target.value) })} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground">Prioritas AI<select value={brief.priority_suggestion} onChange={(e) => patchBrief({ priority_suggestion: e.target.value })} className={cn(control, "font-normal")}><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground">Mata uang<input value={brief.currency} onChange={(e) => patchBrief({ currency: e.target.value.toUpperCase().slice(0, 3) })} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground">Budget minimum<input type="number" min="0" value={brief.budget_min ?? ""} onChange={(e) => patchBrief({ budget_min: e.target.value === "" ? null : Number(e.target.value) })} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground">Budget maksimum<input type="number" min="0" value={brief.budget_max ?? ""} onChange={(e) => patchBrief({ budget_max: e.target.value === "" ? null : Number(e.target.value) })} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground sm:col-span-2">Tools yang disarankan<textarea value={brief.suggested_tools.join("\n")} onChange={(e) => patchBrief({ suggested_tools: splitLines(e.target.value) })} rows={3} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground sm:col-span-2">Langkah pengerjaan (3–5 poin)<textarea value={brief.work_steps.join("\n")} onChange={(e) => patchBrief({ work_steps: splitLines(e.target.value) })} rows={4} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground sm:col-span-2">Asumsi<textarea value={brief.assumptions.join("\n")} onChange={(e) => patchBrief({ assumptions: splitLines(e.target.value) })} rows={3} className={cn(control, "font-normal")} /></label>
+                  <label className="space-y-1 text-sm font-medium text-foreground sm:col-span-2">Pertanyaan terbuka<textarea value={brief.open_questions.join("\n")} onChange={(e) => patchBrief({ open_questions: splitLines(e.target.value) })} rows={3} className={cn(control, "font-normal")} /></label>
+                </section>
+              )}
+
+              {activeSection === "references" && (
+                <section className="space-y-3 border-t border-border pt-6">
+                  <h4 className="text-sm font-semibold text-foreground">Source Library</h4>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://website-atau-dokumen.com" className={cn(control, "min-w-0 flex-1")} />
+                    <Button type="button" variant="outline" onClick={() => void addUrlSource()}>Add link</Button>
+                  </div>
+                  <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-input bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"><Plus className="size-3.5" /> Upload file<input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.webp,.txt,.csv" onChange={(e) => { void addFileSource(e.target.files?.[0]); e.currentTarget.value = ""; }} /></label>
+                  <div className="divide-y divide-border">
+                    {sources.map((source) => <div key={source.id} className="flex items-center justify-between gap-2 py-2 text-sm"><span className="min-w-0 truncate text-foreground">{source.title}</span><span className="shrink-0 text-xs text-muted-foreground">{source.source_status}</span></div>)}
+                  </div>
+                  {documents.length > 0 && <div className="border-t border-border pt-3"><p className="mb-1 text-xs font-medium text-muted-foreground">Client Documents yang tersedia ({documents.length})</p>{documents.slice(0, 6).map((doc) => <p key={doc.id} className="truncate py-1 text-sm text-foreground">{doc.title || doc.file_name}</p>)}</div>}
+                  <p className="text-xs text-muted-foreground">File disimpan di Storage privat. Link yang ditambahkan menjadi referensi dan perlu diperiksa; konektor Email, WhatsApp, Telegram, Trello, Canva, Teams, dan Google Workspace memerlukan autentikasi/integrasi terpisah.</p>
+                </section>
+              )}
+
+              {activeSection === "revisions" && (
+                <section className="space-y-3 border-t border-border pt-6">
+                  <h4 className="text-sm font-semibold text-foreground">Revision Quota per Deliverable</h4>
+                  <div className="divide-y divide-border">
                     {deliverables.map((item) => {
                       const used = revisions.filter((r) => r.deliverable_id === item.id && r.quota_consumed && r.status !== "rejected").length;
-                      return <div key={item.id} className="rounded-lg bg-muted/50 p-3"><div className="flex justify-between gap-2 text-xs"><b>{item.title || "Deliverable"}</b><span>{used}/{item.revision_quota} putaran</span></div><div className="mt-2 h-1.5 rounded-full bg-background"><div className="h-full rounded-full bg-amber-500" style={{ width: Math.min(100, item.revision_quota ? used / item.revision_quota * 100 : 100) + "%" }} /></div></div>;
+                      return (
+                        <div key={item.id} className="py-3">
+                          <div className="flex justify-between gap-2 text-sm"><b className="font-medium text-foreground">{item.title || "Deliverable"}</b><span className="tabular-nums text-muted-foreground">{used}/{item.revision_quota} putaran</span></div>
+                          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-warning" style={{ width: Math.min(100, item.revision_quota ? used / item.revision_quota * 100 : 100) + "%" }} /></div>
+                        </div>
+                      );
                     })}
-                    <select value={revisionTarget} onChange={(e) => setRevisionTarget(e.target.value)} className="w-full rounded-md border border-border bg-background p-2 text-xs"><option value="">Pilih deliverable</option>{deliverables.map((item) => <option key={item.id} value={item.id}>{item.title || "Deliverable"}</option>)}</select>
-                    <select value={revisionType} onChange={(e) => setRevisionType(e.target.value)} className="w-full rounded-md border border-border bg-background p-2 text-xs"><option value="minor_revision">Minor revision (pakai kuota)</option><option value="correction">Correction (tidak pakai kuota)</option><option value="major_revision">Major revision (change request)</option><option value="new_deliverable">New deliverable</option></select>
-                    <textarea value={revisionText} onChange={(e) => setRevisionText(e.target.value)} rows={3} placeholder="Catatan permintaan revisi / koreksi…" className="w-full rounded-md border border-border bg-background p-2 text-xs" />
-                    <button type="button" onClick={() => void addRevision()} disabled={!revisionTarget || !revisionText.trim()} className="rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast disabled:opacity-50">Catat perubahan</button>
-                    {revisions.map((r) => <div key={r.id} className="border-t border-border pt-2 text-[10px]"><b>{r.request_type.replaceAll("_", " ")}</b> · {r.description}</div>)}
-                  </section>
-                )}
-                {activeSection === "timeline" && <section className="rounded-xl border border-border p-4"><h4 className="mb-2 text-sm font-bold">Task Timeline</h4><p className="text-xs text-muted-foreground">Deadline task: {task?.due_date ? new Date(task.due_date + "T00:00:00").toLocaleDateString("id-ID") : "Belum ditentukan"}. Isi milestone dan dependensi pada bagian Timeline &amp; Milestones.</p></section>}
-                {activeSection === "acceptance" && <section className="rounded-xl border border-border p-4"><h4 className="text-sm font-bold">Acceptance Criteria</h4><p className="mt-2 text-xs text-muted-foreground">Kriteria penerimaan dikelola per deliverable di bagian Deliverables. Gunakan checklist yang bisa diverifikasi, bukan penilaian subjektif.</p></section>}
-                {activeSection === "scope" && <section className="rounded-xl border border-border p-4"><h4 className="text-sm font-bold">Scope Summary</h4><div className="grid gap-2 sm:grid-cols-3">{(["in_scope","out_of_scope","optional"] as const).map((scope) => <div className="rounded-lg bg-muted/50 p-3" key={scope}><b className="text-xs capitalize">{scope.replaceAll("_"," ")}</b><p className="mt-1 text-xl font-bold">{deliverables.filter((d) => d.scope_type === scope).length}</p><p className="text-[10px] text-muted-foreground">items</p></div>)}</div><p className="mt-3 text-xs text-muted-foreground">Edit daftar item di bagian Deliverables.</p></section>}
-                {activeSection === "overview" && <section className="space-y-4 rounded-xl border border-border p-4"><label className="block text-xs font-semibold">Brief Title<input value={brief.title} onChange={(e) => patchBrief({ title: e.target.value })} className="mt-2 w-full rounded-md border border-border bg-background p-2 text-sm" /></label><p className="text-xs text-muted-foreground">Task: {task?.title} · Client: {client?.name} · Project: {project?.name ?? "Belum ditautkan"}</p><div className="border-t border-border pt-3"><h4 className="text-xs font-bold">Version History</h4><div className="mt-2 space-y-2">{versions.map((version) => <div key={version.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-[10px]"><span>v{version.version_number} · {version.change_note || "Snapshot"}</span><span className="capitalize text-muted-foreground">{version.status.replaceAll("_"," ")}</span></div>)}{!versions.length && <p className="text-[10px] text-muted-foreground">Belum ada snapshot. Gunakan Save Version atau Internal Approve untuk membuat versi.</p>}</div></div></section>}
-                {activeSection === "resources" && <></>}
-                {activeSection === "risks" && <section className="rounded-xl border border-border p-4"><h4 className="text-sm font-bold">Risks &amp; Open Questions</h4><textarea value={brief.open_questions.join("\n")} onChange={(e) => patchBrief({ open_questions: splitLines(e.target.value) })} rows={5} className="mt-2 w-full rounded-md border border-border bg-background p-2 text-xs" placeholder="Pertanyaan yang belum terjawab, risiko, dan dependensi…" /></section>}
-                {activeSection === "specifications" && <section className="rounded-xl border border-border p-4"><h4 className="text-sm font-bold">Technical Specifications</h4><p className="mt-2 text-xs text-muted-foreground">Tuliskan ukuran, resolusi, platform, format file, aksesibilitas, browser/device, brand rules, dan batasan teknis.</p></section>}
-                <section className="space-y-3 rounded-xl border border-border p-4">
-                  <div><h4 className="text-sm font-bold">Internal Notes &amp; Comments</h4><p className="text-[10px] text-muted-foreground">Catatan ini hanya terlihat oleh tim internal dan tidak ikut ke client share.</p></div>
-                  <textarea value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} rows={2} placeholder="Catatan internal untuk bagian ini…" className="w-full rounded-md border border-border bg-background p-2 text-xs" />
-                  <button type="button" onClick={() => void addInternalComment()} disabled={!brief.id || !commentDraft.trim()} className="rounded-md border px-3 py-2 text-xs disabled:opacity-50">Add internal note</button>
-                  {comments.filter((comment) => !comment.section_key || comment.section_key === activeSection).map((comment) => <div key={comment.id} className="border-t border-border pt-2 text-xs"><p>{comment.comment}</p><p className="mt-1 text-[9px] text-muted-foreground">{new Date(comment.created_at).toLocaleString("id-ID")}</p></div>)}
+                  </div>
+                  <select value={revisionTarget} onChange={(e) => setRevisionTarget(e.target.value)} className={control}><option value="">Pilih deliverable</option>{deliverables.map((item) => <option key={item.id} value={item.id}>{item.title || "Deliverable"}</option>)}</select>
+                  <select value={revisionType} onChange={(e) => setRevisionType(e.target.value)} className={control}><option value="minor_revision">Minor revision (pakai kuota)</option><option value="correction">Correction (tidak pakai kuota)</option><option value="major_revision">Major revision (change request)</option><option value="new_deliverable">New deliverable</option></select>
+                  <textarea value={revisionText} onChange={(e) => setRevisionText(e.target.value)} rows={3} placeholder="Catatan permintaan revisi / koreksi…" className={control} />
+                  <Button type="button" size="sm" onClick={() => void addRevision()} disabled={!revisionTarget || !revisionText.trim()}>Catat perubahan</Button>
+                  <div className="divide-y divide-border">
+                    {revisions.map((r) => <div key={r.id} className="py-2 text-sm"><b className="font-medium capitalize text-foreground">{r.request_type.replaceAll("_", " ")}</b> <span className="text-muted-foreground">· {r.description}</span></div>)}
+                  </div>
                 </section>
-              </main>
+              )}
+
+              {activeSection === "timeline" && <section className="border-t border-border pt-6"><h4 className="mb-2 text-sm font-semibold text-foreground">Task Timeline</h4><p className="text-sm text-muted-foreground">Deadline task: {task?.due_date ? new Date(task.due_date + "T00:00:00").toLocaleDateString("id-ID") : "Belum ditentukan"}. Isi milestone dan dependensi pada bagian Timeline &amp; Milestones.</p></section>}
+              {activeSection === "acceptance" && <section className="border-t border-border pt-6"><h4 className="text-sm font-semibold text-foreground">Acceptance Criteria</h4><p className="mt-2 text-sm text-muted-foreground">Kriteria penerimaan dikelola per deliverable di bagian Deliverables. Gunakan checklist yang bisa diverifikasi, bukan penilaian subjektif.</p></section>}
+              {activeSection === "scope" && (
+                <section className="border-t border-border pt-6">
+                  <h4 className="text-sm font-semibold text-foreground">Scope Summary</h4>
+                  <div className="mt-3 grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    {(["in_scope", "out_of_scope", "optional"] as const).map((scope) => (
+                      <div className="py-2 sm:px-4 sm:first:pl-0" key={scope}>
+                        <b className="text-sm font-medium capitalize text-foreground">{scope.replaceAll("_", " ")}</b>
+                        <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{deliverables.filter((d) => d.scope_type === scope).length}</p>
+                        <p className="text-xs text-muted-foreground">items</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">Edit daftar item di bagian Deliverables.</p>
+                </section>
+              )}
+              {activeSection === "overview" && (
+                <section className="space-y-4 border-t border-border pt-6">
+                  <label className="block text-sm font-medium text-foreground">Brief Title<input value={brief.title} onChange={(e) => patchBrief({ title: e.target.value })} className={cn(control, "mt-2")} /></label>
+                  <p className="text-sm text-muted-foreground">Task: {task?.title} · Client: {client?.name} · Project: {project?.name ?? "Belum ditautkan"}</p>
+                  <div className="border-t border-border pt-4">
+                    <h4 className="text-sm font-semibold text-foreground">Version History</h4>
+                    <div className="mt-1 divide-y divide-border">
+                      {versions.map((version) => <div key={version.id} className="flex items-center justify-between gap-2 py-2 text-sm"><span className="text-foreground">v{version.version_number} · {version.change_note || "Snapshot"}</span><span className="text-xs capitalize text-muted-foreground">{version.status.replaceAll("_", " ")}</span></div>)}
+                    </div>
+                    {!versions.length && <p className="mt-1 text-xs text-muted-foreground">Belum ada snapshot. Gunakan Save Version atau Internal Approve untuk membuat versi.</p>}
+                  </div>
+                </section>
+              )}
+              {activeSection === "risks" && <section className="border-t border-border pt-6"><h4 className="text-sm font-semibold text-foreground">Risks &amp; Open Questions</h4><textarea value={brief.open_questions.join("\n")} onChange={(e) => patchBrief({ open_questions: splitLines(e.target.value) })} rows={5} className={cn(control, "mt-2")} placeholder="Pertanyaan yang belum terjawab, risiko, dan dependensi…" /></section>}
+              {activeSection === "specifications" && <section className="border-t border-border pt-6"><h4 className="text-sm font-semibold text-foreground">Technical Specifications</h4><p className="mt-2 text-sm text-muted-foreground">Tuliskan ukuran, resolusi, platform, format file, aksesibilitas, browser/device, brand rules, dan batasan teknis.</p></section>}
+
+              <section className="space-y-3 border-t border-border pt-6">
+                <div><h4 className="text-sm font-semibold text-foreground">Internal Notes &amp; Comments</h4><p className="text-xs text-muted-foreground">Catatan ini hanya terlihat oleh tim internal dan tidak ikut ke client share.</p></div>
+                <textarea value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} rows={2} placeholder="Catatan internal untuk bagian ini…" className={control} />
+                <Button type="button" size="sm" variant="outline" onClick={() => void addInternalComment()} disabled={!brief.id || !commentDraft.trim()}>Add internal note</Button>
+                <div className="divide-y divide-border">
+                  {comments.filter((comment) => !comment.section_key || comment.section_key === activeSection).map((comment) => <div key={comment.id} className="py-2.5 text-sm"><p className="text-foreground">{comment.comment}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(comment.created_at).toLocaleString("id-ID")}</p></div>)}
+                </div>
+              </section>
+            </main>
+          </div>
+          <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-subtle px-4 py-3 sm:px-5">
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => void createVersion()} disabled={saving || !brief.id} className="gap-1.5"><History className="size-3.5" /> Save Version</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => window.print()} className="gap-1.5"><Download className="size-3.5" /> Print / PDF</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setShareOpen(true)} disabled={!brief.id} className="gap-1.5"><Share2 className="size-3.5" /> Controlled Share</Button>
             </div>
-            <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/30 px-4 py-3">
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => void createVersion()} disabled={saving || !brief.id} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold disabled:opacity-50"><History className="size-3.5" /> Save Version</button>
-                <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold"><Download className="size-3.5" /> Print / PDF</button>
-                <button type="button" onClick={() => setShareOpen(true)} disabled={!brief.id} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold disabled:opacity-50"><Share2 className="size-3.5" /> Controlled Share</button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => void persist().then(() => toast.success("Brief tersimpan.")).catch((e) => toast.error(e.message))} disabled={saving || !isPersistedTask} className="gap-1.5"><Save className="size-3.5" /> {saving ? "Saving…" : "Save Draft"}</Button>
+              <Button type="button" size="sm" onClick={() => void approveBrief()} disabled={saving || !brief.id} className="gap-1.5"><ClipboardCheck className="size-3.5" /> Internal Approve</Button>
+            </div>
+          </footer>
+        </DialogContent>
+      </Dialog>
+
+      {/* ───────── Generate AI: Dialog terpisah (bukan overlay absolute di dalam editor) ───────── */}
+      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Generate Task Brief with Ebran AI</DialogTitle>
+            <DialogDescription>AI membaca task, client profile, brand profile, project, dan metadata dokumen yang tersedia.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">Konteks tambahan<textarea value={aiContext} onChange={(e) => setAiContext(e.target.value)} rows={3} className={cn(control, "mt-1 font-normal")} placeholder="Apa yang client minta? Tujuan kampanye? Informasi dari meeting?" /></label>
+            <label className="block text-sm font-medium text-foreground">Instruksi khusus<textarea value={aiInstructions} onChange={(e) => setAiInstructions(e.target.value)} rows={3} className={cn(control, "mt-1 font-normal")} placeholder="Pantangan, gaya, target kualitas, batasan, asumsi yang harus diuji…" /></label>
+            <div className="space-y-2 rounded-lg bg-muted/60 p-3">
+              <p className="text-sm font-medium text-foreground">Sumber konteks yang boleh digunakan AI</p>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={includeBrandProfile} onChange={(e) => setIncludeBrandProfile(e.target.checked)} /> Brand Profile &amp; aturan brand</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={includeProjectContext} onChange={(e) => setIncludeProjectContext(e.target.checked)} /> Project context</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={includeClientDocuments} onChange={(e) => setIncludeClientDocuments(e.target.checked)} /> Metadata Client Documents</label>
+            </div>
+            <label className="block text-sm font-medium text-foreground">Lampiran untuk AI<input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv" onChange={(e) => setAiFile(e.target.files?.[0] ?? null)} className="mt-1 block w-full text-sm font-normal" /></label>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setAiOpen(false)}>Cancel</Button>
+              <Button type="button" onClick={() => void runAi()} disabled={aiLoading} className="gap-2"><Sparkles className="size-3.5" />{aiLoading ? "AI sedang menyusun…" : "Generate Draft"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ───────── Controlled Share: Dialog terpisah ───────── */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Controlled Client Share</DialogTitle>
+            <DialogDescription>Akses read-only secara default. Internal notes, AI prompts, cost/margin internal, dan komentar internal tidak ikut dibagikan.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={shareComments} onChange={(e) => setShareComments(e.target.checked)} /> Izinkan client memberi komentar</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={shareConfirmation} onChange={(e) => setShareConfirmation(e.target.checked)} /> Izinkan client mengonfirmasi brief</label>
+            <label className="block text-sm font-medium text-foreground">Tautan kedaluwarsa<select value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} className={cn(control, "mt-1 font-normal")}><option value="1">1 hari</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="never">Tidak kedaluwarsa</option></select></label>
+            <Button type="button" className="w-full" onClick={() => void createControlledShare()}>Generate Share Link</Button>
+            {shareLink && <div className="break-all rounded-lg bg-muted/60 p-3 text-xs text-foreground">{shareLink}<p className="mt-1 text-success-foreground">Halaman client share aktif. Tautan dapat dibagikan ke client.</p></div>}
+            {shares.length > 0 && (
+              <div className="border-t border-border pt-3">
+                <p className="text-sm font-medium text-foreground">Share links &amp; access history</p>
+                <div className="mt-1 divide-y divide-border">
+                  {shares.map((share) => <div key={share.id} className="flex items-center justify-between gap-2 py-2 text-xs"><span className="text-muted-foreground">{share.revoked_at ? "Revoked" : share.expires_at && new Date(share.expires_at) < new Date() ? "Expired" : "Active"} · v{share.version_number} · {new Date(share.created_at).toLocaleString("id-ID")}</span>{!share.revoked_at && <button type="button" onClick={() => void revokeShare(share.id)} className="shrink-0 text-destructive underline">Revoke</button>}</div>)}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => void persist().then(() => toast.success("Brief tersimpan.")).catch((e) => toast.error(e.message))} disabled={saving || !isPersistedTask} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-[10px] font-semibold disabled:opacity-50"><Save className="size-3.5" /> {saving ? "Saving…" : "Save Draft"}</button>
-                <button type="button" onClick={() => void approveBrief()} disabled={saving || !brief.id} className="inline-flex items-center gap-1 rounded-lg bg-wb-blue-strong px-3 py-2 text-[10px] font-semibold text-brand-contrast disabled:opacity-50"><ClipboardCheck className="size-3.5" /> Internal Approve</button>
+            )}
+            {shareFeedback.length > 0 && (
+              <div className="border-t border-border pt-3">
+                <p className="text-sm font-medium text-foreground">Client feedback</p>
+                <div className="mt-1 divide-y divide-border">
+                  {shareFeedback.map((feedback) => <div key={feedback.id} className="py-2 text-xs"><b className="font-medium text-foreground">{feedback.client_name}</b> <span className="text-muted-foreground">· {new Date(feedback.created_at).toLocaleString("id-ID")}</span><p className="mt-1 text-foreground">{feedback.decision || "Comment"}{feedback.comment ? " — " + feedback.comment : ""}</p></div>)}
+                </div>
               </div>
-            </footer>
-            {aiOpen && <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-xl space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Generate Task Brief with Ebran AI</h3><button type="button" onClick={() => setAiOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">AI membaca task, client profile, brand profile, project, dan metadata dokumen yang tersedia.</p><label className="block text-xs font-semibold">Konteks tambahan<textarea value={aiContext} onChange={(e) => setAiContext(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-border bg-background p-2 font-normal" placeholder="Apa yang client minta? Tujuan kampanye? Informasi dari meeting?" /></label><label className="block text-xs font-semibold">Instruksi khusus<textarea value={aiInstructions} onChange={(e) => setAiInstructions(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-border bg-background p-2 font-normal" placeholder="Pantangan, gaya, target kualitas, batasan, asumsi yang harus diuji…" /></label><div className="space-y-2 rounded-lg border border-border p-3"><p className="text-xs font-semibold">Sumber konteks yang boleh digunakan AI</p><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={includeBrandProfile} onChange={(e) => setIncludeBrandProfile(e.target.checked)} /> Brand Profile &amp; aturan brand</label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={includeProjectContext} onChange={(e) => setIncludeProjectContext(e.target.checked)} /> Project context</label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={includeClientDocuments} onChange={(e) => setIncludeClientDocuments(e.target.checked)} /> Metadata Client Documents</label></div>
-            <label className="block text-xs font-semibold">Lampiran untuk AI<input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv" onChange={(e) => setAiFile(e.target.files?.[0] ?? null)} className="mt-1 block w-full text-xs" /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setAiOpen(false)} className="rounded-md border px-3 py-2 text-xs">Cancel</button><button type="button" onClick={() => void runAi()} disabled={aiLoading} className="inline-flex items-center gap-2 rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast disabled:opacity-50"><Sparkles className="size-3.5" />{aiLoading ? "AI sedang menyusun…" : "Generate Draft"}</button></div></section></div>}
-            {shareOpen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 p-3"><section className="w-full max-w-lg space-y-3 rounded-2xl border border-border bg-background p-5 shadow-2xl"><div className="flex items-center justify-between"><h3 className="font-bold">Controlled Client Share</h3><button type="button" onClick={() => setShareOpen(false)}><X className="size-4" /></button></div><p className="text-xs text-muted-foreground">Akses read-only secara default. Internal notes, AI prompts, cost/margin internal, dan komentar internal tidak ikut dibagikan.</p><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareComments} onChange={(e) => setShareComments(e.target.checked)} /> Izinkan client memberi komentar</label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={shareConfirmation} onChange={(e) => setShareConfirmation(e.target.checked)} /> Izinkan client mengonfirmasi brief</label><label className="block text-xs">Tautan kedaluwarsa<select value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-background p-2"><option value="1">1 hari</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="never">Tidak kedaluwarsa</option></select></label><button type="button" onClick={() => void createControlledShare()} className="w-full rounded-md bg-wb-blue-strong px-3 py-2 text-xs font-semibold text-brand-contrast">Generate Share Link</button>{shareLink && <div className="break-all rounded-lg bg-muted p-2 text-[10px]">{shareLink}<p className="mt-1 text-emerald-700">Halaman client share aktif. Tautan dapat dibagikan ke client.</p></div>}
-            {shares.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Share links &amp; access history</p>{shares.map((share) => <div key={share.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-[10px]"><span>{share.revoked_at ? "Revoked" : share.expires_at && new Date(share.expires_at) < new Date() ? "Expired" : "Active"} · v{share.version_number} · {new Date(share.created_at).toLocaleString("id-ID")}</span>{!share.revoked_at && <button type="button" onClick={() => void revokeShare(share.id)} className="text-destructive underline">Revoke</button>}</div>)}</div>}
-            {shareFeedback.length > 0 && <div className="space-y-2 border-t border-border pt-3"><p className="text-xs font-semibold">Client feedback</p>{shareFeedback.map((feedback) => <div key={feedback.id} className="rounded-lg bg-muted/50 p-2 text-[10px]"><b>{feedback.client_name}</b> · {new Date(feedback.created_at).toLocaleString("id-ID")}<p className="mt-1">{feedback.decision || "Comment"}{feedback.comment ? " — " + feedback.comment : ""}</p></div>)}</div>}</section></div>}
-          </section>
-        </div>
-      )}
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
