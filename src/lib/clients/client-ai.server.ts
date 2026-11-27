@@ -15,6 +15,7 @@ import {
   redactSecrets,
   socialProfileUrl,
   type ClientAiCard,
+  type ClientAiField,
   type ClientAiMode,
   type ClientProfile,
   type SocialPlatform,
@@ -437,6 +438,45 @@ const CARD_TASK: Record<ClientAiCard, string> = {
   notes:
     "Rangkum timeline, task, dokumen, dan catatan yang ada menjadi Catatan Penting untuk tim internal: kontrak/masa aktif, fokus saat ini, hal yang menunggu konfirmasi, dan larangan penting. Maks 6 poin.",
 };
+
+
+const CLIENT_FIELD_TASK: Record<ClientAiField, string> = {
+  company_overview: "Tulis company overview 2-3 kalimat berdasarkan fakta usaha dan layanan client.",
+  tone_of_voice: "Buat panduan tone of voice 1-2 kalimat yang sesuai identitas merek dan audiens.",
+  pain_points: "Identifikasi 3-5 pain points/kebutuhan bisnis yang relevan sebagai bullet list.",
+  agency_goals: "Susun 3-5 tujuan dan ruang lingkup kontribusi agensi yang realistis sebagai bullet list.",
+  do_rules: "Susun 3-5 aturan DO konkret untuk konten, desain, komunikasi, dan pengerjaan agensi sebagai bullet list.",
+  dont_rules: "Susun 3-5 aturan DON'T konkret berdasarkan identitas dan risiko brand sebagai bullet list.",
+  important_notes: "Buat catatan penting untuk tim internal sebagai bullet list. Jangan mengarang kontrak atau tanggal.",
+  vault_notes: "Buat catatan operasional internal yang aman dan ringkas. Jangan sertakan password, PIN, OTP, token, atau secret.",
+  primary_color: "Tentukan warna utama hanya jika ada bukti di profil atau website. Kembalikan satu HEX #RRGGBB, jika tidak ada bukti kosongkan.",
+  secondary_color: "Tentukan warna sekunder hanya jika ada bukti di profil atau website. Kembalikan satu HEX #RRGGBB, jika tidak ada bukti kosongkan.",
+  tags: "Buat 3-6 tag kategori brand/industri relevan, dipisahkan koma. Jangan membuat klaim tanpa dukungan data.",
+};
+
+export async function generateClientField(field: ClientAiField, brief: ClientBrief) {
+  const blocks = [`Data client dan brand profile tersimpan (JSON):\n${JSON.stringify(brief)}`];
+  const sources: string[] = [];
+  if (["company_overview", "tone_of_voice", "primary_color", "secondary_color"].includes(field) && brief.client.website) {
+    try {
+      const page = await fetchPublicPage(normalizeWebUrl(brief.client.website) || brief.client.website);
+      sources.push(page.url);
+      blocks.push(pageBlock("Isi website client", page));
+    } catch {
+      // Saved client data remains the fallback source.
+    }
+  }
+  const result = await runObject(
+    z.object({ value: z.string().describe("Isi final untuk satu kolom form.") }),
+    `${PERSONA}\nKamu mengisi tepat satu kolom pada Brand Profile Tersimpan.\n${RULES}`,
+    [{ role: "user", content: `${blocks.join("\n\n")}\n\nKolom: ${field}\nTugas: ${CLIENT_FIELD_TASK[field]}\nJika sumber tidak mendukung jawaban faktual, kembalikan string kosong.` }],
+    "medium",
+  );
+  let value = result.value.trim().slice(0, 4000);
+  if (field === "primary_color" || field === "secondary_color") value = normalizeHex(value) ?? "";
+  if (field === "tags") value = value.split(/[,\n]+/).map((tag) => tag.trim()).filter(Boolean).slice(0, 8).join(", ");
+  return { value, sources };
+}
 
 export async function generateClientCard(card: ClientAiCard, brief: ClientBrief) {
   const blocks = [`Data client (JSON):\n${JSON.stringify(brief)}`];
