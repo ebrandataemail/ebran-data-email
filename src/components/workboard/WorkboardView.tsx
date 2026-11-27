@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { TaskIntakeAssistant } from "./TaskIntakeAssistant";
 import { TaskAutomationPanel } from "./TaskAutomationPanel";
 import {
@@ -23,18 +24,21 @@ import { useWorkboardData, type WorkboardTask } from "./useWorkboardData";
 /** L1 — sama dengan halaman Accounts dan Proyek. */
 const surface = "rounded-xl border border-border bg-card shadow-soft";
 
-export function WorkboardView() {
+export type WorkboardSection = "tasks" | "inbox" | "calendar";
+
+export function WorkboardView({ section = "tasks" }: { section?: WorkboardSection }) {
   return (
     <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
-        <WorkboardContent />
+        <WorkboardContent section={section} />
       </main>
     </div>
   );
 }
 
-export function WorkboardContent() {
+export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSection }) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -91,9 +95,15 @@ export function WorkboardContent() {
     <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 pb-16 sm:px-8">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Workboard</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            {section === "tasks" ? "Task Manager" : section === "inbox" ? "Inbox & AI Integrations" : "Kalender & Aktivitas"}
+          </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Data client, proyek, task, deadline, dokumen, dan aktivitas tersinkron dari Supabase.
+            {section === "tasks"
+              ? "Kelola task, Graphic Workspace, brief, desain, dan approval."
+              : section === "inbox"
+                ? "Kumpulkan sumber pekerjaan, buat draft dengan AI, lalu tinjau sebelum menjadi task."
+                : "Pantau deadline, agenda, daftar pekerjaan, dan aktivitas terbaru."}
           </p>
         </div>
         <Button
@@ -114,13 +124,15 @@ export function WorkboardContent() {
         </Button>
       </header>
 
-      <StatStrip
-        items={counts.map(({ label, value, icon: Icon }) => ({
-          label,
-          value: loading ? "—" : value,
-          icon: <Icon />,
-        }))}
-      />
+      {section === "tasks" && (
+        <StatStrip
+          items={counts.map(({ label, value, icon: Icon }) => ({
+            label,
+            value: loading ? "—" : value,
+            icon: <Icon />,
+          }))}
+        />
+      )}
 
       {error && (
         <div
@@ -137,143 +149,127 @@ export function WorkboardContent() {
           </Button>
         </div>
       )}
-      <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-          <label className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-soft sm:max-w-[360px]">
-            <Search className="size-4 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari task, client, PIC, deskripsi…"
-              className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-            />
-            <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[11px] text-muted-foreground">
-              ⌘K
-            </kbd>
-          </label>
-          <label className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-sm text-muted-foreground">
-            Client aktif
-            <select
-              value={selectedClientId}
-              onChange={(e) => {
-                setSelectedClientId(e.target.value);
-                setSelectedTaskId(null);
-              }}
-              className="h-9 w-full min-w-0 rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground shadow-soft sm:max-w-[240px]"
-            >
-              <option value="">Pilih client</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {loading && !clients.length ? (
-          <div className={cn(surface, "p-10 text-center text-sm text-muted-foreground")}>
-            Menghubungkan ke Supabase…
+      {section === "tasks" && (
+        <>
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <label className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-soft sm:max-w-[360px]">
+                <Search className="size-4 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Cari task, client, PIC, deskripsi…"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[11px] text-muted-foreground">⌘K</kbd>
+              </label>
+              <label className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-sm text-muted-foreground">
+                Client aktif
+                <select
+                  value={selectedClientId}
+                  onChange={(e) => { setSelectedClientId(e.target.value); setSelectedTaskId(null); }}
+                  className="h-9 w-full min-w-0 rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground shadow-soft sm:max-w-[240px]"
+                >
+                  <option value="">Pilih client</option>
+                  {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+                </select>
+              </label>
+            </div>
+            {loading && !clients.length ? (
+              <div className={cn(surface, "p-10 text-center text-sm text-muted-foreground")}>Menghubungkan ke Supabase…</div>
+            ) : (
+              <div id="graphic-workspace">
+                <GraphicWorkspace
+                  clients={clients}
+                  projects={projects}
+                  tasks={boardTasks}
+                  documents={documents}
+                  activities={activities}
+                  designVersions={designVersions}
+                  designComments={designComments}
+                  designReviews={designReviews}
+                  selectedClientId={selectedClientId}
+                  onDataChanged={refresh}
+                  selectedTask={selectedTask}
+                />
+              </div>
+            )}
           </div>
-        ) : (
-          <div id="graphic-workspace">
-            <GraphicWorkspace
-              clients={clients}
-              projects={projects}
-              tasks={boardTasks}
-              documents={documents}
-              activities={activities}
-              designVersions={designVersions}
-              designComments={designComments}
-              designReviews={designReviews}
-              selectedClientId={selectedClientId}
-              onDataChanged={refresh}
-              selectedTask={selectedTask}
-            />
-          </div>
-        )}
-      </div>
-      <TaskIntakeAssistant clients={clients} projects={projects} onCreated={refresh} />
-      <TaskAutomationPanel
-        clients={clients}
-        projects={projects}
-        tasks={tasks}
-        onTaskCreated={refresh}
-        onSelectTask={(task) => {
-          setSelectedTaskId(task.id);
-          if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
-        }}
-      />
-      <TaskBoard
-        query={query}
-        tasks={boardTasks}
-        clients={clients}
-        projects={projects}
-        loading={loading}
-        onCreate={async (input) => {
-          const created = await createTask(input);
-          if (created?.id) {
-            setSelectedClientId(input.client_id);
-            setSelectedTaskId(created.id);
-          }
-          return created;
-        }}
-        onUpdate={updateTask}
-        onDelete={deleteTask}
-        onDuplicate={duplicateTask}
-        onSelectTask={(task) => {
-          setSelectedTaskId(task.id);
-          if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
-        }}
-      />
-      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.95fr)]">
-        <CalendarPanel tasks={tasks} activities={activities} />
-        <WorkListPanel tasks={tasks} clients={clients} />
-        <AiSecretaryPanel />
-      </section>
+          <TaskBoard
+            query={query}
+            tasks={boardTasks}
+            clients={clients}
+            projects={projects}
+            loading={loading}
+            onCreate={async (input) => {
+              const created = await createTask(input);
+              if (created?.id) { setSelectedClientId(input.client_id); setSelectedTaskId(created.id); }
+              return created;
+            }}
+            onUpdate={updateTask}
+            onDelete={deleteTask}
+            onDuplicate={duplicateTask}
+            onSelectTask={(task) => {
+              setSelectedTaskId(task.id);
+              if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
+            }}
+          />
+        </>
+      )}
 
-      {/* Aktivitas: satu card, baris dipisah garis — tanpa kartu kecil di dalam kartu */}
-      <section className={cn(surface, "overflow-hidden")}>
-        <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-3.5 sm:px-5">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground">Aktivitas terbaru</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Riwayat aktivitas client dari Supabase
-            </p>
-          </div>
-          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-            {latestActivities.length} terbaru
-          </span>
-        </header>
-        {latestActivities.length ? (
-          <ul className="divide-y divide-border">
-            {latestActivities.map((a) => {
-              const client = clients.find((c) => c.id === a.client_id);
-              return (
-                <li key={a.id} className="min-w-0 px-4 py-3 sm:px-5">
-                  <div className="grid min-w-0 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
-                    <p className="text-sm font-medium text-foreground">{a.title}</p>
-                    <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {new Date(a.occurred_at).toLocaleString("id-ID")}
-                    </time>
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {client?.name ?? "Client"} · {a.event_type}
-                  </p>
-                  {a.description && (
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {a.description}
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Belum ada aktivitas yang tercatat.
-          </p>
-        )}
-      </section>
+      {section === "inbox" && (
+        <div className="space-y-5">
+          <TaskIntakeAssistant clients={clients} projects={projects} onCreated={refresh} />
+          <TaskAutomationPanel
+            clients={clients}
+            projects={projects}
+            tasks={tasks}
+            onTaskCreated={refresh}
+            onSelectTask={() => {
+              void navigate({ to: "/workboard", search: { view: "tasks" } });
+              toast.info("Buka Task Manager untuk melihat dan mengelola task.");
+            }}
+          />
+        </div>
+      )}
+
+      {section === "calendar" && (
+        <div className="space-y-5">
+          <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.95fr)]">
+            <CalendarPanel tasks={tasks} activities={activities} />
+            <WorkListPanel tasks={tasks} clients={clients} />
+            <AiSecretaryPanel />
+          </section>
+          <section className={cn(surface, "overflow-hidden")}>
+            <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-3.5 sm:px-5">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-foreground">Aktivitas terbaru</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">Riwayat aktivitas client dari Supabase</p>
+              </div>
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{latestActivities.length} terbaru</span>
+            </header>
+            {latestActivities.length ? (
+              <ul className="divide-y divide-border">
+                {latestActivities.map((activity) => {
+                  const client = clients.find((item) => item.id === activity.client_id);
+                  return (
+                    <li key={activity.id} className="min-w-0 px-4 py-3 sm:px-5">
+                      <div className="grid min-w-0 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
+                        <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                        <time className="shrink-0 text-xs tabular-nums text-muted-foreground">{new Date(activity.occurred_at).toLocaleString("id-ID")}</time>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{client?.name ?? "Client"} · {activity.event_type}</p>
+                      {activity.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{activity.description}</p>}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">Belum ada aktivitas yang tercatat.</p>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
