@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppSidebar } from "@/components/vault/AppSidebar";
+import { StatStrip } from "@/components/vault/StatStrip";
+import { VaultTabTrigger } from "@/components/vault/primitives";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   AtSign,
@@ -26,6 +30,9 @@ import {
   Video,
   Youtube,
 } from "lucide-react";
+
+/** L1 — satu bahasa card, sama dengan halaman Accounts, Developer, Ads, dan Proyek. */
+const stateCard = "rounded-xl border border-border bg-card shadow-soft";
 
 type SocialAccount = {
   id: string;
@@ -254,21 +261,18 @@ export function SocialMediaView() {
   const totalFollowers = accounts.reduce((n, a) => n + (a.followers_count ?? 0), 0);
   const totalViews = accounts.reduce((n, a) => n + (a.total_views ?? 0), 0);
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
         <header className="border-b border-border bg-background/90 sm:sticky sm:top-0 sm:z-20 sm:backdrop-blur-md">
           <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div className="flex items-center gap-3">
-              <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <AtSign className="size-5" />
-              </span>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">Social Media</h1>
-                <p className="text-sm text-muted-foreground">
-                  Kelola akun, insight, dan performa konten lintas platform.
-                </p>
-              </div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                Social Media
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Kelola akun, insight, dan performa konten lintas platform.
+              </p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => void load()}>
@@ -282,14 +286,26 @@ export function SocialMediaView() {
             </div>
           </div>
         </header>
-        <section className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 pb-16 sm:px-8">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Metric label="Akun terdaftar" value={accounts.length} />
-            <Metric label="Total followers (data tersimpan)" value={fmt(totalFollowers)} />
-            <Metric label="Total views (data tersimpan)" value={fmt(totalViews)} />
-          </div>
-          <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 text-sm">
-            <p className="font-medium">Manual + OAuth/API</p>
+        <section className="mx-auto max-w-[1280px] space-y-4 px-4 py-6 pb-16 sm:px-8">
+          {/* Ringkasan: satu card dengan pemisah garis (bukan tiga card identik) */}
+          <StatStrip
+            items={[
+              { icon: <AtSign />, value: accounts.length, label: "Akun terdaftar" },
+              {
+                icon: <Users />,
+                value: fmt(totalFollowers),
+                label: "Total followers (data tersimpan)",
+              },
+              {
+                icon: <BarChart3 />,
+                value: fmt(totalViews),
+                label: "Total views (data tersimpan)",
+              },
+            ]}
+          />
+          {/* Catatan info: area inset netral (sebelumnya warna sky mentah di luar design system) */}
+          <div className="rounded-lg bg-muted/60 p-4 text-sm">
+            <p className="font-medium text-foreground">Manual + OAuth/API</p>
             <p className="mt-1 text-muted-foreground">
               Pencatatan manual sudah tersedia. Koneksi otomatis memerlukan aplikasi developer, izin
               OAuth, dan kredensial resmi tiap platform. Belum ada proses crawl otomatis yang
@@ -297,17 +313,19 @@ export function SocialMediaView() {
               resmi.
             </p>
           </div>
-          <div className="flex gap-2 border-b border-border">
-            <Button
-              variant={tab === "accounts" ? "default" : "ghost"}
-              onClick={() => setTab("accounts")}
-            >
-              Akun ({accounts.length})
-            </Button>
-            <Button variant={tab === "posts" ? "default" : "ghost"} onClick={() => setTab("posts")}>
-              Posts ({posts.length})
-            </Button>
-          </div>
+          {/* Tab garis-bawah yang sama dengan kartu akun (sebelumnya tombol Button biasa) */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "accounts" | "posts")}>
+            <div className="overflow-x-auto border-b border-border">
+              <TabsList className="h-auto gap-0 rounded-none bg-transparent p-0">
+                <VaultTabTrigger value="accounts" icon={<AtSign />}>
+                  Akun ({accounts.length})
+                </VaultTabTrigger>
+                <VaultTabTrigger value="posts" icon={<Video />}>
+                  Posts ({posts.length})
+                </VaultTabTrigger>
+              </TabsList>
+            </div>
+          </Tabs>
           {tab === "accounts" ? (
             <>
               {loading ? (
@@ -319,14 +337,15 @@ export function SocialMediaView() {
                   action={() => void addAccount()}
                 />
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {accounts.map((a) => (
                     <article
                       key={a.id}
-                      className="rounded-xl border border-border bg-card p-5 shadow-card"
+                      className={cn(stateCard, "min-w-0 overflow-hidden transition-colors hover:border-border-strong")}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
+                      {/* Header */}
+                      <header className="flex items-start gap-3 px-4 pb-3 pt-4">
+                        <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                           {a.avatar_url ? (
                             <img src={a.avatar_url} alt="" className="size-full object-cover" />
                           ) : (
@@ -334,43 +353,55 @@ export function SocialMediaView() {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h2 className="truncate text-sm font-semibold">{a.display_name}</h2>
-                          <p className="text-xs text-muted-foreground">
+                          <h2 className="truncate text-sm font-semibold text-foreground">
+                            {a.display_name}
+                          </h2>
+                          <p className="truncate text-xs text-muted-foreground">
                             {PLATFORMS.find((p) => p.value === a.platform)?.label ?? a.platform}
                             {a.username ? " · @" + a.username : ""}
                           </p>
                         </div>
                         <Button
-                          size="icon"
-                          variant="ghost"
+                          size="icon-sm"
+                          variant="ghost-danger"
                           onClick={() => void remove(a.id, "account")}
-                          aria-label="Hapus akun"
+                          aria-label={`Hapus akun ${a.display_name}`}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 />
                         </Button>
+                      </header>
+
+                      {/* Isi */}
+                      <div className="space-y-3 px-4 pb-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          <Badge
+                            variant={a.connection_status === "connected" ? "success" : "secondary"}
+                          >
+                            {a.connection_status === "connected"
+                              ? "Terhubung"
+                              : a.connection_mode === "manual"
+                                ? "Manual"
+                                : a.connection_status}
+                          </Badge>
+                          <Badge variant="outline">{a.account_type}</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <SmallMetric label="Followers" value={fmt(a.followers_count)} />
+                          <SmallMetric label="Following" value={fmt(a.following_count)} />
+                          <SmallMetric label="Posts" value={fmt(a.posts_count)} />
+                          <SmallMetric label="Total views" value={fmt(a.total_views)} />
+                        </div>
+                        {a.bio && (
+                          <p className="line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
+                        )}
+                        {/* ID dipakai saat "Tambah Post Manual", jadi tetap ditampilkan (12px, redup) */}
+                        <p className="break-all font-mono text-xs text-muted-foreground/70">
+                          {a.id}
+                        </p>
                       </div>
-                      <div className="mt-4 flex flex-wrap gap-1.5">
-                        <Badge
-                          variant={a.connection_status === "connected" ? "success" : "secondary"}
-                        >
-                          {a.connection_status === "connected"
-                            ? "Terhubung"
-                            : a.connection_mode === "manual"
-                              ? "Manual"
-                              : a.connection_status}
-                        </Badge>
-                        <Badge variant="outline">{a.account_type}</Badge>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <SmallMetric label="Followers" value={fmt(a.followers_count)} />
-                        <SmallMetric label="Following" value={fmt(a.following_count)} />
-                        <SmallMetric label="Posts" value={fmt(a.posts_count)} />
-                        <SmallMetric label="Total views" value={fmt(a.total_views)} />
-                      </div>
-                      {a.bio && (
-                        <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
-                      )}
-                      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+
+                      {/* Footer */}
+                      <footer className="flex items-center justify-between gap-2 border-t border-border bg-subtle px-4 py-2.5 text-xs text-muted-foreground">
                         <span>
                           {a.last_synced_at
                             ? "Sync " + date(a.last_synced_at)
@@ -381,15 +412,12 @@ export function SocialMediaView() {
                             href={a.profile_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-primary"
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
                           >
                             Profil <ExternalLink className="size-3" />
                           </a>
                         )}
-                      </div>
-                      <p className="mt-2 break-all font-mono text-[10px] text-muted-foreground/60">
-                        {a.id}
-                      </p>
+                      </footer>
                     </article>
                   ))}
                 </div>
@@ -404,12 +432,12 @@ export function SocialMediaView() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Cari caption, akun, username..."
-                    className="pl-9"
+                    className="bg-card pl-9"
                   />
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                   <Select value={platform} onValueChange={setPlatform}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Platform" />
                     </SelectTrigger>
                     <SelectContent>
@@ -422,7 +450,7 @@ export function SocialMediaView() {
                     </SelectContent>
                   </Select>
                   <Select value={account} onValueChange={setAccount}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Akun" />
                     </SelectTrigger>
                     <SelectContent>
@@ -435,7 +463,7 @@ export function SocialMediaView() {
                     </SelectContent>
                   </Select>
                   <Select value={media} onValueChange={setMedia}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Jenis konten" />
                     </SelectTrigger>
                     <SelectContent>
@@ -458,7 +486,7 @@ export function SocialMediaView() {
                     </SelectContent>
                   </Select>
                   <Select value={period} onValueChange={setPeriod}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Periode" />
                     </SelectTrigger>
                     <SelectContent>
@@ -470,7 +498,7 @@ export function SocialMediaView() {
                     </SelectContent>
                   </Select>
                   <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Urutkan" />
                     </SelectTrigger>
                     <SelectContent>
@@ -483,8 +511,10 @@ export function SocialMediaView() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex justify-between">
-                  <p className="text-xs text-muted-foreground">{filtered.length} post cocok</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs tabular-nums text-muted-foreground">
+                    {filtered.length} post cocok
+                  </p>
                   <Button size="sm" onClick={() => void addPost()}>
                     <Plus className="size-4" />
                     Tambah Post Manual
@@ -500,11 +530,11 @@ export function SocialMediaView() {
                   action={() => void addPost()}
                 />
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {filtered.map((p) => (
                     <article
                       key={p.id}
-                      className="overflow-hidden rounded-xl border border-border bg-card"
+                      className={cn(stateCard, "min-w-0 overflow-hidden transition-colors hover:border-border-strong")}
                     >
                       {p.thumbnail_url ? (
                         <img
@@ -517,21 +547,23 @@ export function SocialMediaView() {
                           <Video className="size-8 text-muted-foreground/40" />
                         </div>
                       )}
-                      <div className="space-y-3 p-4">
+                      <div className="space-y-3 px-4 pb-4 pt-3.5">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold">{p.display_name}</p>
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {p.display_name}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {p.platform} · {p.media_type}
                             </p>
                           </div>
                           <Button
-                            size="icon"
-                            variant="ghost"
+                            size="icon-sm"
+                            variant="ghost-danger"
                             onClick={() => void remove(p.id, "post")}
                             aria-label="Hapus post"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 />
                           </Button>
                         </div>
                         <p className="line-clamp-2 min-h-9 text-xs text-muted-foreground">
@@ -542,23 +574,23 @@ export function SocialMediaView() {
                           <SmallMetric label="Likes" value={fmt(p.likes_count)} />
                           <SmallMetric label="Komentar" value={fmt(p.comments_count)} />
                         </div>
-                        <div className="flex justify-between border-t border-border pt-2 text-[11px] text-muted-foreground">
-                          <span>{date(p.published_at)}</span>
-                          {p.permalink && (
-                            <a
-                              href={p.permalink}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-primary"
-                            >
-                              Buka post ↗
-                            </a>
-                          )}
-                        </div>
                         <Badge variant="outline">
                           {p.source === "api" ? "API sync" : "Manual"}
                         </Badge>
                       </div>
+                      <footer className="flex items-center justify-between gap-2 border-t border-border bg-subtle px-4 py-2.5 text-xs text-muted-foreground">
+                        <span>{date(p.published_at)}</span>
+                        {p.permalink && (
+                          <a
+                            href={p.permalink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Buka post ↗
+                          </a>
+                        )}
+                      </footer>
                     </article>
                   ))}
                 </div>
@@ -570,25 +602,22 @@ export function SocialMediaView() {
     </div>
   );
 }
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
 function SmallMetric({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-base font-semibold tabular-nums">{value}</p>
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-base font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
 function Loading() {
   return (
-    <div className="flex justify-center gap-2 py-20 text-sm text-muted-foreground">
+    <div
+      className={cn(
+        stateCard,
+        "flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground",
+      )}
+    >
       <LoaderCircle className="size-5 animate-spin" />
       Memuat Social Media...
     </div>
@@ -596,9 +625,9 @@ function Loading() {
 }
 function Empty({ title, detail, action }: { title: string; detail: string; action: () => void }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border py-16 text-center">
+    <div className={cn(stateCard, "border-dashed py-16 text-center shadow-none")}>
       <AtSign className="mx-auto mb-3 size-9 text-muted-foreground/40" />
-      <p className="font-medium">{title}</p>
+      <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">{detail}</p>
       <Button className="mt-4" onClick={action}>
         <Plus className="size-4" />
