@@ -128,17 +128,25 @@ export function WorkboardContent({ section = "board", taskId }: { section?: Work
       )}
       {section === "board" && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-              <p className="text-sm text-muted-foreground">Pilih kartu untuk membuka detailnya di Task Manager.</p>
-              <label className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
-                <Search className="size-4" />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari task…" className="min-w-0 bg-transparent text-sm text-foreground outline-none" />
-              </label>
-            </div>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-3 shadow-soft sm:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] sm:items-center">
+            <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
+              <Search className="size-4 shrink-0" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari nama task, PIC, atau deskripsi…"
+                aria-label="Cari task"
+                className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </label>
+            <label className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-sm font-medium text-muted-foreground">
               Client
-              <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground">
+              <select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                aria-label="Filter berdasarkan client"
+                className="h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <option value="">Semua client</option>
                 {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
               </select>
