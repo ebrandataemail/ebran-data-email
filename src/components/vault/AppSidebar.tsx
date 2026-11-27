@@ -86,7 +86,7 @@ function WorkboardNavItem({
   view: "tasks" | "inbox" | "calendar";
 }) {
   const location = useRouterState({ select: (s) => s.location });
-  const active = location.pathname === "/workboard" && (location.search as { view?: string }).view === view;
+  const active = location.pathname === "/workboard" && ((location.search as { view?: string }).view ?? "tasks") === view;
   return (
     <Link
       to="/workboard"
