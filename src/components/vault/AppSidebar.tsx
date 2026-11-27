@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useRouteContext, useRouterState } from "@tanstack/react-router";
+import { Link, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
-  LogOut,
   AtSign,
   CodeXml,
   LayoutDashboard,
   Mail,
   Megaphone,
   Sparkles,
-  Settings2,
+  Settings,
   Users,
   Menu,
   Search,
@@ -21,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { triggerAssetCommandPalette } from "@/lib/vault/palette-trigger";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
 import { categories, tags } from "@/data/asset";
 import { cn } from "@/lib/utils";
 import { StatusDot } from "./primitives";
@@ -164,7 +161,6 @@ export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}
           <SectionLabel>Proyek & client</SectionLabel>
           <div className="space-y-0.5">
             <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
-            <NavItem icon={<Settings2 />} label="Pengaturan & Peringatan" to="/workboard-settings" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
           </div>
         </div>
@@ -216,17 +212,8 @@ export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}
 
 function UserFooter() {
   const { user } = useRouteContext({ from: "/_authenticated" });
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const email = user.email ?? "Pengguna";
   const initials = email.slice(0, 2).toUpperCase();
-
-  const signOut = async () => {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", search: { redirect: "/vault" }, replace: true });
-  };
 
   return (
     <div className="shrink-0 border-t border-sidebar-border p-3">
@@ -243,11 +230,15 @@ function UserFooter() {
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="Keluar" onClick={signOut}>
-              <LogOut />
-            </Button>
+            <Link
+              to="/workboard-settings"
+              aria-label="Pengaturan & Peringatan"
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+            >
+              <Settings className="size-4" />
+            </Link>
           </TooltipTrigger>
-          <TooltipContent>Keluar</TooltipContent>
+          <TooltipContent>Pengaturan & Peringatan</TooltipContent>
         </Tooltip>
       </div>
     </div>
