@@ -5,7 +5,6 @@ import {
   LogOut,
   AtSign,
   CodeXml,
-  Folder,
   LayoutDashboard,
   Mail,
   Megaphone,
@@ -50,7 +49,6 @@ type NavTarget =
   | "/vault"
   | "/accounts"
   | "/ai"
-  | "/projects"
   | "/workboard"
   | "/workboard-settings"
   | "/clients"
@@ -165,7 +163,6 @@ export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}
         <div>
           <SectionLabel>Proyek & client</SectionLabel>
           <div className="space-y-0.5">
-            <NavItem icon={<Folder />} label="Semua Proyek" to="/projects" />
             <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
             <NavItem icon={<Settings2 />} label="Pengaturan & Peringatan" to="/workboard-settings" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
