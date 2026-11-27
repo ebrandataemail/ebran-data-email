@@ -158,7 +158,6 @@ export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}
           <AskAiItem />
         </div>
         <div>
-          <SectionLabel>Proyek & client</SectionLabel>
           <div className="space-y-0.5">
             <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
