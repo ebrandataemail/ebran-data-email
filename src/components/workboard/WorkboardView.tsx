@@ -2,18 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { TaskIntakeAssistant } from "./TaskIntakeAssistant";
 import { TaskAutomationPanel } from "./TaskAutomationPanel";
-import {
-  Search,
-  RefreshCw,
-  Users,
-  FolderKanban,
-  ListTodo,
-  FileText,
-  Activity,
-} from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/vault/AppSidebar";
-import { StatStrip } from "@/components/vault/StatStrip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GraphicWorkspace } from "./GraphicWorkspace";
@@ -85,17 +76,6 @@ export function WorkboardContent({ section = "board", taskId }: { section?: Work
     });
   }, [selectedTaskIdToScroll]);
   const latestActivities = activities.slice(0, 8);
-  const counts = [
-    { label: "Total client", value: clients.length, icon: Users },
-    { label: "Total proyek", value: projects.length, icon: FolderKanban },
-    {
-      label: "Task aktif",
-      value: tasks.filter((t) => !["finished", "cancel"].includes(t.status)).length,
-      icon: ListTodo,
-    },
-    { label: "Dokumen", value: documents.length, icon: FileText },
-    { label: "Aktivitas", value: activities.length, icon: Activity },
-  ];
   return (
     <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 pb-16 sm:px-8">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
@@ -130,16 +110,6 @@ export function WorkboardContent({ section = "board", taskId }: { section?: Work
           <span className="sr-only sm:hidden">Perbarui data</span>
         </Button>
       </header>
-
-      {section === "board" && (
-        <StatStrip
-          items={counts.map(({ label, value, icon: Icon }) => ({
-            label,
-            value: loading ? "—" : value,
-            icon: <Icon />,
-          }))}
-        />
-      )}
 
       {error && (
         <div
