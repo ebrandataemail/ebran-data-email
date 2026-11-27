@@ -4,6 +4,9 @@ import {
   AtSign,
   CodeXml,
   LayoutDashboard,
+  ListTodo,
+  Inbox,
+  CalendarDays,
   Mail,
   Megaphone,
   Sparkles,
@@ -70,6 +73,35 @@ function AskAiItem() {
     >
       <Sparkles className="size-4" />
       <span className="flex-1">Tanya AI</span>
+    </Link>
+  );
+}
+
+function WorkboardNavItem({
+  label,
+  icon,
+  view,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  view: "tasks" | "inbox" | "calendar";
+}) {
+  const location = useRouterState({ select: (s) => s.location });
+  const active = location.pathname === "/workboard" && (location.search as { view?: string }).view === view;
+  return (
+    <Link
+      to="/workboard"
+      search={{ view }}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
+        active
+          ? "bg-background font-semibold text-foreground shadow-soft ring-1 ring-border before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
+          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+      )}
+    >
+      <span className={cn("[&_svg]:size-4", active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground")}>{icon}</span>
+      <span className="flex-1 truncate">{label}</span>
     </Link>
   );
 }
@@ -159,7 +191,9 @@ export function SidebarContents({ onNavigate }: { onNavigate?: () => void } = {}
         </div>
         <div>
           <div className="space-y-0.5">
-            <NavItem icon={<LayoutDashboard />} label="Papan Kerja" to="/workboard" />
+            <WorkboardNavItem icon={<ListTodo />} label="Task Manager" view="tasks" />
+            <WorkboardNavItem icon={<Inbox />} label="Inbox & AI Integrations" view="inbox" />
+            <WorkboardNavItem icon={<CalendarDays />} label="Kalender & Aktivitas" view="calendar" />
             <NavItem icon={<Users />} label="Client" to="/clients" />
           </div>
         </div>
