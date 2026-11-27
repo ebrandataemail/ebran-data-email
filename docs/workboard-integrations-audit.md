@@ -126,3 +126,26 @@ All tables must have owner isolation, explicit RLS, unique constraints for dedup
 ## Scope and deployment notes
 
 This document records the audit and intended implementation architecture. It does not claim that provider OAuth credentials, webhook subscriptions, frontend screens, schema additions, or deployments have been configured. Supabase changes require their own migration/deployment step. Lovable tokens or Lovable AI Gateway are not required for this architecture.
+
+## Navigation split implementation — 2026-11-28
+
+The Workboard page is now separated into three focused views while retaining the same authenticated route and database model:
+
+- **Task Manager** — default view at `/workboard` (also accepts `?view=tasks`); contains task search, client selection, Graphic Workspace, and task CRUD/board.
+- **Inbox & AI Integrations** — `/workboard?view=inbox`; contains manual/AI task intake and the existing automation/Gmail review panel.
+- **Kalender & Aktivitas** — `/workboard?view=calendar`; contains calendar, work list, AI Secretary, and recent activity.
+
+The global sidebar exposes all three as separate navigation entries. Existing direct links to `/workboard` continue to open Task Manager by default. The settings route remains separate and the Gear shortcut is unchanged.
+
+### Data and integration impact
+
+- No database schema or migration was required for this presentation/navigation change.
+- `public.client_tasks` remains the task source of truth.
+- Existing task draft, task intake source, generation run, automation rule, task source link, webhook endpoint/event, brief, deliverable, review, comment, and reminder tables remain in place.
+- Supabase inspection confirmed RLS is enabled on the reviewed Workboard tables. The service-side webhook event table has RLS enabled and no client policies; this refactor does not change its grants or access model.
+- Existing cron schedules were verified active: `workboard-gmail-task-automation` every 5 minutes, `workboard-ntfy-reminders` every minute, and `workboard-copilot-daily` daily at 02:00 UTC.
+- Existing Gmail OAuth, AI task generation, approval, ntfy reminder, and webhook functions are not modified by the navigation split.
+
+### Verification notes
+
+The database/table and cron inspection was performed against the connected Supabase project. Application build and authenticated browser end-to-end checks must still complete in the deployment pipeline before the UI change is considered fully runtime-verified.
