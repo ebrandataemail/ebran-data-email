@@ -24,24 +24,24 @@ import { useWorkboardData, type WorkboardTask } from "./useWorkboardData";
 /** L1 — sama dengan halaman Accounts dan Proyek. */
 const surface = "rounded-xl border border-border bg-card shadow-soft";
 
-export type WorkboardSection = "tasks" | "inbox" | "calendar";
+export type WorkboardSection = "board" | "manager" | "inbox" | "calendar";
 
-export function WorkboardView({ section = "tasks" }: { section?: WorkboardSection }) {
+export function WorkboardView({ section = "board", taskId }: { section?: WorkboardSection; taskId?: string }) {
   return (
     <div className="min-h-screen bg-canvas">
       <AppSidebar />
       <main className="lg:pl-64">
-        <WorkboardContent section={section} />
+        <WorkboardContent section={section} taskId={taskId} />
       </main>
     </div>
   );
 }
 
-export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSection }) {
+export function WorkboardContent({ section = "board", taskId }: { section?: WorkboardSection; taskId?: string }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(taskId ?? null);
   const {
     clients,
     projects,
@@ -62,6 +62,9 @@ export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSec
   useEffect(() => {
     if (!selectedClientId && clients.length) setSelectedClientId(clients[0].id);
   }, [clients, selectedClientId]);
+  useEffect(() => {
+    if (taskId) setSelectedTaskId(taskId);
+  }, [taskId]);
   const demoTasks: WorkboardTask[] = clients.length && !tasks.length ? [
     { id: "demo-task-1", client_id: clients[0].id, title: "Desain feed Instagram — campaign November", description: "Buat 3 konsep feed Instagram untuk campaign November. Gunakan brand guideline, siapkan preview, lalu kirim untuk review client.", status: "on-process", priority: "high", due_date: "2026-11-06", assignee: "Creative Designer", created_at: "2026-11-01T09:00:00.000Z", updated_at: "2026-11-03T08:00:00.000Z", sort_order: 1 },
     { id: "demo-task-2", client_id: clients[0].id, title: "Revisi landing page", description: "Perbaiki hero section, CTA, dan tampilan mobile berdasarkan masukan client.", status: "revision", priority: "medium", due_date: "2026-11-08", assignee: "UI/UX Designer", created_at: "2026-11-02T10:00:00.000Z", updated_at: "2026-11-03T08:30:00.000Z", sort_order: 2 },
@@ -96,12 +99,14 @@ export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSec
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            {section === "tasks" ? "Task Manager" : section === "inbox" ? "Inbox & AI Integrations" : "Kalender & Aktivitas"}
+            {section === "board" ? "Task Board / Kanban" : section === "manager" ? "Task Manager" : section === "inbox" ? "Inbox & AI Integrations" : "Kalender & Aktivitas"}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {section === "tasks"
-              ? "Kelola task, Graphic Workspace, brief, desain, dan approval."
-              : section === "inbox"
+            {section === "board"
+              ? "Pantau seluruh task berdasarkan status dan pindahkan pekerjaan antar kolom."
+              : section === "manager"
+                ? "Kelola detail pekerjaan, brief, deliverables, desain, dan approval di Graphic Workspace."
+                : section === "inbox"
                 ? "Kumpulkan sumber pekerjaan, buat draft dengan AI, lalu tinjau sebelum menjadi task."
                 : "Pantau deadline, agenda, daftar pekerjaan, dan aktivitas terbaru."}
           </p>
@@ -124,7 +129,7 @@ export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSec
         </Button>
       </header>
 
-      {section === "tasks" && (
+      {section === "board" && (
         <StatStrip
           items={counts.map(({ label, value, icon: Icon }) => ({
             label,
@@ -149,72 +154,83 @@ export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSec
           </Button>
         </div>
       )}
-      {section === "tasks" && (
-        <>
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <label className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-soft sm:max-w-[360px]">
-                <Search className="size-4 text-muted-foreground" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cari task, client, PIC, deskripsi…"
-                  className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                />
-                <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[11px] text-muted-foreground">⌘K</kbd>
-              </label>
-              <label className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-sm text-muted-foreground">
-                Client aktif
-                <select
-                  value={selectedClientId}
-                  onChange={(e) => { setSelectedClientId(e.target.value); setSelectedTaskId(null); }}
-                  className="h-9 w-full min-w-0 rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground shadow-soft sm:max-w-[240px]"
-                >
-                  <option value="">Pilih client</option>
-                  {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
-                </select>
-              </label>
-            </div>
-            {loading && !clients.length ? (
-              <div className={cn(surface, "p-10 text-center text-sm text-muted-foreground")}>Menghubungkan ke Supabase…</div>
-            ) : (
-              <div id="graphic-workspace">
-                <GraphicWorkspace
-                  clients={clients}
-                  projects={projects}
-                  tasks={boardTasks}
-                  documents={documents}
-                  activities={activities}
-                  designVersions={designVersions}
-                  designComments={designComments}
-                  designReviews={designReviews}
-                  selectedClientId={selectedClientId}
-                  onDataChanged={refresh}
-                  selectedTask={selectedTask}
-                />
-              </div>
-            )}
+      {section === "board" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">Papan Kanban seluruh pekerjaan. Pilih kartu untuk membuka detailnya di Task Manager.</p>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Client
+              <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground">
+                <option value="">Semua client</option>
+                {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+              </select>
+            </label>
           </div>
           <TaskBoard
             query={query}
-            tasks={boardTasks}
+            tasks={selectedClientId ? boardTasks.filter((task) => task.client_id === selectedClientId) : boardTasks}
             clients={clients}
             projects={projects}
             loading={loading}
             onCreate={async (input) => {
               const created = await createTask(input);
-              if (created?.id) { setSelectedClientId(input.client_id); setSelectedTaskId(created.id); }
+              if (created?.id) {
+                setSelectedClientId(input.client_id);
+                void navigate({ to: "/workboard", search: { view: "manager", taskId: created.id } });
+              }
               return created;
             }}
             onUpdate={updateTask}
             onDelete={deleteTask}
             onDuplicate={duplicateTask}
             onSelectTask={(task) => {
-              setSelectedTaskId(task.id);
-              if (task.client_id !== selectedClientId) setSelectedClientId(task.client_id);
+              setSelectedClientId(task.client_id);
+              void navigate({ to: "/workboard", search: { view: "manager", taskId: task.id } });
             }}
           />
-        </>
+        </div>
+      )}
+
+      {section === "manager" && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <label className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+              Client
+              <select value={selectedClientId} onChange={(e) => { setSelectedClientId(e.target.value); setSelectedTaskId(null); void navigate({ to: "/workboard", search: { view: "manager" } }); }} className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none">
+                <option value="">Pilih client</option>
+                {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+              </select>
+            </label>
+            <label className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+              Task
+              <select value={selectedTask?.id ?? ""} onChange={(e) => { setSelectedTaskId(e.target.value || null); void navigate({ to: "/workboard", search: { view: "manager", taskId: e.target.value || undefined } }); }} className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none">
+                <option value="">Pilih task</option>
+                {boardTasks.filter((task) => !selectedClientId || task.client_id === selectedClientId).map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}
+              </select>
+            </label>
+          </div>
+          {loading && !clients.length ? (
+            <div className={cn(surface, "p-10 text-center text-sm text-muted-foreground")}>Menghubungkan ke Supabase…</div>
+          ) : selectedTask ? (
+            <GraphicWorkspace
+              clients={clients}
+              projects={projects}
+              tasks={boardTasks}
+              documents={documents}
+              activities={activities}
+              designVersions={designVersions}
+              designComments={designComments}
+              designReviews={designReviews}
+              selectedClientId={selectedClientId || selectedTask.client_id}
+              onDataChanged={refresh}
+              selectedTask={selectedTask}
+            />
+          ) : (
+            <div className={cn(surface, "p-10 text-center text-sm text-muted-foreground")}>
+              Pilih task untuk membuka Graphic Workspace. Kamu juga bisa memilih kartu di Task Board / Kanban.
+            </div>
+          )}
+        </div>
       )}
 
       {section === "inbox" && (
@@ -226,7 +242,7 @@ export function WorkboardContent({ section = "tasks" }: { section?: WorkboardSec
             tasks={tasks}
             onTaskCreated={refresh}
             onSelectTask={() => {
-              void navigate({ to: "/workboard", search: { view: "tasks" } });
+              void navigate({ to: "/workboard", search: { view: "board" } });
               toast.info("Buka Task Manager untuk melihat dan mengelola task.");
             }}
           />
