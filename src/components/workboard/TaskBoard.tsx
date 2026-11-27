@@ -437,20 +437,12 @@ export function TaskBoard({
     // Tanpa pembungkus card: papan duduk langsung di atas canvas.
     // Tingkat: canvas → jalur kolom (inset, tanpa border) → kartu task (satu-satunya yang berbingkai).
     <section className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight text-foreground">Task board</h2>
-          <p className="text-sm text-muted-foreground">
-            Task per deadline · tersimpan otomatis ke Supabase
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="text-xs tabular-nums text-muted-foreground">{filtered.length} task</span>
-          <Button onClick={() => openNew()} disabled={!clients.length || loading}>
-            <Plus />
-            Task baru
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <span className="text-xs tabular-nums text-muted-foreground">{filtered.length} task</span>
+        <Button onClick={() => openNew()} disabled={!clients.length || loading}>
+          <Plus />
+          Task baru
+        </Button>
       </div>
 
       {loading ? (
